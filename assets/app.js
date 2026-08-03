@@ -188,15 +188,7 @@ REP.HRM1={
    by:"Lương Minh Quang",byRole:"Chuyên viên Tuyển dụng · PNS",
    chk:"Lã Thị Kiều Trang",chkRole:"Chuyên viên C&B · PNS",
    apv:"Hoàng Thị Như Quỳnh",apvRole:"Quản trị Khối BO"},
- summary:[
-  "Tuyển đạt <b>12/14 vị trí kế hoạch (85,7%)</b>. Hai vị trí trượt tiến độ đều thuộc nhóm kỹ thuật, nguyên nhân là nguồn ứng viên Backend hẹp chứ không phải khâu sàng lọc.",
-  "Time-to-Hire rút còn <b>26 ngày</b>, dưới mục tiêu 30 ngày kỳ thứ tư liên tiếp. Động lực chính đến từ tỷ trọng referral tăng lên 32%.",
-  "Tỷ lệ nghỉ trong thử việc giảm còn <b>8%</b>, cho thấy vòng phỏng vấn văn hoá theo 5 giá trị đang lọc đúng người.",
-  "Chi phí cho mỗi tuyển dụng thành công giảm 12,5% so kỳ trước nhờ giảm phụ thuộc headhunt."],
- actions:[
-  ['JD-26-043 Backend Developer đã mở 60 ngày, chưa có ứng viên qua vòng 2. Đề nghị BOD duyệt mở kênh headhunt chuyên ngành hoặc điều chỉnh dải lương G4.','t-hi'],
-  ['Kế hoạch tuyển Q3 chưa nhận được xác nhận headcount từ 3 BU. Cần chốt trước 10/08 để kịp tiến độ.','t-md'],
-  ['Đề xuất nâng thưởng referral cho nhóm kỹ thuật lên mức senior, do kênh này đang cho chất lượng cao nhất.','t-lo']],
+ summary:[], actions:[],
  kpis:[
   {k:"Time-to-Hire",d:"Từ ngày duyệt JD tới ngày nhận việc",u:"ngày",cur:26,prev:28,tgt:30,dir:-1,p:0,sp:[33,31,30,29,28,26]},
   {k:"Tỷ lệ hoàn thành kế hoạch tuyển",d:"Số tuyển được / kế hoạch kỳ",u:"%",cur:85.7,prev:78.6,tgt:100,dir:1,sp:[71,75,79,82,79,86]},
@@ -793,7 +785,6 @@ function mast(m,r){
 function renderReport(m){
   const r=REP[m.id];
   const K=(window.HQLive?HQLive.apply(m.id,r.kpis):r.kpis);
-  const secs=[["1","Tóm tắt điều hành"],["2","Bảng chỉ số chính"],["3","Phân tích"],["4","Dữ liệu chi tiết"],["5","Định nghĩa & phê duyệt"]];
   let ch="",group=[],span="g2";
   r.charts.forEach(c=>{
     if(c.span){ if(group.length){ch+=`<div class="grid ${span}">${group.join('')}</div>`;group=[]} span=c.span }
@@ -813,21 +804,23 @@ function renderReport(m){
     });
   }
 
+  const hasSum=r.summary&&r.summary.length, hasAct=r.actions&&r.actions.length;
+  const parts=[];
+  if(hasSum||hasAct){
+    const boxes=(hasSum?`<div class="exbox"><h4>Nhận định chính</h4><ol>${r.summary.map(s=>`<li>${s}</li>`).join('')}</ol></div>`:'')+
+      (hasAct?`<div class="exbox act"><h4>Việc cần quyết</h4><ol>${r.actions.map(([a,t])=>`<li>${a}<span class="tagr ${t}">${t==='t-hi'?'ƯU TIÊN CAO':t==='t-md'?'TRUNG BÌNH':'THEO DÕI'}</span></li>`).join('')}</ol></div>`:'');
+    parts.push(["Tóm tắt điều hành","Tóm tắt điều hành","Nhận định và việc cần quyết trong kỳ",
+      `<div class="exec"${hasSum&&hasAct?'':' style="grid-template-columns:1fr"'}>${boxes}</div>`]);
+  }
+  parts.push(["Bảng chỉ số chính","Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
+    panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id))]);
+  parts.push(["Phân tích","Phân tích","Diễn giải bằng biểu đồ",ch]);
+  parts.push(["Dữ liệu chi tiết","Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
+  parts.push(["Định nghĩa & phê duyệt","Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta)]);
   return mast(m,r)+
   `<div class="wrap"><div class="hero kstrip">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div></div>
-   <div class="secnav noprint">${secs.map(([n,t])=>`<a href="#s${n}" data-s="s${n}"><b>${n}</b>${t}</a>`).join('')}</div>
-   <div class="wrap">
-    ${sec(1,"Tóm tắt điều hành","Nhận định và việc cần quyết trong kỳ",
-      `<div class="exec">
-        <div class="exbox"><h4>Nhận định chính</h4><ol>${r.summary.map(s=>`<li>${s}</li>`).join('')}</ol></div>
-        <div class="exbox act"><h4>Việc cần quyết</h4><ol>${r.actions.map(([a,t])=>`<li>${a}<span class="tagr ${t}">${t==='t-hi'?'ƯU TIÊN CAO':t==='t-md'?'TRUNG BÌNH':'THEO DÕI'}</span></li>`).join('')}</ol></div>
-      </div>`)}
-    ${sec(2,"Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
-      panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id)))}
-    ${sec(3,"Phân tích","Diễn giải bằng biểu đồ",ch)}
-    ${sec(4,"Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb)}
-    ${sec(5,"Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta))}
-   </div>`;
+   <div class="secnav noprint">${parts.map((p,i)=>`<a href="#s${i+1}" data-s="s${i+1}"><b>${i+1}</b>${p[0]}</a>`).join('')}</div>
+   <div class="wrap">${parts.map((p,i)=>sec(i+1,p[1],p[2],p[3])).join('')}</div>`;
 }
 
 /* ---- Trang tổng hợp ---- */
@@ -855,6 +848,7 @@ function renderHome(){
     {k:"Tỷ lệ hồ sơ đầy đủ",u:"%",cur:92.6,prev:90.5,tgt:100,dir:1,sp:[84,86,88,89,91,93]},
     {k:"Tỷ lệ nhân sự quá tải",u:"%",cur:57.1,prev:42.9,tgt:10,dir:-1,sp:[29,29,43,43,43,57]}];
   const linkedAll=Object.values(SOURCES).filter(s=>s.url).length;
+  const nHi=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
   const byRep=MODULES.slice(1).map(x=>{
     const r=REP[x.id];
     const kk=window.HQLive?HQLive.apply(x.id,r.kpis):r.kpis;
@@ -871,7 +865,7 @@ function renderHome(){
   return `
   <div class="greet">
     <div><h1>${chao}, chị Quinh 👋</h1>
-      <p>Báo cáo tổng hợp tám mã HRM để Phòng Nhân sự theo dõi. Có 7 việc ưu tiên cao trong kỳ.</p></div>
+      <p>Báo cáo tổng hợp tám mã HRM để Phòng Nhân sự theo dõi. Có ${nHi} việc ưu tiên cao trong kỳ.</p></div>
   </div>
   <div class="mast">
     <div class="bar">
@@ -915,7 +909,7 @@ function renderHome(){
     ${sec(3,"Trạng thái phát hành tám mã báo cáo","",
       panelT("Danh mục báo cáo định kỳ Phòng Nhân sự","",dataTable("t-home",
         [{t:"Mã"},{t:"Tên báo cáo"},{t:"Chu kỳ",a:"c"},{t:"Người lập"},{t:"Phát hành",a:"c"},{t:"Bản",a:"c"},{t:"Nguồn dữ liệu"},{t:"Việc gấp",a:"c"},{t:"Trạng thái",a:"c"},{t:"",a:"c"}],rows,
-        ["TỔNG CỘNG","8 báo cáo","—","4 người lập","—","—","—","7 việc gấp","2 duyệt · 3 chờ · 3 nháp","—"],
+        ["TỔNG CỘNG","8 báo cáo","—","4 người lập","—","—","—",`${nHi} việc gấp`,"2 duyệt · 3 chờ · 3 nháp","—"],
         [{t:"Định danh báo cáo",s:4},{t:"Phát hành",s:4},{t:"Theo dõi",s:3}]),tools("t-home"),tfoot(8)))}
     ${sec(4,"Việc ưu tiên cao cần theo dõi trong kỳ","Tổng hợp mục 1 của từng báo cáo — Phòng Nhân sự theo dõi và đôn đốc",
       `<div class="exec" style="grid-template-columns:1fr"><div class="exbox act"><h4>Danh mục ưu tiên cao</h4><ol>
@@ -966,6 +960,8 @@ function buildNav(){
   const c=Object.values(SOURCES).filter(s=>s.url).length;
   document.getElementById('linkcount').textContent=c+"/14";
   document.getElementById('linkbar').style.width=(c/14*100)+"%";
+  const bc=document.getElementById('bellcount');
+  if(bc)bc.textContent=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
 }
 function go(id){
   current=id;kill();
@@ -999,7 +995,9 @@ document.getElementById('btn-theme').onclick=()=>
   setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
 document.getElementById('btn-close').onclick=closeDrawer;
 document.getElementById('scrim').onclick=closeDrawer;
-document.getElementById('btn-bell').onclick=()=>toast("7 việc ưu tiên cao đang theo dõi trong kỳ");
+document.getElementById('btn-bell').onclick=()=>{
+  const n=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
+  toast(`${n} việc ưu tiên cao đang theo dõi trong kỳ`)};
 document.getElementById('btn-save').onclick=()=>{
   document.querySelectorAll('#srclist input').forEach(i=>SOURCES[i.dataset.k].url=i.value.trim());
   closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/14 liên kết nguồn`)};
