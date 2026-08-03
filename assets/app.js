@@ -749,7 +749,6 @@ function liveStat(){
 }
 function mast(m,r){
   const st=STATE[m.id], sl=STLABEL[st];
-  const linked=m.src.filter(s=>SOURCES[s].url).length;
   return `<div class="mast">
     <div class="bar">
       <div class="mtt">
@@ -770,16 +769,7 @@ function mast(m,r){
         ${filterRow()}
       </div>
     </div>
-    <div class="meta">
-      <div><div class="k">Chu kỳ</div><div class="v">${r.meta.cycle}</div></div>
-      <div><div class="k">Ngày chốt số</div><div class="v">${r.meta.close}</div></div>
-      <div><div class="k">Ngày phát hành</div><div class="v">${r.meta.issue}</div></div>
-      <div><div class="k">Phiên bản</div><div class="v">v${r.meta.ver}</div></div>
-      <div><div class="k">Người lập</div><div class="v">${r.meta.by}</div></div>
-      <div><div class="k">Người duyệt</div><div class="v">${r.meta.apv}</div></div>
-      <div><div class="k">Nguồn dữ liệu</div><div class="v">${linked}/${m.src.length} đã nối
-        <button class="tbtn noprint" style="margin-left:6px" onclick="openDrawer()">Gắn</button></div></div>
-    </div></div>`;
+    </div>`;
 }
 
 function renderReport(m){
