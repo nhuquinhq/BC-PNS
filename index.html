@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Trung tâm Báo cáo Nhân sự HQ Group — HRM1 đến HRM8">
+<meta name="robots" content="noindex, nofollow">
+<title>HQ Group · Trung tâm Báo cáo Nhân sự</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23F5487F'/><text x='50' y='68' font-size='46' font-family='sans-serif' font-weight='800' fill='white' text-anchor='middle'>HQ</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="logo">HQ</div>
+      <div><b>HQ Group</b><span>Báo cáo · Phân tích · Điều hành</span></div>
+    </div>
+    <div class="railsec">TỔNG HỢP</div><div class="nav" id="nav-top"></div>
+    <div class="railsec">BÁO CÁO ĐỊNH KỲ</div><div class="nav" id="nav-main"></div>
+    <div class="raildiv"></div>
+    <div class="railcard">
+      <h4>Nguồn dữ liệu</h4>
+      <p>Gắn link Google Sheet để báo cáo chạy số thật thay cho dữ liệu mẫu.</p>
+      <div class="b"><span>Đã nối</span><span id="linkcount">0/14</span></div>
+      <div class="track"><i id="linkbar" style="width:0%"></i></div>
+      <button onclick="openDrawer()">Gắn nguồn ngay →</button>
+    </div>
+  </aside>
+
+  <div>
+    <div class="top">
+      <div class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+        <input type="text" id="q" placeholder="Tìm trong bảng: mã NV, tên, phòng ban…">
+        <kbd>⌘K</kbd>
+      </div>
+      <div class="pill-sel"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+        <select id="f-period"><option>Kỳ 07/2026</option><option>Kỳ 06/2026</option><option>Kỳ 05/2026</option><option>Quý 2/2026</option><option>Quý 1/2026</option><option>Năm 2026</option></select></div>
+      <div class="pill-sel"><label>BU</label><select id="f-bu"><option>Tất cả</option><option>Ritokey</option><option>WGG</option><option>A10GG</option><option>HQS10000</option><option>VX Team</option><option>Maverick</option><option>Khối BO</option></select></div>
+      <div class="pill-sel"><label>PHÒNG</label><select id="f-dept"><option>Tất cả</option><option>Nhân sự</option><option>Kế toán</option><option>Vận hành</option><option>Chăm sóc KH</option><option>Kinh doanh</option><option>Công nghệ</option><option>Marketing</option></select></div>
+      <button class="iconbtn" id="btn-theme" title="Chuyển sáng / tối"></button>
+      <button class="iconbtn" id="btn-dens" title="Thu gọn dòng"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <button class="iconbtn" id="btn-bell" title="Cảnh báo"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge" id="bellcount">7</span></button>
+      <div class="who"><div class="av">Q</div><div><b>Quinh</b><span>Quản trị Khối BO</span></div></div>
+    </div>
+    <main id="view"></main>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead"><h2 style="font-size:16px">Nguồn dữ liệu</h2>
+    <p>Dán link CSV đã publish của từng tab Google Sheet. Giữ nguyên tên cột bắt buộc để hệ thống tự nhận.</p></div>
+  <div class="dbody" id="srclist"></div>
+  <div class="dfoot"><button class="btn" id="btn-save">Lưu liên kết</button><button class="btn g" id="btn-close">Đóng</button></div>
+</aside>
+<script src="/assets/config.js"></script>
+<script src="/assets/live.js" defer></script>
+<script src="/assets/app.js" defer></script>
+</body>
+</html>

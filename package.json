@@ -1,0 +1,9 @@
+{
+  "name": "hq-hr-report",
+  "version": "4.0.0",
+  "private": true,
+  "description": "HQ Group - Trung tam Bao cao Nhan su (HRM1-HRM8)",
+  "scripts": {
+    "dev": "npx serve . -l 3000"
+  }
+}
