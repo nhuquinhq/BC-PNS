@@ -119,13 +119,6 @@ main{padding:0 0 70px;max-width:1580px}
 .chip.wait{background:rgba(59,130,246,.13);color:var(--blue)}
 .chip.ok{background:rgba(16,185,129,.13);color:var(--green)}
 
-/* ===== SECTION NAV ===== */
-.secnav{display:flex;gap:8px;padding:18px 24px 0;overflow-x:auto}
-.secnav a{text-decoration:none;font-size:12px;font-weight:700;color:var(--tx2);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 16px;white-space:nowrap;box-shadow:var(--sh);transition:.15s}
-.secnav a:hover{color:var(--tx)}
-.secnav a.on{background:var(--grad-cta);color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(56,189,248,.3)}
-.secnav a b{font-family:"IBM Plex Mono",monospace;margin-right:6px;opacity:.6}
-
 .sec{margin-top:22px;scroll-margin-top:92px}
 .sechead{display:flex;align-items:center;gap:11px;margin-bottom:14px}
 .sechead .no{width:27px;height:27px;border-radius:9px;background:var(--grad-cta);color:#fff;display:grid;place-items:center;font-size:11.5px;font-weight:800}
@@ -262,7 +255,7 @@ tbody td b{color:var(--tx);font-weight:800}
 @media(max-width:880px){
   .shell{grid-template-columns:1fr}.rail{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}
   .nav{flex-direction:row;overflow-x:auto}.nav button{min-width:168px}
-  .railcard{display:none}.wrap,.secnav,.greet{padding-left:14px;padding-right:14px}.mast{margin:14px}
+  .railcard{display:none}.wrap,.greet{padding-left:14px;padding-right:14px}.mast{margin:14px}
   .mside{align-items:flex-start}.mrow{justify-content:flex-start}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -270,7 +263,7 @@ tbody td b{color:var(--tx);font-weight:800}
 @page{size:A4 landscape;margin:10mm}
 @media print{
   html{--bg:#fff;--card:#fff;--card2:#F8F9FE;--line:#E3E6F0;--tx:#1E2436;--tx2:#4E5670;--tx3:#818AA3}
-  .rail,.top,.secnav,.tools,.drawer,.scrim,.noprint,.tfoot{display:none!important}
+  .rail,.top,.tools,.drawer,.scrim,.noprint,.tfoot{display:none!important}
   .shell{grid-template-columns:1fr}main{padding:0;max-width:none}
   .mast{margin:0 0 10px;box-shadow:none}.panel,.exbox,.defs,.sign,.hcard{box-shadow:none;break-inside:avoid}
   .sec{break-inside:avoid-page}.tw{max-height:none;overflow:visible}

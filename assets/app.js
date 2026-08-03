@@ -799,18 +799,17 @@ function renderReport(m){
   if(hasSum||hasAct){
     const boxes=(hasSum?`<div class="exbox"><h4>Nhận định chính</h4><ol>${r.summary.map(s=>`<li>${s}</li>`).join('')}</ol></div>`:'')+
       (hasAct?`<div class="exbox act"><h4>Việc cần quyết</h4><ol>${r.actions.map(([a,t])=>`<li>${a}<span class="tagr ${t}">${t==='t-hi'?'ƯU TIÊN CAO':t==='t-md'?'TRUNG BÌNH':'THEO DÕI'}</span></li>`).join('')}</ol></div>`:'');
-    parts.push(["Tóm tắt điều hành","Tóm tắt điều hành","Nhận định và việc cần quyết trong kỳ",
+    parts.push(["Tóm tắt điều hành","Nhận định và việc cần quyết trong kỳ",
       `<div class="exec"${hasSum&&hasAct?'':' style="grid-template-columns:1fr"'}>${boxes}</div>`]);
   }
-  parts.push(["Bảng chỉ số chính","Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
+  parts.push(["Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
     panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id))]);
-  parts.push(["Phân tích","Phân tích","Diễn giải bằng biểu đồ",ch]);
-  parts.push(["Dữ liệu chi tiết","Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
-  parts.push(["Định nghĩa & phê duyệt","Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta)]);
+  parts.push(["Phân tích","Diễn giải bằng biểu đồ",ch]);
+  parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
+  parts.push(["Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta)]);
   return mast(m,r)+
   `<div class="wrap"><div class="hero kstrip">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div></div>
-   <div class="secnav noprint">${parts.map((p,i)=>`<a href="#s${i+1}" data-s="s${i+1}"><b>${i+1}</b>${p[0]}</a>`).join('')}</div>
-   <div class="wrap">${parts.map((p,i)=>sec(i+1,p[1],p[2],p[3])).join('')}</div>`;
+   <div class="wrap">${parts.map((p,i)=>sec(i+1,p[0],p[1],p[2])).join('')}</div>`;
 }
 
 /* ---- Trang tổng hợp ---- */
@@ -849,7 +848,6 @@ function renderHome(){
     <div class="hero">${kk.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
     <div class="grid g2">${chs}</div>`;
   }).join('');
-  const secs=[["1","Chỉ số trọng yếu"],["2","Số liệu theo báo cáo"],["3","Trạng thái phát hành"],["4","Việc cần theo dõi"]];
   const hour=new Date().getHours();
   const chao=hour<11?"Chào buổi sáng":hour<14?"Chào buổi trưa":hour<18?"Chào buổi chiều":"Chào buổi tối";
   return `
@@ -878,7 +876,6 @@ function renderHome(){
       </div>
     </div>
   </div>
-  <div class="secnav noprint">${secs.map(([n,t])=>`<a href="#s${n}" data-s="s${n}"><b>${n}</b>${t}</a>`).join('')}</div>
   <div class="wrap">
     ${sec(1,"Chỉ số trọng yếu","Rút từ tám mã báo cáo",
       `<div class="hero">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
@@ -916,15 +913,6 @@ function homeCharts(){
     {cutout:"64%",plugins:{legend:{display:true,position:"bottom"}},scales:{}});
 }
 
-/* ---- Scroll spy ---- */
-function scrollSpy(){
-  const links=[...document.querySelectorAll('.secnav a')]; if(!links.length)return;
-  const obs=new IntersectionObserver(es=>es.forEach(e=>{
-    if(e.isIntersecting)links.forEach(l=>l.classList.toggle('on',l.dataset.s===e.target.id))}),
-    {rootMargin:"-100px 0px -66% 0px"});
-  document.querySelectorAll('.sec').forEach(s=>obs.observe(s));
-}
-
 /* ---- Tìm trong bảng ---- */
 function runSearch(){
   const el=document.getElementById('q'); if(!el)return;
@@ -960,7 +948,7 @@ function go(id){
   v.innerHTML = id==="HOME"?renderHome():renderReport(m);
   if(id==="HOME"){homeCharts();MODULES.slice(1).forEach(x=>REP[x.id].charts.slice(0,2).forEach(c=>c.f()))}
   else (REP[m.id].charts||[]).forEach(c=>c.f());
-  scrollSpy();buildNav();runSearch();window.scrollTo(0,0);
+  buildNav();runSearch();window.scrollTo(0,0);
 }
 
 /* ---- Drawer ---- */
