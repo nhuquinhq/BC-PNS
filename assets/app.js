@@ -160,7 +160,7 @@ const DEPTS=["Kinh doanh","Vận hành","Chăm sóc KH","Công nghệ","Marketin
 const BUS=["Ritokey","WGG","A10GG","HQS10000","VX Team","Maverick","Khối BO"];
 
 const MODULES=[
- {id:"HOME",code:"—",title:"Bảng tổng hợp BOD",src:[]},
+ {id:"HOME",code:"—",title:"Báo cáo tổng hợp",src:[]},
  {id:"HRM1",code:"HRM1",title:"Báo cáo tuyển dụng",src:["RAW_TuyenDung","DM_PhongBan"]},
  {id:"HRM2",code:"HRM2",title:"Chấm công & Phép",src:["RAW_ChamCong","RAW_Phep","DM_NhanSu"]},
  {id:"HRM3",code:"HRM3",title:"Payroll & C&B",src:["RAW_Luong","DM_NhanSu","DM_Grade"]},
@@ -865,20 +865,20 @@ function renderHome(){
     <div class="hero">${kk.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
     <div class="grid g2">${chs}</div>`;
   }).join('');
-  const secs=[["1","Chỉ số điều hành"],["2","Số liệu theo báo cáo"],["3","Trạng thái phát hành"],["4","Việc cần quyết"]];
+  const secs=[["1","Chỉ số trọng yếu"],["2","Số liệu theo báo cáo"],["3","Trạng thái phát hành"],["4","Việc cần theo dõi"]];
   const hour=new Date().getHours();
   const chao=hour<11?"Chào buổi sáng":hour<14?"Chào buổi trưa":hour<18?"Chào buổi chiều":"Chào buổi tối";
   return `
   <div class="greet">
     <div><h1>${chao}, chị Quinh 👋</h1>
-      <p>Tám mã báo cáo nhân sự đã sẵn sàng. Có 7 việc cần Ban Điều hành quyết.</p></div>
+      <p>Báo cáo tổng hợp tám mã HRM để Phòng Nhân sự theo dõi. Có 7 việc ưu tiên cao trong kỳ.</p></div>
   </div>
   <div class="mast">
     <div class="bar">
       <div class="mtt">
-        <div class="eyebrow">Tổng quan · HRM1 → HRM8</div>
-        <h1>Tổng quan nhân sự</h1>
-        <p>Toàn bộ chỉ số của tám mã báo cáo, trình Ban Điều hành.</p>
+        <div class="eyebrow">Báo cáo tổng hợp · HRM1 → HRM8</div>
+        <h1>Báo cáo tổng hợp nhân sự</h1>
+        <p>Toàn bộ chỉ số của tám mã báo cáo — Phòng Nhân sự theo dõi vận hành theo kỳ.</p>
         <div class="scoperow">
           <span class="scopepill">Phạm vi: <b>${fmtd(RANGE.from)} → ${fmtd(RANGE.to)}</b></span>
           <span class="srctxt">Nguồn: ${linkedAll}/14 tab Google Sheet đã nối</span>
@@ -896,7 +896,7 @@ function renderHome(){
   </div>
   <div class="secnav noprint">${secs.map(([n,t])=>`<a href="#s${n}" data-s="s${n}"><b>${n}</b>${t}</a>`).join('')}</div>
   <div class="wrap">
-    ${sec(1,"Chỉ số điều hành","Rút từ tám mã báo cáo",
+    ${sec(1,"Chỉ số trọng yếu","Rút từ tám mã báo cáo",
       `<div class="hero">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
        <div class="grid g21">
         ${panel("Quỹ lương và nhân sự 12 kỳ","triệu đồng · người",`<div class="chartbox tall"><canvas id="z1"></canvas></div>`)}
@@ -910,14 +910,14 @@ function renderHome(){
           ["Trần Văn Đức","154%",100],["Lương Minh Quang","141%",92],["Đỗ Minh Khôi","122%",79],
           ["Lã Thị Kiều Trang","118%",77],["Nguyễn Thị Hạnh","111%",72],["Phạm Thu Hương","99%",64],["Vũ Hải Yến","73%",47]]))}
        </div>
-       ${panelT("Bảng chỉ số điều hành hợp nhất","10 chỉ số trọng yếu",scorecard("sc-home",K),tools("sc-home"))}`)}
+       ${panelT("Bảng chỉ số hợp nhất","10 chỉ số trọng yếu",scorecard("sc-home",K),tools("sc-home"))}`)}
     ${sec(2,"Số liệu theo từng mã báo cáo","Chỉ số nổi bật và biểu đồ chính của HRM1 → HRM8",byRep)}
     ${sec(3,"Trạng thái phát hành tám mã báo cáo","",
       panelT("Danh mục báo cáo định kỳ Phòng Nhân sự","",dataTable("t-home",
         [{t:"Mã"},{t:"Tên báo cáo"},{t:"Chu kỳ",a:"c"},{t:"Người lập"},{t:"Phát hành",a:"c"},{t:"Bản",a:"c"},{t:"Nguồn dữ liệu"},{t:"Việc gấp",a:"c"},{t:"Trạng thái",a:"c"},{t:"",a:"c"}],rows,
         ["TỔNG CỘNG","8 báo cáo","—","4 người lập","—","—","—","7 việc gấp","2 duyệt · 3 chờ · 3 nháp","—"],
         [{t:"Định danh báo cáo",s:4},{t:"Phát hành",s:4},{t:"Theo dõi",s:3}]),tools("t-home"),tfoot(8)))}
-    ${sec(4,"Việc cần Ban Điều hành quyết trong kỳ","Tổng hợp mục 1 của từng báo cáo",
+    ${sec(4,"Việc ưu tiên cao cần theo dõi trong kỳ","Tổng hợp mục 1 của từng báo cáo — Phòng Nhân sự theo dõi và đôn đốc",
       `<div class="exec" style="grid-template-columns:1fr"><div class="exbox act"><h4>Danh mục ưu tiên cao</h4><ol>
         ${MODULES.slice(1).flatMap(x=>REP[x.id].actions.filter(a=>a[1]==='t-hi').map(a=>`<li><b>${x.code}</b> — ${a[0]}</li>`)).join('')}
       </ol></div></div>`)}
@@ -999,7 +999,7 @@ document.getElementById('btn-theme').onclick=()=>
   setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
 document.getElementById('btn-close').onclick=closeDrawer;
 document.getElementById('scrim').onclick=closeDrawer;
-document.getElementById('btn-bell').onclick=()=>toast("7 việc ưu tiên cao đang chờ Ban Điều hành quyết");
+document.getElementById('btn-bell').onclick=()=>toast("7 việc ưu tiên cao đang theo dõi trong kỳ");
 document.getElementById('btn-save').onclick=()=>{
   document.querySelectorAll('#srclist input').forEach(i=>SOURCES[i.dataset.k].url=i.value.trim());
   closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/14 liên kết nguồn`)};
