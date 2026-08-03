@@ -110,9 +110,6 @@ main{padding:0 0 70px;max-width:1580px}
 .livestat{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:var(--tx2)}
 .ldot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
 .ldot.off{background:var(--tx3);box-shadow:none}
-.minilock{display:flex;align-items:center;gap:14px;color:var(--tx2);font-size:12.5px;flex-wrap:wrap}
-.minilock svg{width:22px;height:22px;color:var(--tx3);flex-shrink:0}
-.minilock .btn{margin-left:auto}
 .qbtn{border:1px solid var(--line);background:var(--card);color:var(--tx2);border-radius:9px;padding:7px 12px;font-size:11.5px;font-weight:700;transition:.14s}
 .qbtn:hover{color:var(--tx)}
 .qbtn.on{background:var(--grad-cta);color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(56,189,248,.3)}
@@ -183,6 +180,10 @@ main{padding:0 0 70px;max-width:1580px}
 .phead h3{font-size:14px;font-weight:800}
 .phead .hint{font-size:11px;color:var(--tx3);font-weight:600}
 .phead .tools{margin-left:auto;display:flex;gap:7px}
+.rephead{display:flex;align-items:baseline;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
+.rephead h3{font-size:14.5px;font-weight:800}
+.rephead .hint{font-size:11px;color:var(--tx3);font-weight:600}
+.rephead .tools{margin-left:auto;display:flex;gap:7px}
 .tbtn{background:var(--card2);border:1px solid var(--line);border-radius:9px;font-size:10.5px;padding:6px 11px;color:var(--tx2);font-weight:700}
 .tbtn:hover{color:var(--indigo);border-color:var(--indigo)}
 .pbody{padding:0 var(--pad) var(--pad)}
@@ -248,12 +249,6 @@ tbody td b{color:var(--tx);font-weight:800}
 .sign .d{font-size:10.5px;color:var(--tx3)}
 
 /* ===== LOCK / DRAWER ===== */
-.lock{max-width:410px;margin:70px auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:34px 30px;text-align:center}
-.lock .tile{width:56px;height:56px;border-radius:16px;margin:0 auto 15px;display:grid;place-items:center;background:var(--grad-cta);box-shadow:0 10px 22px rgba(56,189,248,.3)}
-.lock .tile svg{width:23px;height:23px;stroke:#fff;stroke-width:2}
-.lock input{width:100%;text-align:center;letter-spacing:.3em;margin-top:12px}
-.lock .btn{width:100%;margin-top:10px;padding:11px;justify-content:center}
-.err{color:var(--rose);font-size:11.5px;margin-top:10px;min-height:16px;font-weight:700}
 .scrim{position:fixed;inset:0;background:rgba(15,20,40,.5);z-index:60;display:none}.scrim.on{display:block}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(590px,96vw);background:var(--bg);z-index:61;transform:translateX(101%);transition:transform .2s;display:flex;flex-direction:column}
 .drawer.on{transform:none}
