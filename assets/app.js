@@ -21,6 +21,9 @@ const CFG=window.HQ_CONFIG||{};
 const PASSCODE=(CFG.passcode||"hq2026"), LOCKED=["HRM3","HRM7","HRM8"];
 Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
 let unlocked=false, current="HOME";
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fmtd=s=>s.split('-').reverse().join('/');
+let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),q:'ca'};
 
 /* ============================================================
    B. TIỆN ÍCH
@@ -43,6 +46,7 @@ const SVG={
   chart:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   file:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
   down:'<svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M4 21h16"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>',
   plug:'<svg viewBox="0 0 24 24"><path d="M12 2v6M8 8h8v4a4 4 0 0 1-8 0z"/><path d="M12 16v6"/></svg>',
   sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.2 4.2l1.5 1.5M18.3 18.3l1.5 1.5M2 12h2M20 12h2M4.2 19.8l1.5-1.5M18.3 5.7l1.5-1.5"/></svg>',
   moon:'<svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>',
@@ -50,9 +54,9 @@ const SVG={
 };
 const ICONSET=[SVG.users,SVG.clock,SVG.cash,SVG.chart,SVG.layers,SVG.shield,SVG.build,SVG.spark];
 const NAVICON={HOME:SVG.grid,HRM1:SVG.user,HRM2:SVG.clock,HRM3:SVG.cash,HRM4:SVG.build,HRM5:SVG.spark,HRM6:SVG.users,HRM7:SVG.shield,HRM8:SVG.layers};
-const TILE=["#7C5CFC","#3B82F6","#10B981","#F59E0B","#F5487F","#06B6D4","#FF7A45","#5B5BF0"];
+const TILE=["#38BDF8","#818CF8","#10B981","#F59E0B","#F5487F","#22D3EE","#FF7A45","#3B82F6"];
 
-const C={navy:"#5B5BF0",navy2:"#7C5CFC",steel:"#94A3B8",red:"#F43F5E",amber:"#F59E0B",green:"#10B981",light:"#C7D2FE",cream:"#FBCFE8",gold:"#FF7A45"};
+const C={navy:"#38BDF8",navy2:"#818CF8",steel:"#94A3B8",red:"#F43F5E",amber:"#F59E0B",green:"#10B981",light:"#7DD3FC",cream:"#C7D2FE",gold:"#FF7A45"};
 const PAL=[C.navy,C.navy2,C.green,C.amber,C.gold,C.red,C.light,C.cream];
 function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
 let AX={},AXH={};
@@ -86,7 +90,7 @@ function spark(arr,color,w=58,h=20){
     <circle cx="${w}" cy="${pt[pt.length-1].split(',')[1]}" r="2.2" fill="${color}" stroke="none"/></svg>`;
 }
 function miniBar(v,max,neg){const w=Math.min(Math.abs(v)/max*50,50);
-  return `<span class="bar ${neg?'neg':''}" style="width:${w.toFixed(0)}px"></span>`}
+  return `<span class="hbar ${neg?'neg':''}" style="width:${w.toFixed(0)}px"></span>`}
 function rag(cur,tgt,dir){const a=dir>0?cur/tgt:tgt/cur;
   if(a>=1)return{c:"g",t:"Đạt",a}; if(a>=0.9)return{c:"a",t:"Cận đạt",a}; return{c:"r",t:"Chưa đạt",a}}
 function delta(cur,prev,dir){
@@ -719,11 +723,9 @@ function heroCard(k,i){
   const col=g.c==="g"?"#10B981":g.c==="a"?"#F59E0B":"#F43F5E";
   const t=TILE[i%TILE.length];
   return `<div class="hcard">
-    <div class="tile" style="background:${t};box-shadow:0 8px 18px ${t}40">${ICONSET[i%ICONSET.length]}</div>
-    <div>
-      <div class="k">${k.k}</div>
-      <div class="row"><span class="v">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></span>${delta(k.cur,k.prev,k.dir)}</div>
-    </div>
+    <span class="utag" style="background:${t}20;border-color:${t}55;color:${t}">${(k.u||"chỉ số").toUpperCase()}</span>
+    <div class="k">${k.k}</div>
+    <div class="row"><span class="v">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></span>${delta(k.cur,k.prev,k.dir)}</div>
     <div class="foot">
       <span><i class="dot" style="background:${col}"></i>Mục tiêu ${k.f?k.f(k.tgt):dec(k.tgt,k.p??1)} ${k.u}</span>
       <span class="rag ${g.c}"><i></i>${g.t}</span>
@@ -732,16 +734,47 @@ function heroCard(k,i){
     </div></div>`;
 }
 
+function liveStat(){
+  if(!window.HQLive) return `<i class="ldot off"></i>Dữ liệu mẫu — chưa nối nguồn`;
+  const st=HQLive.status();
+  if(!st.oke) return `<i class="ldot off"></i>Dữ liệu mẫu — chưa nối nguồn`;
+  const at=Object.values(HQLive.meta).filter(x=>x.ok).map(x=>x.at).sort().pop();
+  const p=(CFG.ui&&CFG.ui.tuTaiLai)||0;
+  return `<i class="ldot"></i>Cập nhật ${at} · LIVE${p>0?` · Tự làm mới ${p} phút`:''}`;
+}
 function mast(m,r){
   const st=STATE[m.id], sl=STLABEL[st];
   const linked=m.src.filter(s=>SOURCES[s].url).length;
   return `<div class="mast">
     <div class="bar">
-      <div class="badge2">${m.code}</div>
-      <div><h1>${r.title}</h1><p>${r.sub}</p></div>
+      <div class="mtt">
+        <div class="eyebrow">${m.code} · Chu kỳ ${r.meta.cycle} · Chốt số ${r.meta.close}</div>
+        <h1>${r.title}</h1>
+        <p>${r.sub}</p>
+        <div class="scoperow">
+          <span class="scopepill">Phạm vi: <b>${fmtd(RANGE.from)} → ${fmtd(RANGE.to)}</b></span>
+          <span class="srctxt">Nguồn: ${m.src.map(k=>SOURCES[k].n).join(' · ')} — Google Sheet</span>
+        </div>
+      </div>
       <div class="sp"></div>
-      <div class="chip ${st}"><i></i>${sl[0]} · ${sl[1]}</div>
-      <button class="btn g" onclick="window.print()">${SVG.down}Xuất PDF</button>
+      <div class="mside">
+        <div class="mrow">
+          <div class="chip ${st}"><i></i>${sl[0]} · ${sl[1]}</div>
+          <button class="btn g noprint" onclick="window.print()">${SVG.down}Xuất PDF</button>
+        </div>
+        <div class="mrow noprint">
+          <div class="fld"><label>Từ ngày</label><input type="date" id="d-from" value="${RANGE.from}" onchange="setRange()"></div>
+          <div class="fld"><label>Đến ngày</label><input type="date" id="d-to" value="${RANGE.to}" onchange="setRange()"></div>
+          <div class="fld"><label>Nhanh</label><div class="qwrap">
+            <button class="qbtn ${RANGE.q==='7n'?'on':''}" onclick="quickRange('7n')">7N</button>
+            <button class="qbtn ${RANGE.q==='30n'?'on':''}" onclick="quickRange('30n')">30N</button>
+            <button class="qbtn ${RANGE.q==='thang'?'on':''}" onclick="quickRange('thang')">Tháng này</button>
+            <button class="qbtn ${RANGE.q==='ca'?'on':''}" onclick="quickRange('ca')">Cả kỳ</button>
+          </div></div>
+          <button class="btn mrefresh" onclick="reloadLive()">${SVG.refresh}Làm mới</button>
+        </div>
+        <div class="livestat noprint">${liveStat()}</div>
+      </div>
     </div>
     <div class="meta">
       <div><div class="k">Kỳ báo cáo</div><div class="v">${document.getElementById('f-period').value.replace('Kỳ ','')}</div></div>
@@ -780,7 +813,8 @@ function renderReport(m){
   }
 
   return mast(m,r)+
-  `<div class="secnav noprint">${secs.map(([n,t])=>`<a href="#s${n}" data-s="s${n}"><b>${n}</b>${t}</a>`).join('')}</div>
+  `<div class="wrap"><div class="hero kstrip">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div></div>
+   <div class="secnav noprint">${secs.map(([n,t])=>`<a href="#s${n}" data-s="s${n}"><b>${n}</b>${t}</a>`).join('')}</div>
    <div class="wrap">
     ${sec(1,"Tóm tắt điều hành","Nhận định và việc cần quyết trong kỳ",
       `<div class="exec">
@@ -788,8 +822,7 @@ function renderReport(m){
         <div class="exbox act"><h4>Việc cần quyết</h4><ol>${r.actions.map(([a,t])=>`<li>${a}<span class="tagr ${t}">${t==='t-hi'?'ƯU TIÊN CAO':t==='t-md'?'TRUNG BÌNH':'THEO DÕI'}</span></li>`).join('')}</ol></div>
       </div>`)}
     ${sec(2,"Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
-      `<div class="hero">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
-       ${panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id))}`)}
+      panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id)))}
     ${sec(3,"Phân tích","Diễn giải bằng biểu đồ",ch)}
     ${sec(4,"Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb)}
     ${sec(5,"Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta))}
@@ -954,6 +987,29 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('q').focus()}});
 ["f-period","f-bu","f-dept"].forEach(id=>document.getElementById(id).onchange=()=>{
   go(current);toast("Đã áp bộ lọc — nối nguồn thật để số liệu đổi theo")});
+function quickRange(k){
+  const t=new Date(); let f;
+  if(k==='7n'){f=new Date(t);f.setDate(t.getDate()-6)}
+  else if(k==='30n'){f=new Date(t);f.setDate(t.getDate()-29)}
+  else if(k==='thang'){f=new Date(t.getFullYear(),t.getMonth(),1)}
+  else{f=new Date(t.getFullYear(),0,1)}
+  RANGE={from:iso(f),to:iso(t),q:k};
+  go(current);toast("Đã áp phạm vi ngày — nối nguồn thật để số liệu đổi theo")}
+function setRange(){
+  const f=document.getElementById('d-from').value,t=document.getElementById('d-to').value;
+  if(f)RANGE.from=f; if(t)RANGE.to=t; RANGE.q=null;
+  go(current);toast("Đã áp phạm vi ngày — nối nguồn thật để số liệu đổi theo")}
+async function reloadLive(){
+  if(!window.HQLive){toast("Chưa nạp được module dữ liệu trực tiếp");return}
+  const st=HQLive.status();
+  if(!st.khai){openDrawer();toast("Chưa khai nguồn — dán link Google Sheet để chạy số thật");return}
+  toast(`Đang đọc ${st.khai} nguồn dữ liệu…`);
+  const r=await HQLive.loadAll();
+  go(current);buildNav();
+  toast(r.failed
+    ? `Đã nối ${r.loaded}/${st.khai} nguồn · ${r.failed} nguồn lỗi, xem Console`
+    : `Đã nối ${r.loaded}/${st.khai} nguồn dữ liệu`);
+}
 
 /* ---- Khởi động ---- */
 const mode=(CFG.ui&&CFG.ui.themeMacDinh)||"auto";
