@@ -21,6 +21,9 @@ const CFG=window.HQ_CONFIG||{};
 const PASSCODE=(CFG.passcode||"hq2026"), LOCKED=["HRM3","HRM7","HRM8"];
 Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
 let unlocked=false, current="HOME";
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fmtd=s=>s.split('-').reverse().join('/');
+let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),q:'ca'};
 
 /* ============================================================
    B. TIỆN ÍCH
@@ -731,20 +734,27 @@ function heroCard(k,i){
     </div></div>`;
 }
 
+function liveStat(){
+  if(!window.HQLive) return `<i class="ldot off"></i>Dữ liệu mẫu — chưa nối nguồn`;
+  const st=HQLive.status();
+  if(!st.oke) return `<i class="ldot off"></i>Dữ liệu mẫu — chưa nối nguồn`;
+  const at=Object.values(HQLive.meta).filter(x=>x.ok).map(x=>x.at).sort().pop();
+  const p=(CFG.ui&&CFG.ui.tuTaiLai)||0;
+  return `<i class="ldot"></i>Cập nhật ${at} · LIVE${p>0?` · Tự làm mới ${p} phút`:''}`;
+}
 function mast(m,r){
   const st=STATE[m.id], sl=STLABEL[st];
   const linked=m.src.filter(s=>SOURCES[s].url).length;
-  const sel=document.getElementById('f-period');
-  const bu=document.getElementById('f-bu').value, dept=document.getElementById('f-dept').value;
-  const pills=[...sel.options].map(o=>
-    `<button class="qbtn ${o.value===sel.value?'on':''}" onclick="setPeriod('${o.value}')">${o.value.replace('/2026','')}</button>`).join('');
   return `<div class="mast">
     <div class="bar">
       <div class="mtt">
         <div class="eyebrow">${m.code} · Chu kỳ ${r.meta.cycle} · Chốt số ${r.meta.close}</div>
         <h1>${r.title}</h1>
         <p>${r.sub}</p>
-        <div class="scopepill">Phạm vi: <b>${sel.value.replace('Kỳ ','')}</b> — BU ${bu} · Phòng ${dept}</div>
+        <div class="scoperow">
+          <span class="scopepill">Phạm vi: <b>${fmtd(RANGE.from)} → ${fmtd(RANGE.to)}</b></span>
+          <span class="srctxt">Nguồn: ${m.src.map(k=>SOURCES[k].n).join(' · ')} — Google Sheet</span>
+        </div>
       </div>
       <div class="sp"></div>
       <div class="mside">
@@ -753,9 +763,17 @@ function mast(m,r){
           <button class="btn g noprint" onclick="window.print()">${SVG.down}Xuất PDF</button>
         </div>
         <div class="mrow noprint">
-          <span class="qlab">KỲ BÁO CÁO</span>${pills}
-          <button class="btn" onclick="reloadLive()">${SVG.refresh}Làm mới</button>
+          <div class="fld"><label>Từ ngày</label><input type="date" id="d-from" value="${RANGE.from}" onchange="setRange()"></div>
+          <div class="fld"><label>Đến ngày</label><input type="date" id="d-to" value="${RANGE.to}" onchange="setRange()"></div>
+          <div class="fld"><label>Nhanh</label><div class="qwrap">
+            <button class="qbtn ${RANGE.q==='7n'?'on':''}" onclick="quickRange('7n')">7N</button>
+            <button class="qbtn ${RANGE.q==='30n'?'on':''}" onclick="quickRange('30n')">30N</button>
+            <button class="qbtn ${RANGE.q==='thang'?'on':''}" onclick="quickRange('thang')">Tháng này</button>
+            <button class="qbtn ${RANGE.q==='ca'?'on':''}" onclick="quickRange('ca')">Cả kỳ</button>
+          </div></div>
+          <button class="btn mrefresh" onclick="reloadLive()">${SVG.refresh}Làm mới</button>
         </div>
+        <div class="livestat noprint">${liveStat()}</div>
       </div>
     </div>
     <div class="meta">
@@ -969,9 +987,18 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('q').focus()}});
 ["f-period","f-bu","f-dept"].forEach(id=>document.getElementById(id).onchange=()=>{
   go(current);toast("Đã áp bộ lọc — nối nguồn thật để số liệu đổi theo")});
-function setPeriod(v){
-  const s=document.getElementById('f-period');
-  if(s.value!==v){s.value=v;s.onchange()}}
+function quickRange(k){
+  const t=new Date(); let f;
+  if(k==='7n'){f=new Date(t);f.setDate(t.getDate()-6)}
+  else if(k==='30n'){f=new Date(t);f.setDate(t.getDate()-29)}
+  else if(k==='thang'){f=new Date(t.getFullYear(),t.getMonth(),1)}
+  else{f=new Date(t.getFullYear(),0,1)}
+  RANGE={from:iso(f),to:iso(t),q:k};
+  go(current);toast("Đã áp phạm vi ngày — nối nguồn thật để số liệu đổi theo")}
+function setRange(){
+  const f=document.getElementById('d-from').value,t=document.getElementById('d-to').value;
+  if(f)RANGE.from=f; if(t)RANGE.to=t; RANGE.q=null;
+  go(current);toast("Đã áp phạm vi ngày — nối nguồn thật để số liệu đổi theo")}
 async function reloadLive(){
   if(!window.HQLive){toast("Chưa nạp được module dữ liệu trực tiếp");return}
   const st=HQLive.status();
