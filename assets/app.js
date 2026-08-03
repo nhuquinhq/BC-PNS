@@ -780,7 +780,6 @@ function mast(m,r){
       </div>
     </div>
     <div class="meta">
-      <div><div class="k">Kỳ báo cáo</div><div class="v">${document.getElementById('f-period').value.replace('Kỳ ','')}</div></div>
       <div><div class="k">Chu kỳ</div><div class="v">${r.meta.cycle}</div></div>
       <div><div class="k">Ngày chốt số</div><div class="v">${r.meta.close}</div></div>
       <div><div class="k">Ngày phát hành</div><div class="v">${r.meta.issue}</div></div>
@@ -874,7 +873,7 @@ function renderHome(){
   return `
   <div class="greet">
     <div><h1>${chao}, chị Quinh 👋</h1>
-      <p>Tám mã báo cáo nhân sự kỳ ${document.getElementById('f-period').value.replace('Kỳ ','')} đã sẵn sàng. Có 7 việc cần Ban Điều hành quyết.</p></div>
+      <p>Tám mã báo cáo nhân sự đã sẵn sàng. Có 7 việc cần Ban Điều hành quyết.</p></div>
   </div>
   <div class="mast">
     <div class="bar">
@@ -946,7 +945,8 @@ function scrollSpy(){
 
 /* ---- Tìm trong bảng ---- */
 function runSearch(){
-  const q=document.getElementById('q').value.trim().toLowerCase();
+  const el=document.getElementById('q'); if(!el)return;
+  const q=el.value.trim().toLowerCase();
   document.querySelectorAll('.tw tbody tr').forEach(tr=>{
     if(tr.classList.contains('tot'))return;
     tr.style.display = (!q || tr.innerText.toLowerCase().includes(q)) ? "" : "none";
@@ -1016,11 +1016,6 @@ document.getElementById('btn-save').onclick=()=>{
 document.getElementById('btn-dens').onclick=function(){
   document.body.classList.toggle('compact');
   toast(document.body.classList.contains('compact')?"Đang xem chế độ thu gọn":"Đã trở lại chế độ giãn dòng")};
-document.getElementById('q').oninput=runSearch;
-document.addEventListener('keydown',e=>{
-  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('q').focus()}});
-["f-period","f-bu","f-dept"].forEach(id=>document.getElementById(id).onchange=()=>{
-  go(current);toast("Đã áp bộ lọc — nối nguồn thật để số liệu đổi theo")});
 function quickRange(k){
   const t=new Date(); let f;
   if(k==='7n'){f=new Date(t);f.setDate(t.getDate()-6)}
