@@ -180,6 +180,10 @@ main{padding:0 0 70px;max-width:1580px}
 .phead h3{font-size:14px;font-weight:800}
 .phead .hint{font-size:11px;color:var(--tx3);font-weight:600}
 .phead .tools{margin-left:auto;display:flex;gap:7px}
+.rephead{display:flex;align-items:baseline;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
+.rephead h3{font-size:14.5px;font-weight:800}
+.rephead .hint{font-size:11px;color:var(--tx3);font-weight:600}
+.rephead .tools{margin-left:auto;display:flex;gap:7px}
 .tbtn{background:var(--card2);border:1px solid var(--line);border-radius:9px;font-size:10.5px;padding:6px 11px;color:var(--tx2);font-weight:700}
 .tbtn:hover{color:var(--indigo);border-color:var(--indigo)}
 .pbody{padding:0 var(--pad) var(--pad)}

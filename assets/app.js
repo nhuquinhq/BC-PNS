@@ -857,11 +857,14 @@ function renderHome(){
   const linkedAll=Object.values(SOURCES).filter(s=>s.url).length;
   const byRep=MODULES.slice(1).map(x=>{
     const r=REP[x.id];
-    const kk=window.HQLive?HQLive.apply(x.id,r.kpis):r.kpis, id="sch-"+x.id;
-    return panelT(`${x.code} · ${r.title}`,`${kk.length} chỉ số · chu kỳ ${r.meta.cycle}`,
-      scorecard(id,kk),
-      `<div class="tools"><button class="tbtn" onclick="go('${x.id}')">Mở báo cáo →</button><button class="tbtn" onclick="copyT('${id}')">Sao chép sang Sheet</button><button class="tbtn" onclick="csvT('${id}')">CSV</button></div>`);
-  }).join('<div style="height:16px"></div>');
+    const kk=window.HQLive?HQLive.apply(x.id,r.kpis):r.kpis;
+    const chs=r.charts.slice(0,2).map(c=>panel(c.t,c.h,`<div class="chartbox ${c.cls||''}"><canvas id="${c.id}"></canvas></div>`)).join('');
+    return `<div class="rephead"><h3>${x.code} · ${r.title}</h3>
+      <span class="hint">${kk.length} chỉ số · chu kỳ ${r.meta.cycle}</span>
+      <div class="tools"><button class="tbtn" onclick="go('${x.id}')">Mở báo cáo →</button></div></div>
+    <div class="hero">${kk.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
+    <div class="grid g2">${chs}</div>`;
+  }).join('');
   const secs=[["1","Chỉ số điều hành"],["2","Số liệu theo báo cáo"],["3","Trạng thái phát hành"],["4","Việc cần quyết"]];
   const hour=new Date().getHours();
   const chao=hour<11?"Chào buổi sáng":hour<14?"Chào buổi trưa":hour<18?"Chào buổi chiều":"Chào buổi tối";
@@ -908,7 +911,7 @@ function renderHome(){
           ["Lã Thị Kiều Trang","118%",77],["Nguyễn Thị Hạnh","111%",72],["Phạm Thu Hương","99%",64],["Vũ Hải Yến","73%",47]]))}
        </div>
        ${panelT("Bảng chỉ số điều hành hợp nhất","10 chỉ số trọng yếu",scorecard("sc-home",K),tools("sc-home"))}`)}
-    ${sec(2,"Số liệu toàn bộ theo từng mã báo cáo","Tất cả chỉ số của HRM1 → HRM8 trong một trang",byRep)}
+    ${sec(2,"Số liệu theo từng mã báo cáo","Chỉ số nổi bật và biểu đồ chính của HRM1 → HRM8",byRep)}
     ${sec(3,"Trạng thái phát hành tám mã báo cáo","",
       panelT("Danh mục báo cáo định kỳ Phòng Nhân sự","",dataTable("t-home",
         [{t:"Mã"},{t:"Tên báo cáo"},{t:"Chu kỳ",a:"c"},{t:"Người lập"},{t:"Phát hành",a:"c"},{t:"Bản",a:"c"},{t:"Nguồn dữ liệu"},{t:"Việc gấp",a:"c"},{t:"Trạng thái",a:"c"},{t:"",a:"c"}],rows,
@@ -969,7 +972,8 @@ function go(id){
   const m=MODULES.find(x=>x.id===id);
   const v=document.getElementById('view');
   v.innerHTML = id==="HOME"?renderHome():renderReport(m);
-  if(id==="HOME")homeCharts(); else (REP[m.id].charts||[]).forEach(c=>c.f());
+  if(id==="HOME"){homeCharts();MODULES.slice(1).forEach(x=>REP[x.id].charts.slice(0,2).forEach(c=>c.f()))}
+  else (REP[m.id].charts||[]).forEach(c=>c.f());
   scrollSpy();buildNav();runSearch();window.scrollTo(0,0);
 }
 
