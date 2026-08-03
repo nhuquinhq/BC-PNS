@@ -18,9 +18,8 @@ const SOURCES={
  RAW_Workload:{n:"RAW_Workload",l:"Khối lượng việc & phân bổ",m:"HRM8",url:"",c:"Mã NV · Nhóm việc · Số đầu việc · Giờ/tháng · BU thụ hưởng · % phân bổ · Mã hạch toán"}
 };
 const CFG=window.HQ_CONFIG||{};
-const PASSCODE=(CFG.passcode||"hq2026"), LOCKED=["HRM3","HRM7","HRM8"];
 Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
-let unlocked=false, current="HOME";
+let current="HOME";
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const fmtd=s=>s.split('-').reverse().join('/');
 let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),q:'ca'};
@@ -858,10 +857,6 @@ function renderHome(){
   const linkedAll=Object.values(SOURCES).filter(s=>s.url).length;
   const byRep=MODULES.slice(1).map(x=>{
     const r=REP[x.id];
-    if(LOCKED.includes(x.id)&&!unlocked)
-      return panel(`${x.code} · ${r.title}`,"báo cáo mật — dữ liệu lương và bảo hiểm",
-        `<div class="minilock">${SVG.lock}<span>Số liệu bị khoá. Nhập mã truy cập Khối BO để hiển thị tại tổng quan.</span><button class="btn" onclick="go('${x.id}')">Nhập mã để mở</button></div>`,
-        `<div class="tools"><button class="tbtn" onclick="go('${x.id}')">Mở báo cáo →</button></div>`);
     const kk=window.HQLive?HQLive.apply(x.id,r.kpis):r.kpis, id="sch-"+x.id;
     return panelT(`${x.code} · ${r.title}`,`${kk.length} chỉ số · chu kỳ ${r.meta.cycle}`,
       scorecard(id,kk),
@@ -973,19 +968,10 @@ function go(id){
   current=id;kill();
   const m=MODULES.find(x=>x.id===id);
   const v=document.getElementById('view');
-  if(LOCKED.includes(id)&&!unlocked){v.innerHTML=lock(m);buildNav();window.scrollTo(0,0);return}
   v.innerHTML = id==="HOME"?renderHome():renderReport(m);
   if(id==="HOME")homeCharts(); else (REP[m.id].charts||[]).forEach(c=>c.f());
   scrollSpy();buildNav();runSearch();window.scrollTo(0,0);
 }
-function lock(m){return `<div class="lock"><div class="tile">${SVG.lock}</div>
-  <h2 style="font-size:17.5px">${m.title}</h2>
-  <p style="color:var(--tx2);font-size:12.5px;margin:7px 0 0">Báo cáo chứa dữ liệu lương và bảo hiểm. Nhập mã truy cập Khối BO để mở.</p>
-  <input type="password" id="pw" placeholder="••••••" autocomplete="off" onkeydown="if(event.key==='Enter')unlock()">
-  <button class="btn" onclick="unlock()">Mở báo cáo</button><div class="err" id="pwerr"></div>
-  <p style="font-size:11px;color:var(--tx3);margin-top:14px">Mã demo <b class="mono">hq2026</b> — đổi tại biến PASSCODE</p></div>`}
-function unlock(){const v=document.getElementById('pw').value;
-  if(v===PASSCODE){unlocked=true;go(current)}else document.getElementById('pwerr').textContent="Mã không đúng. Liên hệ Quản trị Khối BO."}
 
 /* ---- Drawer ---- */
 function openDrawer(){
