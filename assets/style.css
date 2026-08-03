@@ -117,6 +117,9 @@ main{padding:0 0 70px;max-width:1580px}
 .livestat{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:var(--tx2)}
 .ldot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
 .ldot.off{background:var(--tx3);box-shadow:none}
+.minilock{display:flex;align-items:center;gap:14px;color:var(--tx2);font-size:12.5px;flex-wrap:wrap}
+.minilock svg{width:22px;height:22px;color:var(--tx3);flex-shrink:0}
+.minilock .btn{margin-left:auto}
 .qbtn{border:1px solid var(--line);background:var(--card);color:var(--tx2);border-radius:9px;padding:7px 12px;font-size:11.5px;font-weight:700;transition:.14s}
 .qbtn:hover{color:var(--tx)}
 .qbtn.on{background:var(--grad-cta);color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(56,189,248,.3)}
