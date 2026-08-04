@@ -38,12 +38,9 @@ window.HQ_CONFIG = {
        chỉ còn nút Google. */
     matKhau: "hq2026",
 
-    /* Webhook nhận thông báo mỗi lượt đăng nhập / xin cấp quyền (gửi
-       mail về quản trị cứng). Dán URL Web App của Google Apps Script;
-       để trống = tắt. Script mẫu xem trang Nguồn & Cấu hình. */
-    webhookThongBao: "",
-
-    /* TÀI KHOẢN ĐƯỢC CẤP QUYỀN — Admin phê duyệt tại đây.
+    /* TÀI KHOẢN ĐƯỢC CẤP QUYỀN (DỰ PHÒNG khi chưa nối kho KV).
+       Khi đã nối Upstash KV trên Vercel thì duyệt và phân quyền ngay
+       trong trang Nguồn & Cấu hình, không cần sửa mục này.
        Bất kỳ mail domain nào có trong danh sách là đăng nhập được;
        email chưa có sẽ thấy thông báo chờ cấp quyền.
        "*" = xem tất cả báo cáo, hoặc liệt kê mã được xem. Ví dụ:
