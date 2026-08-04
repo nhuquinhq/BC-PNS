@@ -6,7 +6,12 @@ const SOURCES={
  DM_PhongBan:{n:"DM_PhongBan_BU",l:"Danh mục Phòng ban ↔ BU",m:"Tất cả",url:"",c:"Mã phòng · Tên phòng · BU · Khối · Trưởng phòng"},
  DM_Grade:{n:"DM_Grade",l:"Khung Grade G1–G7",m:"HRM3,6,8",url:"",c:"Grade · Track (IC/MGMT) · Min · Mid · Max"},
  RAW_TuyenDung:{n:"RAW_TuyenDung",l:"Pipeline tuyển dụng",m:"HRM1",url:"",c:"Mã JD · Vị trí · Phòng ban · BU · Grade · Nguồn CV · Ứng viên · Vòng hiện tại · Ngày mở · Ngày nhận việc · Kết quả"},
- RAW_ChamCong:{n:"RAW_ChamCong",l:"Chấm công theo kỳ",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T1:{n:"RAW_ChamCong_T1",l:"Chấm công T1/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T2:{n:"RAW_ChamCong_T2",l:"Chấm công T2/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T3:{n:"RAW_ChamCong_T3",l:"Chấm công T3/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T4:{n:"RAW_ChamCong_T4",l:"Chấm công T4/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T5:{n:"RAW_ChamCong_T5",l:"Chấm công T5/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T6:{n:"RAW_ChamCong_T6",l:"Chấm công T6/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
  RAW_Phep:{n:"RAW_Phep",l:"Phép năm",m:"HRM2",url:"",c:"Mã NV · Phép đầu kỳ · Phát sinh · Đã dùng · Nghỉ không lương · Tồn"},
  RAW_Luong:{n:"RAW_Luong",l:"Bảng lương (P1/P2)",m:"HRM3,8",url:"",c:"Mã NV · Kỳ · P1 · P2 vận hành · P2 báo cáo · Phụ cấp · Thưởng · Khấu trừ BH · Thực nhận"},
  RAW_ChiPhiVP:{n:"RAW_ChiPhiVP",l:"Chi phí vận hành VP",m:"HRM4",url:"",c:"Kỳ · Khoản mục · Mã MISA · Phòng thụ hưởng · Ngân sách · Thực chi · Ghi chú"},
@@ -19,6 +24,7 @@ const SOURCES={
 };
 const CFG=window.HQ_CONFIG||{};
 Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
+const NSRC=Object.keys(SOURCES).length;
 let current="HOME";
 const AUTHC={
   domain:((CFG.auth&&CFG.auth.mienChoPhep)||"hqplay.vn").toLowerCase(),
@@ -168,7 +174,7 @@ const BUS=["Ritokey","WGG","A10GG","HQS10000","VX Team","Maverick","Khối BO"];
 const MODULES=[
  {id:"HOME",code:"—",title:"Tổng quan (HRM1 → HRM8)",src:[]},
  {id:"HRM1",code:"HRM1",title:"Báo cáo tuyển dụng",src:["RAW_TuyenDung","DM_PhongBan"]},
- {id:"HRM2",code:"HRM2",title:"Chấm công & Phép",src:["RAW_ChamCong","RAW_Phep","DM_NhanSu"]},
+ {id:"HRM2",code:"HRM2",title:"Chấm công & Phép",src:["RAW_ChamCong_T1","RAW_ChamCong_T2","RAW_ChamCong_T3","RAW_ChamCong_T4","RAW_ChamCong_T5","RAW_ChamCong_T6","RAW_Phep","DM_NhanSu"]},
  {id:"HRM3",code:"HRM3",title:"Payroll & C&B",src:["RAW_Luong","DM_NhanSu","DM_Grade"]},
  {id:"HRM4",code:"HRM4",title:"Chi phí vận hành VP",src:["RAW_ChiPhiVP"]},
  {id:"HRM5",code:"HRM5",title:"Chi phí truyền thông NB",src:["RAW_ChiPhiTT"]},
@@ -863,7 +869,7 @@ function renderHome(){
         <p>Toàn bộ chỉ số của tám mã báo cáo — Phòng Nhân sự theo dõi vận hành theo kỳ.</p>
         <div class="scoperow">
           <span class="scopepill">Phạm vi: <b>${fmtd(RANGE.from)} → ${fmtd(RANGE.to)}</b></span>
-          <span class="srctxt">Nguồn: ${linkedAll}/14 tab Google Sheet đã nối</span>
+          <span class="srctxt">Nguồn: ${linkedAll}/${NSRC} tab Google Sheet đã nối</span>
         </div>
       </div>
       <div class="sp"></div>
@@ -949,8 +955,8 @@ function buildNav(){
     w.appendChild(g);
   });
   const c=Object.values(SOURCES).filter(s=>s.url).length;
-  document.getElementById('linkcount').textContent=c+"/14";
-  document.getElementById('linkbar').style.width=(c/14*100)+"%";
+  document.getElementById('linkcount').textContent=c+"/"+NSRC;
+  document.getElementById('linkbar').style.width=(c/NSRC*100)+"%";
   const bc=document.getElementById('bellcount');
   if(bc)bc.textContent=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
 }
@@ -993,7 +999,7 @@ document.getElementById('btn-bell').onclick=()=>{
   toast(`${n} việc ưu tiên cao đang theo dõi trong kỳ`)};
 document.getElementById('btn-save').onclick=()=>{
   document.querySelectorAll('#srclist input').forEach(i=>SOURCES[i.dataset.k].url=i.value.trim());
-  closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/14 liên kết nguồn`)};
+  closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/${NSRC} liên kết nguồn`)};
 document.getElementById('btn-dens').onclick=function(){
   document.body.classList.toggle('compact');
   toast(document.body.classList.contains('compact')?"Đang xem chế độ thu gọn":"Đã trở lại chế độ giãn dòng")};
