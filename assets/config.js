@@ -12,17 +12,22 @@ window.HQ_CONFIG = {
      1. NHẬN DIỆN
      --------------------------------------------------------------- */
   brand: {
-    org:      "HQ Group",
-    tagline:  "Báo cáo · Phân tích · Điều hành",
+    org:      "Trung tâm Báo cáo PNS",
+    tagline:  "Realtime Google Sheet · v3",
     user:     "Quinh",
     userRole: "Quản trị Khối BO"
   },
 
   /* ---------------------------------------------------------------
-     2. MÃ TRUY CẬP BÁO CÁO MẬT (HRM3 · HRM7 · HRM8)
-     Đổi chuỗi dưới đây trước khi phát hành nội bộ.
+     2. ĐĂNG NHẬP THEO EMAIL CÔNG TY
+     Chỉ email thuộc miền "mienChoPhep" mới đăng nhập được.
+     Email nằm trong "quanTriCapCao" có toàn quyền (gắn / sửa nguồn
+     dữ liệu…), các email còn lại chỉ xem báo cáo.
      --------------------------------------------------------------- */
-  passcode: "hq2026",
+  auth: {
+    mienChoPhep:   "hqplay.vn",
+    quanTriCapCao: ["quynhhtn@hqplay.vn"]
+  },
 
   /* ---------------------------------------------------------------
      3. LINK GOOGLE SHEET
@@ -37,7 +42,13 @@ window.HQ_CONFIG = {
     DM_PhongBan:   "",
     DM_Grade:      "",
     RAW_TuyenDung: "",
-    RAW_ChamCong:  "",
+    /* Chấm công theo tháng — mỗi tháng một tab (HRM2) */
+    RAW_ChamCong_T1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=921865850&single=true&output=csv",
+    RAW_ChamCong_T2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=520204105&single=true&output=csv",
+    RAW_ChamCong_T3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=922402576&single=true&output=csv",
+    RAW_ChamCong_T4: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=1555815624&single=true&output=csv",
+    RAW_ChamCong_T5: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=1858634959&single=true&output=csv",
+    RAW_ChamCong_T6: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=1699892467&single=true&output=csv",
     RAW_Phep:      "",
     RAW_Luong:     "",
     RAW_ChiPhiVP:  "",

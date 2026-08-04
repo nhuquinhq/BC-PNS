@@ -6,7 +6,12 @@ const SOURCES={
  DM_PhongBan:{n:"DM_PhongBan_BU",l:"Danh mục Phòng ban ↔ BU",m:"Tất cả",url:"",c:"Mã phòng · Tên phòng · BU · Khối · Trưởng phòng"},
  DM_Grade:{n:"DM_Grade",l:"Khung Grade G1–G7",m:"HRM3,6,8",url:"",c:"Grade · Track (IC/MGMT) · Min · Mid · Max"},
  RAW_TuyenDung:{n:"RAW_TuyenDung",l:"Pipeline tuyển dụng",m:"HRM1",url:"",c:"Mã JD · Vị trí · Phòng ban · BU · Grade · Nguồn CV · Ứng viên · Vòng hiện tại · Ngày mở · Ngày nhận việc · Kết quả"},
- RAW_ChamCong:{n:"RAW_ChamCong",l:"Chấm công theo kỳ",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T1:{n:"RAW_ChamCong_T1",l:"Chấm công T1/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T2:{n:"RAW_ChamCong_T2",l:"Chấm công T2/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T3:{n:"RAW_ChamCong_T3",l:"Chấm công T3/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T4:{n:"RAW_ChamCong_T4",l:"Chấm công T4/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T5:{n:"RAW_ChamCong_T5",l:"Chấm công T5/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
+ RAW_ChamCong_T6:{n:"RAW_ChamCong_T6",l:"Chấm công T6/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
  RAW_Phep:{n:"RAW_Phep",l:"Phép năm",m:"HRM2",url:"",c:"Mã NV · Phép đầu kỳ · Phát sinh · Đã dùng · Nghỉ không lương · Tồn"},
  RAW_Luong:{n:"RAW_Luong",l:"Bảng lương (P1/P2)",m:"HRM3,8",url:"",c:"Mã NV · Kỳ · P1 · P2 vận hành · P2 báo cáo · Phụ cấp · Thưởng · Khấu trừ BH · Thực nhận"},
  RAW_ChiPhiVP:{n:"RAW_ChiPhiVP",l:"Chi phí vận hành VP",m:"HRM4",url:"",c:"Kỳ · Khoản mục · Mã MISA · Phòng thụ hưởng · Ngân sách · Thực chi · Ghi chú"},
@@ -19,7 +24,14 @@ const SOURCES={
 };
 const CFG=window.HQ_CONFIG||{};
 Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
+const NSRC=Object.keys(SOURCES).length;
 let current="HOME";
+const AUTHC={
+  domain:((CFG.auth&&CFG.auth.mienChoPhep)||"hqplay.vn").toLowerCase(),
+  admins:((CFG.auth&&CFG.auth.quanTriCapCao)||["quynhhtn@hqplay.vn"]).map(e=>e.toLowerCase())
+};
+let AUTH=null;
+const isAdmin=()=>!!AUTH&&AUTH.role==='admin';
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const fmtd=s=>s.split('-').reverse().join('/');
 let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),q:'ca'};
@@ -160,9 +172,9 @@ const DEPTS=["Kinh doanh","Vận hành","Chăm sóc KH","Công nghệ","Marketin
 const BUS=["Ritokey","WGG","A10GG","HQS10000","VX Team","Maverick","Khối BO"];
 
 const MODULES=[
- {id:"HOME",code:"—",title:"Báo cáo tổng hợp",src:[]},
+ {id:"HOME",code:"—",title:"Tổng quan (HRM1 → HRM8)",src:[]},
  {id:"HRM1",code:"HRM1",title:"Báo cáo tuyển dụng",src:["RAW_TuyenDung","DM_PhongBan"]},
- {id:"HRM2",code:"HRM2",title:"Chấm công & Phép",src:["RAW_ChamCong","RAW_Phep","DM_NhanSu"]},
+ {id:"HRM2",code:"HRM2",title:"Chấm công & Phép",src:["RAW_ChamCong_T1","RAW_ChamCong_T2","RAW_ChamCong_T3","RAW_ChamCong_T4","RAW_ChamCong_T5","RAW_ChamCong_T6","RAW_Phep","DM_NhanSu"]},
  {id:"HRM3",code:"HRM3",title:"Payroll & C&B",src:["RAW_Luong","DM_NhanSu","DM_Grade"]},
  {id:"HRM4",code:"HRM4",title:"Chi phí vận hành VP",src:["RAW_ChiPhiVP"]},
  {id:"HRM5",code:"HRM5",title:"Chi phí truyền thông NB",src:["RAW_ChiPhiTT"]},
@@ -799,18 +811,17 @@ function renderReport(m){
   if(hasSum||hasAct){
     const boxes=(hasSum?`<div class="exbox"><h4>Nhận định chính</h4><ol>${r.summary.map(s=>`<li>${s}</li>`).join('')}</ol></div>`:'')+
       (hasAct?`<div class="exbox act"><h4>Việc cần quyết</h4><ol>${r.actions.map(([a,t])=>`<li>${a}<span class="tagr ${t}">${t==='t-hi'?'ƯU TIÊN CAO':t==='t-md'?'TRUNG BÌNH':'THEO DÕI'}</span></li>`).join('')}</ol></div>`:'');
-    parts.push(["Tóm tắt điều hành","Tóm tắt điều hành","Nhận định và việc cần quyết trong kỳ",
+    parts.push(["Tóm tắt điều hành","Nhận định và việc cần quyết trong kỳ",
       `<div class="exec"${hasSum&&hasAct?'':' style="grid-template-columns:1fr"'}>${boxes}</div>`]);
   }
-  parts.push(["Bảng chỉ số chính","Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
+  parts.push(["Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
     panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id))]);
-  parts.push(["Phân tích","Phân tích","Diễn giải bằng biểu đồ",ch]);
-  parts.push(["Dữ liệu chi tiết","Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
-  parts.push(["Định nghĩa & phê duyệt","Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta)]);
+  parts.push(["Phân tích","Diễn giải bằng biểu đồ",ch]);
+  parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
+  parts.push(["Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta)]);
   return mast(m,r)+
   `<div class="wrap"><div class="hero kstrip">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div></div>
-   <div class="secnav noprint">${parts.map((p,i)=>`<a href="#s${i+1}" data-s="s${i+1}"><b>${i+1}</b>${p[0]}</a>`).join('')}</div>
-   <div class="wrap">${parts.map((p,i)=>sec(i+1,p[1],p[2],p[3])).join('')}</div>`;
+   <div class="wrap">${parts.map((p,i)=>sec(i+1,p[0],p[1],p[2])).join('')}</div>`;
 }
 
 /* ---- Trang tổng hợp ---- */
@@ -849,14 +860,7 @@ function renderHome(){
     <div class="hero">${kk.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
     <div class="grid g2">${chs}</div>`;
   }).join('');
-  const secs=[["1","Chỉ số trọng yếu"],["2","Số liệu theo báo cáo"],["3","Trạng thái phát hành"],["4","Việc cần theo dõi"]];
-  const hour=new Date().getHours();
-  const chao=hour<11?"Chào buổi sáng":hour<14?"Chào buổi trưa":hour<18?"Chào buổi chiều":"Chào buổi tối";
   return `
-  <div class="greet">
-    <div><h1>${chao}, chị Quinh 👋</h1>
-      <p>Báo cáo tổng hợp tám mã HRM để Phòng Nhân sự theo dõi. Có ${nHi} việc ưu tiên cao trong kỳ.</p></div>
-  </div>
   <div class="mast">
     <div class="bar">
       <div class="mtt">
@@ -865,20 +869,19 @@ function renderHome(){
         <p>Toàn bộ chỉ số của tám mã báo cáo — Phòng Nhân sự theo dõi vận hành theo kỳ.</p>
         <div class="scoperow">
           <span class="scopepill">Phạm vi: <b>${fmtd(RANGE.from)} → ${fmtd(RANGE.to)}</b></span>
-          <span class="srctxt">Nguồn: ${linkedAll}/14 tab Google Sheet đã nối</span>
+          <span class="srctxt">Nguồn: ${linkedAll}/${NSRC} tab Google Sheet đã nối</span>
         </div>
       </div>
       <div class="sp"></div>
       <div class="mside">
         <div class="mrow">
           <button class="btn g noprint" onclick="window.print()">${SVG.down}Xuất báo cáo</button>
-          <button class="btn g noprint" onclick="openDrawer()">${SVG.plug}Gắn nguồn dữ liệu</button>
+          <button class="btn g noprint adminonly" onclick="openDrawer()">${SVG.plug}Gắn nguồn dữ liệu</button>
         </div>
         ${filterRow()}
       </div>
     </div>
   </div>
-  <div class="secnav noprint">${secs.map(([n,t])=>`<a href="#s${n}" data-s="s${n}"><b>${n}</b>${t}</a>`).join('')}</div>
   <div class="wrap">
     ${sec(1,"Chỉ số trọng yếu","Rút từ tám mã báo cáo",
       `<div class="hero">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
@@ -916,15 +919,6 @@ function homeCharts(){
     {cutout:"64%",plugins:{legend:{display:true,position:"bottom"}},scales:{}});
 }
 
-/* ---- Scroll spy ---- */
-function scrollSpy(){
-  const links=[...document.querySelectorAll('.secnav a')]; if(!links.length)return;
-  const obs=new IntersectionObserver(es=>es.forEach(e=>{
-    if(e.isIntersecting)links.forEach(l=>l.classList.toggle('on',l.dataset.s===e.target.id))}),
-    {rootMargin:"-100px 0px -66% 0px"});
-  document.querySelectorAll('.sec').forEach(s=>obs.observe(s));
-}
-
 /* ---- Tìm trong bảng ---- */
 function runSearch(){
   const el=document.getElementById('q'); if(!el)return;
@@ -936,20 +930,33 @@ function runSearch(){
 }
 
 /* ---- Nav ---- */
+const TIERS=[
+  {t:"Tầng 1 · Điều hành (CEO · tháng)",ids:["HRM6","HRM3","HRM8"]},
+  {t:"Tầng 2 · Quản trị chi phí & tuyển (tháng)",ids:["HRM1","HRM4","HRM5"]},
+  {t:"Tầng 3 · Vận hành (tuần)",ids:["HRM2","HRM7"]}
+];
+function navBtn(m){
+  const st=m.id==="HOME"?"":STATE[m.id];
+  const b=el(`<button class="${current===m.id?'on':''}">
+    <span class="code">${m.id==="HOME"?"◆":m.code}</span>
+    <span class="st ${st==='ok'?'done':st==='draft'?'draft':st==='wait'?'wait':''}"></span>
+    <span>${m.title}</span></button>`);
+  b.onclick=()=>go(m.id);return b;
+}
 function buildNav(){
-  const t=document.getElementById('nav-top'),n=document.getElementById('nav-main');
-  t.innerHTML='';n.innerHTML='';
-  MODULES.forEach(m=>{
-    const st=m.id==="HOME"?"":STATE[m.id];
-    const b=el(`<button class="${current===m.id?'on':''}">${NAVICON[m.id]}<span>${m.title}</span>
-      <span class="code">${m.code==='—'?'':m.code}</span>
-      <span class="st ${st==='ok'?'done':st==='draft'?'draft':st==='wait'?'wait':''}"></span></button>`);
-    b.onclick=()=>go(m.id);
-    (m.id==="HOME"?t:n).appendChild(b);
+  const w=document.getElementById('navwrap');w.innerHTML='';
+  const rsec=t=>el(`<div class="railsec">${t}</div>`), nv=()=>el('<div class="nav"></div>');
+  w.appendChild(rsec("Tổng hợp"));
+  const n0=nv();n0.appendChild(navBtn(MODULES[0]));w.appendChild(n0);
+  TIERS.forEach(tr=>{
+    w.appendChild(rsec(tr.t));
+    const g=nv();
+    tr.ids.forEach(id=>g.appendChild(navBtn(MODULES.find(m=>m.id===id))));
+    w.appendChild(g);
   });
   const c=Object.values(SOURCES).filter(s=>s.url).length;
-  document.getElementById('linkcount').textContent=c+"/14";
-  document.getElementById('linkbar').style.width=(c/14*100)+"%";
+  document.getElementById('linkcount').textContent=c+"/"+NSRC;
+  document.getElementById('linkbar').style.width=(c/NSRC*100)+"%";
   const bc=document.getElementById('bellcount');
   if(bc)bc.textContent=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
 }
@@ -960,11 +967,12 @@ function go(id){
   v.innerHTML = id==="HOME"?renderHome():renderReport(m);
   if(id==="HOME"){homeCharts();MODULES.slice(1).forEach(x=>REP[x.id].charts.slice(0,2).forEach(c=>c.f()))}
   else (REP[m.id].charts||[]).forEach(c=>c.f());
-  scrollSpy();buildNav();runSearch();window.scrollTo(0,0);
+  buildNav();runSearch();window.scrollTo(0,0);
 }
 
 /* ---- Drawer ---- */
 function openDrawer(){
+  if(!isAdmin()){toast("Chỉ Quản trị cấp cao nhất được gắn / sửa nguồn dữ liệu");return}
   document.getElementById('srclist').innerHTML=Object.entries(SOURCES).map(([k,s])=>`
     <div class="srcrow"><div class="t"><b>${s.l}</b>
       <span class="pill ${(window.HQLive&&HQLive.has(k))?'p-ok':(s.url?'p-w':'p-n')}">${(window.HQLive&&HQLive.has(k))?('Đã đọc '+HQLive.rows(k).length+' dòng'):(s.url?'Đã khai báo':'Chưa nối')}</span>
@@ -984,13 +992,14 @@ function setTheme(t){
 document.getElementById('btn-theme').onclick=()=>
   setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
 document.getElementById('btn-close').onclick=closeDrawer;
+document.getElementById('btn-logout').onclick=logout;
 document.getElementById('scrim').onclick=closeDrawer;
 document.getElementById('btn-bell').onclick=()=>{
   const n=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
   toast(`${n} việc ưu tiên cao đang theo dõi trong kỳ`)};
 document.getElementById('btn-save').onclick=()=>{
   document.querySelectorAll('#srclist input').forEach(i=>SOURCES[i.dataset.k].url=i.value.trim());
-  closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/14 liên kết nguồn`)};
+  closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/${NSRC} liên kết nguồn`)};
 document.getElementById('btn-dens').onclick=function(){
   document.body.classList.toggle('compact');
   toast(document.body.classList.contains('compact')?"Đang xem chế độ thu gọn":"Đã trở lại chế độ giãn dòng")};
@@ -1018,6 +1027,48 @@ async function reloadLive(){
     : `Đã nối ${r.loaded}/${st.khai} nguồn dữ liệu`);
 }
 
+/* ---- Đăng nhập theo email công ty ---- */
+function showLogin(){
+  const old=document.getElementById('authwall'); if(old)old.remove();
+  const org=(CFG.brand&&CFG.brand.org)||"HQ Group";
+  document.body.appendChild(el(`<div class="authwall" id="authwall"><div class="authcard">
+    <div class="alogo">HQ</div>
+    <h2>${org}</h2>
+    <p>Đăng nhập bằng email công ty</p>
+    <input type="text" id="au-mail" placeholder="ten@${AUTHC.domain}" autocomplete="off"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" onclick="doLogin()">Đăng nhập</button>
+    <div class="err" id="au-err"></div>
+    <p class="ahint">Chỉ email thuộc miền <b>@${AUTHC.domain}</b> được truy cập.</p>
+  </div></div>`));
+  document.getElementById('au-mail').focus();
+}
+function doLogin(){
+  const v=document.getElementById('au-mail').value.trim().toLowerCase();
+  const err=document.getElementById('au-err');
+  if(!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(v)){err.textContent="Email không hợp lệ.";return}
+  if(!v.endsWith('@'+AUTHC.domain)){err.textContent=`Chỉ email @${AUTHC.domain} được truy cập. Liên hệ Quản trị cấp cao.`;return}
+  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer'};
+  document.getElementById('authwall').remove();
+  initApp();
+}
+function logout(){location.reload()}
+function applyAuthUI(){
+  document.body.classList.toggle('viewer',!isAdmin());
+  const w=document.querySelector('.who');
+  if(w&&AUTH){
+    const name=AUTH.email.split('@')[0];
+    w.querySelector('.av').textContent=name.slice(0,1).toUpperCase();
+    w.querySelector('b').textContent=name;
+    w.querySelector('span').textContent=isAdmin()?"Quản trị cấp cao nhất":"Phòng Nhân sự · Xem báo cáo";
+  }
+}
+function initApp(){
+  applyAuthUI();
+  buildNav();go("HOME");
+  bootLive();
+}
+
 /* ---- Khởi động ---- */
 const mode=(CFG.ui&&CFG.ui.themeMacDinh)||"auto";
 const prefersDark = mode==="dark" || (mode==="auto" && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -1033,10 +1084,10 @@ if(CFG.brand){
   if(b){ b.querySelector('b').textContent=CFG.brand.org||"HQ Group";
          b.querySelector('span').textContent=CFG.brand.tagline||""; }
 }
-buildNav();go("HOME");
+showLogin();
 
 /* ---- Nạp dữ liệu thật từ Google Sheet ---- */
-(async function bootLive(){
+async function bootLive(){
   if(!window.HQLive) return;
   const st=HQLive.status();
   if(!st.khai) return;
@@ -1049,4 +1100,4 @@ buildNav();go("HOME");
     : `Đã nối ${r.loaded}/${st.khai} nguồn dữ liệu`);
   const p=(CFG.ui&&CFG.ui.tuTaiLai)||0;
   if(p>0) setInterval(async()=>{ await HQLive.loadAll(); go(current); }, p*60000);
-})();
+}

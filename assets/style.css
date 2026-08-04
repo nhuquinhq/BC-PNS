@@ -35,23 +35,22 @@ svg{stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-l
 .shell>*{min-width:0}
 .rail{background:var(--rail);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;padding-bottom:16px}
 .brand{display:flex;align-items:center;gap:11px;padding:20px;border-bottom:1px solid var(--line)}
-.logo{width:40px;height:40px;border-radius:12px;background:var(--grad-accent);display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:-.04em;box-shadow:0 8px 18px rgba(34,211,238,.30);flex-shrink:0}
-.brand b{display:block;font-size:17px;font-weight:800;line-height:1.1;background:var(--grad-accent);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo{width:40px;height:40px;border-radius:12px;background:#fff;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#0B1428;font-weight:800;font-size:14px;line-height:1;letter-spacing:-.04em;box-shadow:0 8px 18px rgba(34,211,238,.18);flex-shrink:0}
+.logo i{font-style:normal;font-size:7px;font-weight:800;letter-spacing:.04em;margin-top:1px}
+.brand b{display:block;font-size:15px;font-weight:800;line-height:1.25;color:var(--tx)}
 .brand span{display:block;color:var(--tx3);font-size:10.5px;font-weight:600;margin-top:1px}
-.railsec{display:flex;align-items:center;gap:9px;padding:16px 22px 9px;font-size:9.5px;letter-spacing:.13em;color:var(--railhead);font-weight:800;white-space:nowrap;font-family:"IBM Plex Mono",ui-monospace,monospace}
+.railsec{display:flex;align-items:center;gap:9px;padding:16px 22px 9px;font-size:9.5px;letter-spacing:.1em;color:var(--railhead);font-weight:800;white-space:nowrap;text-transform:uppercase;font-family:"IBM Plex Mono",ui-monospace,monospace}
 .railsec:after{content:"";flex:1;height:1px;background:var(--line)}
 .nav+.railsec{margin-top:10px;border-top:1px solid var(--line);padding-top:16px}
 .raildiv{height:1px;background:var(--line);margin:auto 14px 16px}
 .nav{padding:0 12px;display:flex;flex-direction:column;gap:2px}
-.nav button{display:grid;grid-template-columns:20px 1fr auto auto;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:0;color:var(--railtx);padding:10px 12px;border-radius:var(--r2);font-size:12.5px;font-weight:600;line-height:1.25;transition:.14s}
+.nav button{display:grid;grid-template-columns:34px 7px 1fr;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:1px solid transparent;color:var(--railtx);padding:10px 12px;border-radius:var(--r2);font-size:12.5px;font-weight:600;line-height:1.25;transition:.14s}
 .nav button:hover{background:var(--railhov);color:var(--tx)}
-.nav button.on{background:var(--grad-accent);color:#fff;box-shadow:0 8px 18px rgba(34,211,238,.28)}
-.nav svg{width:17px;height:17px}
+.nav button.on{background:var(--railhov);border-color:rgba(56,189,248,.5);color:var(--tx);box-shadow:0 0 0 3px rgba(56,189,248,.08)}
 .nav .code{font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:700;color:var(--tx3);letter-spacing:.02em}
-.nav button.on .code{color:rgba(255,255,255,.82)}
+.nav button.on .code{color:var(--indigo)}
 .nav .st{width:7px;height:7px;border-radius:50%;background:var(--line)}
 .nav .st.draft{background:var(--amber)}.nav .st.wait{background:var(--blue)}.nav .st.done{background:var(--green)}
-.nav button.on .st{background:rgba(255,255,255,.75)}
 .railcard{margin:0 14px 0;border-radius:var(--r);padding:16px;color:#fff;background:linear-gradient(150deg,#0A2A57,#0C4D95 55%,#22D3EE);box-shadow:0 12px 26px rgba(12,77,149,.35)}
 .railcard h4{font-size:13px;font-weight:800}
 .railcard p{margin:6px 0 12px;color:rgba(255,255,255,.72);font-size:10.5px;line-height:1.55}
@@ -78,11 +77,6 @@ html[data-theme="dark"] input[type=date]{color-scheme:dark}
 main{padding:0 0 70px;max-width:1580px}
 .wrap{padding:0 24px}
 
-/* ===== GREETING ===== */
-.greet{display:flex;align-items:flex-end;gap:16px;padding:24px 24px 4px;flex-wrap:wrap}
-.greet h1{font-size:25px;font-weight:800}
-.greet p{margin:5px 0 0;color:var(--tx2);font-size:13px}
-.greet .sp{flex:1}
 .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:var(--r2);padding:10px 17px;font-size:12.5px;font-weight:700;background:var(--grad-cta);color:#fff;box-shadow:0 8px 20px rgba(56,189,248,.32);transition:.15s}
 .btn:hover{transform:translateY(-1px)}
 .btn svg{width:15px;height:15px}
@@ -110,6 +104,18 @@ main{padding:0 0 70px;max-width:1580px}
 .livestat{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:var(--tx2)}
 .ldot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
 .ldot.off{background:var(--tx3);box-shadow:none}
+
+/* ===== ĐĂNG NHẬP ===== */
+.authwall{position:fixed;inset:0;background:var(--bg);z-index:100;display:grid;place-items:center;padding:20px}
+.authcard{max-width:420px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh2);padding:36px 32px;text-align:center}
+.authcard .alogo{width:56px;height:56px;border-radius:16px;margin:0 auto 15px;display:grid;place-items:center;background:var(--grad-accent);color:#fff;font-weight:800;font-size:19px;letter-spacing:-.03em;box-shadow:0 10px 22px rgba(34,211,238,.3)}
+.authcard h2{font-size:17.5px}
+.authcard p{color:var(--tx2);font-size:12.5px;margin:7px 0 0}
+.authcard input{width:100%;text-align:center;margin-top:14px}
+.authcard .btn{width:100%;margin-top:10px;padding:11px;justify-content:center}
+.authcard .ahint{font-size:11px;color:var(--tx3);margin-top:14px}
+.err{color:var(--rose);font-size:11.5px;margin-top:10px;min-height:16px;font-weight:700}
+body.viewer .adminonly{display:none!important}
 .qbtn{border:1px solid var(--line);background:var(--card);color:var(--tx2);border-radius:9px;padding:7px 12px;font-size:11.5px;font-weight:700;transition:.14s}
 .qbtn:hover{color:var(--tx)}
 .qbtn.on{background:var(--grad-cta);color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(56,189,248,.3)}
@@ -118,13 +124,6 @@ main{padding:0 0 70px;max-width:1580px}
 .chip.draft{background:rgba(245,158,11,.13);color:var(--amber)}
 .chip.wait{background:rgba(59,130,246,.13);color:var(--blue)}
 .chip.ok{background:rgba(16,185,129,.13);color:var(--green)}
-
-/* ===== SECTION NAV ===== */
-.secnav{display:flex;gap:8px;padding:18px 24px 0;overflow-x:auto}
-.secnav a{text-decoration:none;font-size:12px;font-weight:700;color:var(--tx2);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 16px;white-space:nowrap;box-shadow:var(--sh);transition:.15s}
-.secnav a:hover{color:var(--tx)}
-.secnav a.on{background:var(--grad-cta);color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(56,189,248,.3)}
-.secnav a b{font-family:"IBM Plex Mono",monospace;margin-right:6px;opacity:.6}
 
 .sec{margin-top:22px;scroll-margin-top:92px}
 .sechead{display:flex;align-items:center;gap:11px;margin-bottom:14px}
@@ -262,7 +261,7 @@ tbody td b{color:var(--tx);font-weight:800}
 @media(max-width:880px){
   .shell{grid-template-columns:1fr}.rail{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}
   .nav{flex-direction:row;overflow-x:auto}.nav button{min-width:168px}
-  .railcard{display:none}.wrap,.secnav,.greet{padding-left:14px;padding-right:14px}.mast{margin:14px}
+  .railcard{display:none}.wrap{padding-left:14px;padding-right:14px}.mast{margin:14px}
   .mside{align-items:flex-start}.mrow{justify-content:flex-start}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -270,7 +269,7 @@ tbody td b{color:var(--tx);font-weight:800}
 @page{size:A4 landscape;margin:10mm}
 @media print{
   html{--bg:#fff;--card:#fff;--card2:#F8F9FE;--line:#E3E6F0;--tx:#1E2436;--tx2:#4E5670;--tx3:#818AA3}
-  .rail,.top,.secnav,.tools,.drawer,.scrim,.noprint,.tfoot{display:none!important}
+  .rail,.top,.tools,.drawer,.scrim,.noprint,.tfoot{display:none!important}
   .shell{grid-template-columns:1fr}main{padding:0;max-width:none}
   .mast{margin:0 0 10px;box-shadow:none}.panel,.exbox,.defs,.sign,.hcard{box-shadow:none;break-inside:avoid}
   .sec{break-inside:avoid-page}.tw{max-height:none;overflow:visible}

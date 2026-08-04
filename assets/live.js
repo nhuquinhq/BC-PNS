@@ -105,15 +105,39 @@ window.HQLive = (function () {
       }
     }
 
-    if (reportId === "HRM2" && has("RAW_ChamCong")) {
-      const cc = rows("RAW_ChamCong");
-      const phut = cc.reduce((s, r) => s + num(r["Phút muộn"]), 0);
-      set("Tổng phút đi muộn", phut);
-      set("Tiền phạt đi muộn", phut * (P.phatDiMuon || 1000) / 1e6);
-      const chua = cc.filter(r => !/đã xác nhận/i.test(r["Xác nhận Lead"] || "")).length;
-      set("Hồ sơ chưa xác nhận công", chua);
-      const cong = cc.reduce((s, r) => s + num(r["Công thực tế"]), 0);
-      set("Ngày công bình quân", cc.length ? cong / cc.length : null);
+    if (reportId === "HRM2") {
+      /* Chấm công tách theo tháng: RAW_ChamCong_T1 … T6.
+         Tháng hiển thị lấy theo bộ lọc "Đến ngày" (RANGE), lùi về tháng
+         gần nhất có dữ liệu; tháng liền trước làm số so sánh; chuỗi các
+         tháng đã nối làm sparkline. */
+      const avail = [1, 2, 3, 4, 5, 6].map(i => "RAW_ChamCong_T" + i).filter(has);
+      if (avail.length) {
+        let mi = 6;
+        if (typeof RANGE !== "undefined" && RANGE && RANGE.to) mi = Math.min(6, Math.max(1, parseInt(RANGE.to.split("-")[1], 10)));
+        while (mi > 1 && !has("RAW_ChamCong_T" + mi)) mi--;
+        const key = has("RAW_ChamCong_T" + mi) ? "RAW_ChamCong_T" + mi : avail[avail.length - 1];
+        const pkey = "RAW_ChamCong_T" + (parseInt(key.slice(-1), 10) - 1);
+
+        const phutM = k => rows(k).reduce((s, r) => s + num(r["Phút muộn"]), 0);
+        const tienM = k => phutM(k) * (P.phatDiMuon || 1000) / 1e6;
+        const chuaM = k => rows(k).filter(r => !/đã xác nhận/i.test(r["Xác nhận Lead"] || "")).length;
+        const congM = k => { const rr = rows(k); return rr.length ? rr.reduce((s, r) => s + num(r["Công thực tế"]), 0) / rr.length : null; };
+
+        const setFull = (ten, f) => {
+          const k = kpis.find(x => x.k === ten); if (!k) return;
+          const cur = f(key);
+          if (cur == null || !isFinite(cur)) return;
+          k.cur = cur; k.live = true;
+          const prev = has(pkey) ? f(pkey) : null;
+          if (prev != null && isFinite(prev)) k.prev = prev;
+          const sp = avail.map(f).filter(v => v != null && isFinite(v));
+          if (sp.length >= 2) k.sp = sp;
+        };
+        setFull("Tổng phút đi muộn", phutM);
+        setFull("Tiền phạt đi muộn", tienM);
+        setFull("Hồ sơ chưa xác nhận công", chuaM);
+        setFull("Ngày công bình quân", congM);
+      }
     }
 
     if (reportId === "HRM3" && has("RAW_Luong")) {
