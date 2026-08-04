@@ -27,29 +27,36 @@ Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=
 const NSRC=Object.keys(SOURCES).length;
 let current="HOME";
 const AUTHC={
-  domain:((CFG.auth&&CFG.auth.mienChoPhep)||"hqplay.vn").toLowerCase(),
   admins:((CFG.auth&&CFG.auth.quanTriCapCao)||["quynhhtn@hqplay.vn"]).map(e=>e.toLowerCase()),
   gcid:(CFG.auth&&CFG.auth.googleClientId||"").trim(),
   pass:(CFG.auth&&CFG.auth.matKhau||"").trim(),
   hook:(CFG.auth&&CFG.auth.webhookThongBao||"").trim(),
-  qd:(CFG.auth&&CFG.auth.quyenDoc)||{}
+  acc:Object.fromEntries(Object.entries((CFG.auth&&CFG.auth.taiKhoan)||{}).map(([e,v])=>[e.toLowerCase(),v]))
 };
+function grantOf(email){
+  if(AUTHC.admins.includes(email))return"admin";
+  return AUTHC.acc[email]?"viewer":null;
+}
 let AUTH=null;
 const isAdmin=()=>!!AUTH&&AUTH.role==='admin';
 function canRead(id){
   if(!AUTH)return false;
   if(isAdmin())return true;
-  const ls=AUTHC.qd[AUTH.email];
-  return !ls||ls.includes(id);
+  const ls=AUTHC.acc[AUTH.email];
+  return ls==="*"||(Array.isArray(ls)&&ls.includes(id));
 }
-function notifyLogin(){
-  if(!AUTHC.hook||!AUTH)return;
+function notifyHook(email,vaiTro,phuongThuc,trangThai){
+  if(!AUTHC.hook)return;
   try{
     fetch(AUTHC.hook,{method:'POST',mode:'no-cors',body:JSON.stringify({
-      app:(CFG.brand&&CFG.brand.org)||"BC-PNS",email:AUTH.email,vaiTro:AUTH.role,
-      phuongThuc:AUTH.method||"—",luc:new Date().toLocaleString('vi-VN')})})
-      .then(()=>toast(`Đã báo lượt đăng nhập tới ${AUTHC.admins[0]}`)).catch(()=>{});
+      app:(CFG.brand&&CFG.brand.org)||"BC-PNS",email,vaiTro:vaiTro||"—",
+      phuongThuc,trangThai,luc:new Date().toLocaleString('vi-VN')})}).catch(()=>{});
   }catch(e){}
+}
+function notifyLogin(){
+  if(!AUTH)return;
+  notifyHook(AUTH.email,AUTH.role,AUTH.method||"—","Đăng nhập thành công");
+  if(AUTHC.hook)toast(`Đã báo lượt đăng nhập tới ${AUTHC.admins[0]}`);
 }
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const fmtd=s=>s.split('-').reverse().join('/');
@@ -941,7 +948,7 @@ function renderSys(){
   const lastAt=(window.HQLive&&Object.values(HQLive.meta).filter(x=>x.ok).map(x=>x.at).sort().pop())||"—";
   const card=(label,val,sub)=>`<div class="hcard"><div class="k" style="text-transform:uppercase;letter-spacing:.07em;font-size:9.5px;font-family:'IBM Plex Mono',monospace">${label}</div><div class="row"><span class="v" style="font-size:20px">${val}</span></div><div class="k">${sub||""}</div></div>`;
   const method=(AUTH&&AUTH.method)||"—";
-  const qrows=Object.entries(AUTHC.qd).map(([em,ls])=>`<tr><td>${em}</td><td>${Array.isArray(ls)?ls.join(' · '):String(ls)}</td></tr>`).join('');
+  const qrows=Object.entries(AUTHC.acc).map(([em,ls])=>`<tr><td>${em}</td><td>${ls==="*"?"Tất cả báo cáo":(Array.isArray(ls)?ls.join(' · '):String(ls))}</td></tr>`).join('');
   const srcRows=Object.entries(SOURCES).map(([k,s],i)=>{
     const m=window.HQLive?HQLive.meta[k]:null;
     const gid=(s.url.match(/[?&]gid=(\d+)/)||[])[1]||"—";
@@ -979,9 +986,9 @@ function renderSys(){
         <p style="margin-top:7px"><b>Thông báo đăng nhập về mail quản trị:</b> ${AUTHC.hook
           ?`<span class="pill p-ok">Đang bật</span> — mỗi lượt đăng nhập gửi về ${AUTHC.admins[0]}`
           :`<span class="pill p-n">Chưa bật</span> — dán URL Web App Google Apps Script vào <span class="mono">auth.webhookThongBao</span> trong config.js`}</p>
-        <div style="margin-top:12px"><b>Quyền đọc báo cáo theo email</b> — khai tại <span class="mono">auth.quyenDoc</span> trong config.js; email không liệt kê được đọc tất cả:</div>
+        <div style="margin-top:12px"><b>Tài khoản được cấp quyền</b> — Admin phê duyệt tại <span class="mono">auth.taiKhoan</span> trong config.js; email chưa có trong danh sách sẽ thấy thông báo chờ cấp quyền khi đăng nhập:</div>
         <div class="tw" style="max-height:220px;margin-top:8px"><table id="t-quyen"><thead><tr><th>Email</th><th>Được đọc</th></tr></thead><tbody>
-          ${qrows||`<tr><td colspan="2" style="color:var(--tx2)">Chưa giới hạn ai — mọi email @${AUTHC.domain} đọc được tất cả báo cáo.</td></tr>`}
+          ${qrows||`<tr><td colspan="2" style="color:var(--tx2)">Chưa cấp quyền cho ai — hiện chỉ Admin cứng đăng nhập được.</td></tr>`}
         </tbody></table></div>
       </div>`)}
     <div style="height:16px"></div>
@@ -1122,7 +1129,7 @@ function showLogin(){
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn" onclick="doLogin()">Đăng nhập</button>
     <div class="err" id="au-err"></div>
-    <p class="ahint">Chỉ email thuộc miền <b>@${AUTHC.domain}</b> được truy cập.</p>
+    <p class="ahint">Liên hệ Admin <b>${AUTHC.admins[0]}</b> để được cấp quyền truy cập.</p>
   </div></div>`));
   mountGoogleBtn();
   document.getElementById('au-mail').focus();
@@ -1150,9 +1157,12 @@ function onGoogleCred(resp){
   const p=jwtPayload(resp&&resp.credential||'');
   if(!p||!p.email){err.textContent="Không đọc được tài khoản Google. Thử lại.";return}
   const v=p.email.toLowerCase();
-  if(!p.email_verified||!v.endsWith('@'+AUTHC.domain)){
-    err.textContent=`Chỉ tài khoản Google @${AUTHC.domain} được truy cập.`;return}
-  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer',name:p.name||v.split('@')[0],method:"Google"};
+  if(!p.email_verified){err.textContent="Tài khoản Google chưa xác minh email.";return}
+  const g=grantOf(v);
+  if(!g){
+    notifyHook(v,null,"Google","Đăng nhập lần đầu — chờ cấp quyền");
+    err.textContent="Tài khoản chưa được cấp quyền truy cập — đã gửi thông báo tới Admin.";return}
+  AUTH={email:v,role:g,name:p.name||v.split('@')[0],method:"Google"};
   document.getElementById('authwall').remove();
   initApp();
 }
@@ -1160,11 +1170,14 @@ function doLogin(){
   const v=document.getElementById('au-mail').value.trim().toLowerCase();
   const err=document.getElementById('au-err');
   if(!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(v)){err.textContent="Email không hợp lệ.";return}
-  if(!v.endsWith('@'+AUTHC.domain)){err.textContent=`Chỉ email @${AUTHC.domain} được truy cập. Liên hệ Quản trị cấp cao.`;return}
   if(!AUTHC.pass){err.textContent="Đăng nhập tay đang tắt — dùng nút Đăng nhập với Google.";return}
   const pw=(document.getElementById('au-pass')||{}).value||'';
-  if(pw!==AUTHC.pass){err.textContent="Mật khẩu không đúng. Liên hệ Quản trị cấp cao.";return}
-  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer',method:"Mật khẩu nội bộ"};
+  if(pw!==AUTHC.pass){err.textContent="Mật khẩu không đúng. Liên hệ Admin.";return}
+  const g=grantOf(v);
+  if(!g){
+    notifyHook(v,null,"Mật khẩu nội bộ","Đăng nhập lần đầu — chờ cấp quyền");
+    err.textContent="Tài khoản chưa được cấp quyền truy cập — đã gửi thông báo tới Admin.";return}
+  AUTH={email:v,role:g,method:"Mật khẩu nội bộ"};
   document.getElementById('authwall').remove();
   initApp();
 }
