@@ -65,18 +65,24 @@ module.exports = async (req, res) => {
       return;
     }
 
-    /* Hành động quản trị — bắt buộc token Google của Admin cứng */
+    /* Hành động quản trị — token Google của Admin cứng, hoặc tài khoản
+       đã được cấp vai trò admin / leader */
     const g = await verifyGoogle(b.credential);
-    if (!g || !ADMIN_CUNG.includes(g.email)) {
-      res.status(403).json({ loi: "Cần đăng nhập Google bằng tài khoản Admin cứng" }); return;
-    }
+    if (!g) { res.status(403).json({ loi: "Cần đăng nhập Google bằng tài khoản Admin hoặc Leader" }); return; }
     const acc = await getJ(K_ACC), pend = await getJ(K_PEND);
+    let mgr = null;
+    if (ADMIN_CUNG.includes(g.email)) mgr = "admin";
+    else if (acc[g.email] && (acc[g.email].vaiTro === "admin" || acc[g.email].vaiTro === "leader")) mgr = acc[g.email].vaiTro;
+    if (!mgr) { res.status(403).json({ loi: "Cần đăng nhập Google bằng tài khoản Admin hoặc Leader" }); return; }
 
     if (b.action === "list") { res.status(200).json({ accounts: acc, pending: pend }); return; }
 
     if (b.action === "grant") {
       const em = String(b.email || "").toLowerCase();
       if (!em) { res.status(400).json({ loi: "Thiếu email" }); return; }
+      if (ADMIN_CUNG.includes(em)) { res.status(400).json({ loi: "Admin cứng không cần cấp quyền" }); return; }
+      if (mgr !== "admin" && b.vaiTro === "admin") { res.status(403).json({ loi: "Chỉ Admin được cấp vai trò Admin" }); return; }
+      if (mgr !== "admin" && acc[em] && acc[em].vaiTro === "admin") { res.status(403).json({ loi: "Chỉ Admin được sửa tài khoản Admin" }); return; }
       acc[em] = { vaiTro: b.vaiTro || "nhanvien", quyen: b.quyen === "*" ? "*" : (Array.isArray(b.quyen) ? b.quyen : []), ten: (pend[em] && pend[em].ten) || String(b.ten || "") };
       delete pend[em];
       await setJ(K_ACC, acc); await setJ(K_PEND, pend);
@@ -85,6 +91,8 @@ module.exports = async (req, res) => {
 
     if (b.action === "revoke") {
       const em = String(b.email || "").toLowerCase();
+      if (ADMIN_CUNG.includes(em)) { res.status(400).json({ loi: "Không thể thu hồi Admin cứng" }); return; }
+      if (mgr !== "admin" && acc[em] && acc[em].vaiTro === "admin") { res.status(403).json({ loi: "Chỉ Admin được thu hồi tài khoản Admin" }); return; }
       delete acc[em]; delete pend[em];
       await setJ(K_ACC, acc); await setJ(K_PEND, pend);
       res.status(200).json({ ok: true, accounts: acc, pending: pend }); return;
