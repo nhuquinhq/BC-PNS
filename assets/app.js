@@ -28,7 +28,9 @@ const NSRC=Object.keys(SOURCES).length;
 let current="HOME";
 const AUTHC={
   domain:((CFG.auth&&CFG.auth.mienChoPhep)||"hqplay.vn").toLowerCase(),
-  admins:((CFG.auth&&CFG.auth.quanTriCapCao)||["quynhhtn@hqplay.vn"]).map(e=>e.toLowerCase())
+  admins:((CFG.auth&&CFG.auth.quanTriCapCao)||["quynhhtn@hqplay.vn"]).map(e=>e.toLowerCase()),
+  gcid:(CFG.auth&&CFG.auth.googleClientId||"").trim(),
+  pass:(CFG.auth&&CFG.auth.matKhau||"").trim()
 };
 let AUTH=null;
 const isAdmin=()=>!!AUTH&&AUTH.role==='admin';
@@ -1031,23 +1033,61 @@ async function reloadLive(){
 function showLogin(){
   const old=document.getElementById('authwall'); if(old)old.remove();
   const org=(CFG.brand&&CFG.brand.org)||"HQ Group";
+  const gg=AUTHC.gcid?`<div class="gbtn" id="gbtn"></div>
+    <div class="adiv">hoặc ${AUTHC.pass?"mật khẩu":"email"} nội bộ</div>`:'';
   document.body.appendChild(el(`<div class="authwall" id="authwall"><div class="authcard">
-    <div class="alogo">HQ</div>
+    <div class="alogo">HQ<i>group</i></div>
     <h2>${org}</h2>
-    <p>Đăng nhập bằng email công ty</p>
-    <input type="text" id="au-mail" placeholder="ten@${AUTHC.domain}" autocomplete="off"
+    <p>Đăng nhập nội bộ · HQ Group</p>
+    ${gg}
+    <input type="text" id="au-mail" placeholder="Email" autocomplete="off"
       onkeydown="if(event.key==='Enter')doLogin()">
+    ${AUTHC.pass?`<input type="password" id="au-pass" placeholder="Mật khẩu" autocomplete="off"
+      onkeydown="if(event.key==='Enter')doLogin()">`:''}
     <button class="btn" onclick="doLogin()">Đăng nhập</button>
     <div class="err" id="au-err"></div>
     <p class="ahint">Chỉ email thuộc miền <b>@${AUTHC.domain}</b> được truy cập.</p>
   </div></div>`));
+  mountGoogleBtn();
   document.getElementById('au-mail').focus();
+}
+function mountGoogleBtn(){
+  if(!AUTHC.gcid)return;
+  const c=document.getElementById('gbtn'); if(!c)return;
+  let tries=0;
+  (function tick(){
+    if(window.google&&google.accounts&&google.accounts.id){
+      google.accounts.id.initialize({client_id:AUTHC.gcid,callback:onGoogleCred});
+      google.accounts.id.renderButton(c,{theme:"filled_blue",size:"large",width:300,text:"signin_with",locale:"vi"});
+    }else if(tries++<60)setTimeout(tick,150);
+  })();
+}
+function jwtPayload(t){
+  try{
+    const b=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+  }catch(e){return null}
+}
+function onGoogleCred(resp){
+  const err=document.getElementById('au-err');
+  const p=jwtPayload(resp&&resp.credential||'');
+  if(!p||!p.email){err.textContent="Không đọc được tài khoản Google. Thử lại.";return}
+  const v=p.email.toLowerCase();
+  if(!p.email_verified||!v.endsWith('@'+AUTHC.domain)){
+    err.textContent=`Chỉ tài khoản Google @${AUTHC.domain} được truy cập.`;return}
+  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer',name:p.name||v.split('@')[0]};
+  document.getElementById('authwall').remove();
+  initApp();
 }
 function doLogin(){
   const v=document.getElementById('au-mail').value.trim().toLowerCase();
   const err=document.getElementById('au-err');
   if(!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(v)){err.textContent="Email không hợp lệ.";return}
   if(!v.endsWith('@'+AUTHC.domain)){err.textContent=`Chỉ email @${AUTHC.domain} được truy cập. Liên hệ Quản trị cấp cao.`;return}
+  if(AUTHC.pass){
+    const pw=(document.getElementById('au-pass')||{}).value||'';
+    if(pw!==AUTHC.pass){err.textContent="Mật khẩu không đúng. Liên hệ Quản trị cấp cao.";return}
+  }
   AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer'};
   document.getElementById('authwall').remove();
   initApp();
@@ -1057,7 +1097,7 @@ function applyAuthUI(){
   document.body.classList.toggle('viewer',!isAdmin());
   const w=document.querySelector('.who');
   if(w&&AUTH){
-    const name=AUTH.email.split('@')[0];
+    const name=AUTH.name||AUTH.email.split('@')[0];
     w.querySelector('.av').textContent=name.slice(0,1).toUpperCase();
     w.querySelector('b').textContent=name;
     w.querySelector('span').textContent=isAdmin()?"Quản trị cấp cao nhất":"Phòng Nhân sự · Xem báo cáo";

@@ -26,7 +26,17 @@ window.HQ_CONFIG = {
      --------------------------------------------------------------- */
   auth: {
     mienChoPhep:   "hqplay.vn",
-    quanTriCapCao: ["quynhhtn@hqplay.vn"]
+    quanTriCapCao: ["quynhhtn@hqplay.vn"],
+
+    /* Nút "Đăng nhập với Google": dán OAuth Client ID (dạng
+       xxxx.apps.googleusercontent.com) lấy từ Google Cloud Console —
+       nhớ thêm domain web (vd https://bc-pns.vercel.app) vào
+       "Authorized JavaScript origins". Để trống = ẩn nút Google. */
+    googleClientId: "",
+
+    /* Mật khẩu nội bộ dùng kèm email khi không đăng nhập Google.
+       Để trống = chỉ cần email đúng miền. */
+    matKhau: ""
   },
 
   /* ---------------------------------------------------------------
