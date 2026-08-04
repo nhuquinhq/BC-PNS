@@ -1026,7 +1026,7 @@ function showLogin(){
   const old=document.getElementById('authwall'); if(old)old.remove();
   const org=(CFG.brand&&CFG.brand.org)||"HQ Group";
   const gg=AUTHC.gcid?`<div class="gbtn" id="gbtn"></div>
-    <div class="adiv">hoặc ${AUTHC.pass?"mật khẩu":"email"} nội bộ</div>`:'';
+    <div class="adiv">hoặc mật khẩu nội bộ</div>`:'';
   document.body.appendChild(el(`<div class="authwall" id="authwall"><div class="authcard">
     <div class="alogo">HQ<i>group</i></div>
     <h2>${org}</h2>
@@ -1034,8 +1034,8 @@ function showLogin(){
     ${gg}
     <input type="text" id="au-mail" placeholder="Email" autocomplete="off"
       onkeydown="if(event.key==='Enter')doLogin()">
-    ${AUTHC.pass?`<input type="password" id="au-pass" placeholder="Mật khẩu" autocomplete="off"
-      onkeydown="if(event.key==='Enter')doLogin()">`:''}
+    <input type="password" id="au-pass" placeholder="Mật khẩu" autocomplete="off"
+      onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn" onclick="doLogin()">Đăng nhập</button>
     <div class="err" id="au-err"></div>
     <p class="ahint">Chỉ email thuộc miền <b>@${AUTHC.domain}</b> được truy cập.</p>
@@ -1049,8 +1049,9 @@ function mountGoogleBtn(){
   let tries=0;
   (function tick(){
     if(window.google&&google.accounts&&google.accounts.id){
-      google.accounts.id.initialize({client_id:AUTHC.gcid,callback:onGoogleCred});
+      google.accounts.id.initialize({client_id:AUTHC.gcid,callback:onGoogleCred,auto_select:true,cancel_on_tap_outside:false});
       google.accounts.id.renderButton(c,{theme:"filled_blue",size:"large",width:300,text:"signin_with",locale:"vi"});
+      google.accounts.id.prompt();
     }else if(tries++<60)setTimeout(tick,150);
   })();
 }
@@ -1076,10 +1077,9 @@ function doLogin(){
   const err=document.getElementById('au-err');
   if(!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(v)){err.textContent="Email không hợp lệ.";return}
   if(!v.endsWith('@'+AUTHC.domain)){err.textContent=`Chỉ email @${AUTHC.domain} được truy cập. Liên hệ Quản trị cấp cao.`;return}
-  if(AUTHC.pass){
-    const pw=(document.getElementById('au-pass')||{}).value||'';
-    if(pw!==AUTHC.pass){err.textContent="Mật khẩu không đúng. Liên hệ Quản trị cấp cao.";return}
-  }
+  if(!AUTHC.pass){err.textContent="Đăng nhập tay đang tắt — dùng nút Đăng nhập với Google.";return}
+  const pw=(document.getElementById('au-pass')||{}).value||'';
+  if(pw!==AUTHC.pass){err.textContent="Mật khẩu không đúng. Liên hệ Quản trị cấp cao.";return}
   AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer'};
   document.getElementById('authwall').remove();
   initApp();

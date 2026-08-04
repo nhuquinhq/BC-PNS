@@ -35,8 +35,9 @@ window.HQ_CONFIG = {
     googleClientId: "195227450871-agk96k2h1897lnvgjk7uorfoe2q9dqqi.apps.googleusercontent.com",
 
     /* Mật khẩu nội bộ dùng kèm email khi không đăng nhập Google.
-       Để trống = chỉ cần email đúng miền. */
-    matKhau: ""
+       ĐỔI NGAY khi vận hành thật. Để trống = tắt đường đăng nhập tay,
+       chỉ còn nút Google. */
+    matKhau: "hq2026"
   },
 
   /* ---------------------------------------------------------------
