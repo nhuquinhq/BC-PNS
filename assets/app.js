@@ -1035,9 +1035,6 @@ function buildNav(){
     const bs=el(`<button class="${current==='SYS'?'on':''}"><span class="code">·</span><span class="st done"></span><span>Nguồn &amp; Cấu hình</span></button>`);
     bs.onclick=()=>go('SYS');gs.appendChild(bs);w.appendChild(gs);
   }
-  const c=Object.values(SOURCES).filter(s=>s.url).length;
-  document.getElementById('linkcount').textContent=c+"/"+NSRC;
-  document.getElementById('linkbar').style.width=(c/NSRC*100)+"%";
 }
 function go(id){
   if(id==="SYS"&&!isAdmin()){toast("Trang hệ thống chỉ dành cho Quản trị cấp cao nhất");return}

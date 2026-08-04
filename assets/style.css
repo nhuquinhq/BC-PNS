@@ -51,14 +51,6 @@ svg{stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-l
 .nav button.on .code{color:var(--indigo)}
 .nav .st{width:7px;height:7px;border-radius:50%;background:var(--line)}
 .nav .st.draft{background:var(--amber)}.nav .st.wait{background:var(--blue)}.nav .st.done{background:var(--green)}
-.railcard{margin:0 14px 0;border-radius:var(--r);padding:16px;color:#fff;background:linear-gradient(150deg,#0A2A57,#0C4D95 55%,#22D3EE);box-shadow:0 12px 26px rgba(12,77,149,.35)}
-.railcard h4{font-size:13px;font-weight:800}
-.railcard p{margin:6px 0 12px;color:rgba(255,255,255,.72);font-size:10.5px;line-height:1.55}
-.railcard .b{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;margin-bottom:6px}
-.track{height:6px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden;margin-bottom:12px}
-.track i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#22D3EE,#3B82F6)}
-.railcard button{width:100%;border:0;border-radius:9px;padding:8px;font-size:11.5px;font-weight:800;color:#fff;background:rgba(255,255,255,.18);backdrop-filter:blur(4px)}
-.railcard button:hover{background:rgba(255,255,255,.28)}
 
 /* ===== ĐIỀU KHIỂN Ở SIDEBAR ===== */
 .railuser{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;gap:8px;margin:12px 0 -16px;padding:10px 14px 14px;background:var(--rail);border-top:1px solid var(--line)}
@@ -272,7 +264,7 @@ tbody td b{color:var(--tx);font-weight:800}
 @media(max-width:880px){
   .shell{grid-template-columns:1fr}.rail{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}
   .nav{flex-direction:row;overflow-x:auto}.nav button{min-width:168px}
-  .railcard{display:none}.wrap{padding-left:14px;padding-right:14px}.mast{margin:14px}
+  .wrap{padding-left:14px;padding-right:14px}.mast{margin:14px}
   .mside{align-items:flex-start}.mrow{justify-content:flex-start}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
