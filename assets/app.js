@@ -954,8 +954,6 @@ function buildNav(){
   const c=Object.values(SOURCES).filter(s=>s.url).length;
   document.getElementById('linkcount').textContent=c+"/"+NSRC;
   document.getElementById('linkbar').style.width=(c/NSRC*100)+"%";
-  const bc=document.getElementById('bellcount');
-  if(bc)bc.textContent=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
 }
 function go(id){
   current=id;kill();
@@ -991,15 +989,9 @@ document.getElementById('btn-theme').onclick=()=>
 document.getElementById('btn-close').onclick=closeDrawer;
 document.getElementById('btn-logout').onclick=logout;
 document.getElementById('scrim').onclick=closeDrawer;
-document.getElementById('btn-bell').onclick=()=>{
-  const n=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
-  toast(`${n} việc ưu tiên cao đang theo dõi trong kỳ`)};
 document.getElementById('btn-save').onclick=()=>{
   document.querySelectorAll('#srclist input').forEach(i=>SOURCES[i.dataset.k].url=i.value.trim());
   closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/${NSRC} liên kết nguồn`)};
-document.getElementById('btn-dens').onclick=function(){
-  document.body.classList.toggle('compact');
-  toast(document.body.classList.contains('compact')?"Đang xem chế độ thu gọn":"Đã trở lại chế độ giãn dòng")};
 function setThang(v){
   const y=new Date().getFullYear();
   if(!v){RANGE={from:iso(new Date(y,0,1)),to:iso(new Date()),thang:null,tuan:null}}
