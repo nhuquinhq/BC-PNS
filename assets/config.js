@@ -37,7 +37,17 @@ window.HQ_CONFIG = {
     /* Mật khẩu nội bộ dùng kèm email khi không đăng nhập Google.
        ĐỔI NGAY khi vận hành thật. Để trống = tắt đường đăng nhập tay,
        chỉ còn nút Google. */
-    matKhau: "hq2026"
+    matKhau: "hq2026",
+
+    /* Webhook nhận thông báo mỗi lượt đăng nhập (gửi mail về quản trị
+       cứng). Dán URL Web App của Google Apps Script; để trống = tắt.
+       Script mẫu xem trang Nguồn & Cấu hình trong app. */
+    webhookThongBao: "",
+
+    /* Giới hạn quyền ĐỌC báo cáo theo email. Email không liệt kê ở
+       đây được đọc tất cả. Ví dụ:
+       quyenDoc: { "lananh@hqplay.vn": ["HRM1","HRM2"] }              */
+    quyenDoc: {}
   },
 
   /* ---------------------------------------------------------------

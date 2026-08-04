@@ -30,10 +30,27 @@ const AUTHC={
   domain:((CFG.auth&&CFG.auth.mienChoPhep)||"hqplay.vn").toLowerCase(),
   admins:((CFG.auth&&CFG.auth.quanTriCapCao)||["quynhhtn@hqplay.vn"]).map(e=>e.toLowerCase()),
   gcid:(CFG.auth&&CFG.auth.googleClientId||"").trim(),
-  pass:(CFG.auth&&CFG.auth.matKhau||"").trim()
+  pass:(CFG.auth&&CFG.auth.matKhau||"").trim(),
+  hook:(CFG.auth&&CFG.auth.webhookThongBao||"").trim(),
+  qd:(CFG.auth&&CFG.auth.quyenDoc)||{}
 };
 let AUTH=null;
 const isAdmin=()=>!!AUTH&&AUTH.role==='admin';
+function canRead(id){
+  if(!AUTH)return false;
+  if(isAdmin())return true;
+  const ls=AUTHC.qd[AUTH.email];
+  return !ls||ls.includes(id);
+}
+function notifyLogin(){
+  if(!AUTHC.hook||!AUTH)return;
+  try{
+    fetch(AUTHC.hook,{method:'POST',mode:'no-cors',body:JSON.stringify({
+      app:(CFG.brand&&CFG.brand.org)||"BC-PNS",email:AUTH.email,vaiTro:AUTH.role,
+      phuongThuc:AUTH.method||"—",luc:new Date().toLocaleString('vi-VN')})})
+      .then(()=>toast(`Đã báo lượt đăng nhập tới ${AUTHC.admins[0]}`)).catch(()=>{});
+  }catch(e){}
+}
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const fmtd=s=>s.split('-').reverse().join('/');
 let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),thang:null,tuan:null};
@@ -847,7 +864,7 @@ function renderHome(){
     {k:"Tỷ lệ nhân sự quá tải",u:"%",cur:57.1,prev:42.9,tgt:10,dir:-1,sp:[29,29,43,43,43,57]}];
   const linkedAll=Object.values(SOURCES).filter(s=>s.url).length;
   const nHi=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
-  const byRep=MODULES.slice(1).map(x=>{
+  const byRep=MODULES.slice(1).filter(x=>canRead(x.id)).map(x=>{
     const r=REP[x.id];
     const kk=window.HQLive?HQLive.apply(x.id,r.kpis):r.kpis;
     const chs=r.charts.slice(0,2).map(c=>panel(c.t,c.h,`<div class="chartbox ${c.cls||''}"><canvas id="${c.id}"></canvas></div>`)).join('');
@@ -916,6 +933,65 @@ function homeCharts(){
     {cutout:"64%",plugins:{legend:{display:true,position:"bottom"}},scales:{}});
 }
 
+/* ---- Trang Nguồn & Cấu hình (hệ thống) ---- */
+function renderSys(){
+  const st=window.HQLive?HQLive.status():{oke:0,khai:0,meta:{}};
+  const p=(CFG.ui&&CFG.ui.tuTaiLai)||0;
+  const files=new Set(Object.values(SOURCES).filter(s=>s.url).map(s=>(s.url.match(/\/d\/e\/([^/]+)/)||[])[1]||s.url)).size;
+  const lastAt=(window.HQLive&&Object.values(HQLive.meta).filter(x=>x.ok).map(x=>x.at).sort().pop())||"—";
+  const card=(label,val,sub)=>`<div class="hcard"><div class="k" style="text-transform:uppercase;letter-spacing:.07em;font-size:9.5px;font-family:'IBM Plex Mono',monospace">${label}</div><div class="row"><span class="v" style="font-size:20px">${val}</span></div><div class="k">${sub||""}</div></div>`;
+  const method=(AUTH&&AUTH.method)||"—";
+  const qrows=Object.entries(AUTHC.qd).map(([em,ls])=>`<tr><td>${em}</td><td>${Array.isArray(ls)?ls.join(' · '):String(ls)}</td></tr>`).join('');
+  const srcRows=Object.entries(SOURCES).map(([k,s],i)=>{
+    const m=window.HQLive?HQLive.meta[k]:null;
+    const gid=(s.url.match(/[?&]gid=(\d+)/)||[])[1]||"—";
+    const stt=!s.url?'<span class="pill p-n">Chưa khai</span>':(m?(m.ok?'<span class="pill p-ok">Trực tiếp Google</span>':'<span class="pill p-b">Trực tiếp lỗi</span>'):'<span class="pill p-w">Chưa đọc</span>');
+    const note=!s.url?'—':(m?(m.ok?'OK':`<span style="color:var(--rose)">${(m.err||'').slice(0,90)}</span>`):'chưa tải trong phiên này');
+    return `<tr><td class="idx">${i+1}</td><td><b>${s.n}</b><div style="font-size:10.5px;color:var(--tx3)">${s.l} · ${s.m}</div></td><td class="mono" style="font-size:10.5px">${gid}</td><td>${stt}</td><td style="text-align:right;font-weight:700">${m&&m.ok?m.n:'—'}</td><td>${note}</td></tr>`;
+  }).join('');
+  return `<div class="mast"><div class="bar">
+    <div class="mtt">
+      <div class="eyebrow">Hệ thống · Quản trị</div>
+      <h1>Nguồn &amp; Cấu hình</h1>
+      <p>Đọc trực tiếp Google Sheet (publish CSV) — mọi cấu hình nằm tại assets/config.js.</p>
+      <div class="scoperow"><span class="scopepill">Admin cứng: <b>${AUTHC.admins.join(' · ')}</b></span></div>
+    </div>
+    <div class="sp"></div>
+    <div class="mside">
+      <div class="mrow noprint">
+        <button class="btn g adminonly" onclick="openDrawer()">${SVG.plug}Gắn nguồn dữ liệu</button>
+        <button class="btn" onclick="reloadLive()">${SVG.refresh}Làm mới</button>
+      </div>
+      <div class="livestat noprint">${liveStat()}</div>
+    </div>
+  </div></div>
+  <div class="wrap">
+    <div class="hero kstrip">
+      ${card("Nguồn dữ liệu",`${st.oke}/${NSRC}`,`${NSRC} tab · ${files} file Google Sheet`)}
+      ${card("Cách đọc","Trực tiếp Google","publish CSV, đọc từ trình duyệt")}
+      ${card("Tài khoản",AUTH?AUTH.email.split('@')[0]:"—",AUTH?`${isAdmin()?'Quản trị cấp cao nhất':'Chỉ xem'} · ${method}`:"")}
+      ${card("Tự làm mới",p>0?`${p} phút`:"Tắt",`lần cuối ${lastAt}`)}
+    </div>
+    ${AUTH&&AUTH.method!=="Google"?`<div class="warnnote">Bạn đang đăng nhập bằng <b>mật khẩu nội bộ</b> (không có token Google). Hãy <b>đăng nhập lại bằng Google</b> để định danh thật khi quản lý tài khoản.</div>`:''}
+    ${panel("Quản lý đăng nhập &amp; phân quyền",`Admin cứng: ${AUTHC.admins.join(' · ')}`,
+      `<div style="font-size:12.5px;line-height:1.7">
+        <p><b>Phiên hiện tại:</b> ${AUTH?`${AUTH.email} · ${isAdmin()?'Quản trị cấp cao nhất':'Chỉ xem'} · đăng nhập bằng ${method}`:'—'}</p>
+        <p style="margin-top:7px"><b>Thông báo đăng nhập về mail quản trị:</b> ${AUTHC.hook
+          ?`<span class="pill p-ok">Đang bật</span> — mỗi lượt đăng nhập gửi về ${AUTHC.admins[0]}`
+          :`<span class="pill p-n">Chưa bật</span> — dán URL Web App Google Apps Script vào <span class="mono">auth.webhookThongBao</span> trong config.js`}</p>
+        <div style="margin-top:12px"><b>Quyền đọc báo cáo theo email</b> — khai tại <span class="mono">auth.quyenDoc</span> trong config.js; email không liệt kê được đọc tất cả:</div>
+        <div class="tw" style="max-height:220px;margin-top:8px"><table id="t-quyen"><thead><tr><th>Email</th><th>Được đọc</th></tr></thead><tbody>
+          ${qrows||`<tr><td colspan="2" style="color:var(--tx2)">Chưa giới hạn ai — mọi email @${AUTHC.domain} đọc được tất cả báo cáo.</td></tr>`}
+        </tbody></table></div>
+      </div>`)}
+    <div style="height:16px"></div>
+    ${panelT("Chẩn đoán nguồn dữ liệu",`${st.oke}/${NSRC} tab đọc được`,
+      `<div class="tw"><table id="t-sys"><thead><tr><th class="idx">#</th><th>Tab</th><th>gid</th><th>Nguồn đọc được</th><th style="text-align:right">Số dòng</th><th>Ghi chú / lỗi</th></tr></thead><tbody>${srcRows}</tbody></table></div>`,
+      tools("t-sys"))}
+    <p style="margin-top:12px;font-size:11px;color:var(--tx3)">Luồng dữ liệu: Google Sheet → Publish CSV → Dashboard${p>0?` (${p} phút/lần)`:''} · "Chưa khai" = tab chưa có link trong config.js · "Trực tiếp lỗi" = tab chưa Publish to web hoặc link sai.</p>
+  </div>`;
+}
+
 /* ---- Tìm trong bảng ---- */
 function runSearch(){
   const el=document.getElementById('q'); if(!el)return;
@@ -946,19 +1022,30 @@ function buildNav(){
   w.appendChild(rsec("Tổng hợp"));
   const n0=nv();n0.appendChild(navBtn(MODULES[0]));w.appendChild(n0);
   TIERS.forEach(tr=>{
+    const ids=tr.ids.filter(id=>canRead(id));
+    if(!ids.length)return;
     w.appendChild(rsec(tr.t));
     const g=nv();
-    tr.ids.forEach(id=>g.appendChild(navBtn(MODULES.find(m=>m.id===id))));
+    ids.forEach(id=>g.appendChild(navBtn(MODULES.find(m=>m.id===id))));
     w.appendChild(g);
   });
+  if(isAdmin()){
+    w.appendChild(rsec("Hệ thống"));
+    const gs=nv();
+    const bs=el(`<button class="${current==='SYS'?'on':''}"><span class="code">·</span><span class="st done"></span><span>Nguồn &amp; Cấu hình</span></button>`);
+    bs.onclick=()=>go('SYS');gs.appendChild(bs);w.appendChild(gs);
+  }
   const c=Object.values(SOURCES).filter(s=>s.url).length;
   document.getElementById('linkcount').textContent=c+"/"+NSRC;
   document.getElementById('linkbar').style.width=(c/NSRC*100)+"%";
 }
 function go(id){
+  if(id==="SYS"&&!isAdmin()){toast("Trang hệ thống chỉ dành cho Quản trị cấp cao nhất");return}
+  if(id!=="HOME"&&id!=="SYS"&&!canRead(id)){toast("Bạn chưa được cấp quyền đọc báo cáo này — liên hệ Quản trị cấp cao");return}
   current=id;kill();
-  const m=MODULES.find(x=>x.id===id);
   const v=document.getElementById('view');
+  if(id==="SYS"){v.innerHTML=renderSys();buildNav();runSearch();window.scrollTo(0,0);return}
+  const m=MODULES.find(x=>x.id===id);
   v.innerHTML = id==="HOME"?renderHome():renderReport(m);
   if(id==="HOME"){homeCharts();MODULES.slice(1).forEach(x=>REP[x.id].charts.slice(0,2).forEach(c=>c.f()))}
   else (REP[m.id].charts||[]).forEach(c=>c.f());
@@ -1068,7 +1155,7 @@ function onGoogleCred(resp){
   const v=p.email.toLowerCase();
   if(!p.email_verified||!v.endsWith('@'+AUTHC.domain)){
     err.textContent=`Chỉ tài khoản Google @${AUTHC.domain} được truy cập.`;return}
-  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer',name:p.name||v.split('@')[0]};
+  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer',name:p.name||v.split('@')[0],method:"Google"};
   document.getElementById('authwall').remove();
   initApp();
 }
@@ -1080,7 +1167,7 @@ function doLogin(){
   if(!AUTHC.pass){err.textContent="Đăng nhập tay đang tắt — dùng nút Đăng nhập với Google.";return}
   const pw=(document.getElementById('au-pass')||{}).value||'';
   if(pw!==AUTHC.pass){err.textContent="Mật khẩu không đúng. Liên hệ Quản trị cấp cao.";return}
-  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer'};
+  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer',method:"Mật khẩu nội bộ"};
   document.getElementById('authwall').remove();
   initApp();
 }
@@ -1099,6 +1186,7 @@ function initApp(){
   applyAuthUI();
   buildNav();go("HOME");
   bootLive();
+  notifyLogin();
 }
 
 /* ---- Khởi động ---- */
