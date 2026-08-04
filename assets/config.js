@@ -25,7 +25,6 @@ window.HQ_CONFIG = {
      dữ liệu…), các email còn lại chỉ xem báo cáo.
      --------------------------------------------------------------- */
   auth: {
-    mienChoPhep:   "hqplay.vn",
     quanTriCapCao: ["quynhhtn@hqplay.vn"],
 
     /* Nút "Đăng nhập với Google": dán OAuth Client ID (dạng
@@ -39,15 +38,18 @@ window.HQ_CONFIG = {
        chỉ còn nút Google. */
     matKhau: "hq2026",
 
-    /* Webhook nhận thông báo mỗi lượt đăng nhập (gửi mail về quản trị
-       cứng). Dán URL Web App của Google Apps Script; để trống = tắt.
-       Script mẫu xem trang Nguồn & Cấu hình trong app. */
+    /* Webhook nhận thông báo mỗi lượt đăng nhập / xin cấp quyền (gửi
+       mail về quản trị cứng). Dán URL Web App của Google Apps Script;
+       để trống = tắt. Script mẫu xem trang Nguồn & Cấu hình. */
     webhookThongBao: "",
 
-    /* Giới hạn quyền ĐỌC báo cáo theo email. Email không liệt kê ở
-       đây được đọc tất cả. Ví dụ:
-       quyenDoc: { "lananh@hqplay.vn": ["HRM1","HRM2"] }              */
-    quyenDoc: {}
+    /* TÀI KHOẢN ĐƯỢC CẤP QUYỀN — Admin phê duyệt tại đây.
+       Bất kỳ mail domain nào có trong danh sách là đăng nhập được;
+       email chưa có sẽ thấy thông báo chờ cấp quyền.
+       "*" = xem tất cả báo cáo, hoặc liệt kê mã được xem. Ví dụ:
+         "quanglm@hqgroups.vn": "*",
+         "lananh@hqplay.vn":   ["HRM1","HRM2"]                        */
+    taiKhoan: {}
   },
 
   /* ---------------------------------------------------------------
