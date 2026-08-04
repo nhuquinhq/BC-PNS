@@ -166,7 +166,7 @@ const DEPTS=["Kinh doanh","Vận hành","Chăm sóc KH","Công nghệ","Marketin
 const BUS=["Ritokey","WGG","A10GG","HQS10000","VX Team","Maverick","Khối BO"];
 
 const MODULES=[
- {id:"HOME",code:"—",title:"Báo cáo tổng hợp",src:[]},
+ {id:"HOME",code:"—",title:"Tổng quan (HRM1 → HRM8)",src:[]},
  {id:"HRM1",code:"HRM1",title:"Báo cáo tuyển dụng",src:["RAW_TuyenDung","DM_PhongBan"]},
  {id:"HRM2",code:"HRM2",title:"Chấm công & Phép",src:["RAW_ChamCong","RAW_Phep","DM_NhanSu"]},
  {id:"HRM3",code:"HRM3",title:"Payroll & C&B",src:["RAW_Luong","DM_NhanSu","DM_Grade"]},
@@ -924,16 +924,29 @@ function runSearch(){
 }
 
 /* ---- Nav ---- */
+const TIERS=[
+  {t:"Tầng 1 · Điều hành (CEO · tháng)",ids:["HRM6","HRM3","HRM8"]},
+  {t:"Tầng 2 · Quản trị chi phí & tuyển (tháng)",ids:["HRM1","HRM4","HRM5"]},
+  {t:"Tầng 3 · Vận hành (tuần)",ids:["HRM2","HRM7"]}
+];
+function navBtn(m){
+  const st=m.id==="HOME"?"":STATE[m.id];
+  const b=el(`<button class="${current===m.id?'on':''}">
+    <span class="code">${m.id==="HOME"?"◆":m.code}</span>
+    <span class="st ${st==='ok'?'done':st==='draft'?'draft':st==='wait'?'wait':''}"></span>
+    <span>${m.title}</span></button>`);
+  b.onclick=()=>go(m.id);return b;
+}
 function buildNav(){
-  const t=document.getElementById('nav-top'),n=document.getElementById('nav-main');
-  t.innerHTML='';n.innerHTML='';
-  MODULES.forEach(m=>{
-    const st=m.id==="HOME"?"":STATE[m.id];
-    const b=el(`<button class="${current===m.id?'on':''}">${NAVICON[m.id]}<span>${m.title}</span>
-      <span class="code">${m.code==='—'?'':m.code}</span>
-      <span class="st ${st==='ok'?'done':st==='draft'?'draft':st==='wait'?'wait':''}"></span></button>`);
-    b.onclick=()=>go(m.id);
-    (m.id==="HOME"?t:n).appendChild(b);
+  const w=document.getElementById('navwrap');w.innerHTML='';
+  const rsec=t=>el(`<div class="railsec">${t}</div>`), nv=()=>el('<div class="nav"></div>');
+  w.appendChild(rsec("Tổng hợp"));
+  const n0=nv();n0.appendChild(navBtn(MODULES[0]));w.appendChild(n0);
+  TIERS.forEach(tr=>{
+    w.appendChild(rsec(tr.t));
+    const g=nv();
+    tr.ids.forEach(id=>g.appendChild(navBtn(MODULES.find(m=>m.id===id))));
+    w.appendChild(g);
   });
   const c=Object.values(SOURCES).filter(s=>s.url).length;
   document.getElementById('linkcount').textContent=c+"/14";
@@ -1014,8 +1027,8 @@ function showLogin(){
   const org=(CFG.brand&&CFG.brand.org)||"HQ Group";
   document.body.appendChild(el(`<div class="authwall" id="authwall"><div class="authcard">
     <div class="alogo">HQ</div>
-    <h2>Trung tâm Báo cáo Nhân sự</h2>
-    <p>${org} — đăng nhập bằng email công ty</p>
+    <h2>${org}</h2>
+    <p>Đăng nhập bằng email công ty</p>
     <input type="text" id="au-mail" placeholder="ten@${AUTHC.domain}" autocomplete="off"
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn" onclick="doLogin()">Đăng nhập</button>

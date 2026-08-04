@@ -12,8 +12,8 @@ window.HQ_CONFIG = {
      1. NHẬN DIỆN
      --------------------------------------------------------------- */
   brand: {
-    org:      "HQ Group",
-    tagline:  "Báo cáo · Phân tích · Điều hành",
+    org:      "Trung tâm Báo cáo PNS",
+    tagline:  "Realtime Google Sheet · v3",
     user:     "Quinh",
     userRole: "Quản trị Khối BO"
   },
