@@ -32,7 +32,7 @@ window.HQ_CONFIG = {
        xxxx.apps.googleusercontent.com) lấy từ Google Cloud Console —
        nhớ thêm domain web (vd https://bc-pns.vercel.app) vào
        "Authorized JavaScript origins". Để trống = ẩn nút Google. */
-    googleClientId: "",
+    googleClientId: "195227450871-agk96k2h1897lnvgjk7uorfoe2q9dqqi.apps.googleusercontent.com",
 
     /* Mật khẩu nội bộ dùng kèm email khi không đăng nhập Google.
        Để trống = chỉ cần email đúng miền. */
