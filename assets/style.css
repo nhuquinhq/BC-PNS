@@ -84,14 +84,14 @@ main{padding:0 0 70px;max-width:1580px}
 .btn.g:hover{color:var(--tx);transform:none}
 
 /* ===== MASTHEAD ===== */
-.mast{margin:22px 24px 0;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
-.mast .bar{display:flex;align-items:flex-start;gap:16px;padding:22px;flex-wrap:wrap}
+.mast{margin:20px 24px 0}
+.mast .bar{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
 .mast .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--indigo);margin-bottom:7px}
 .mast h1{font-size:21px;font-weight:800;text-transform:uppercase}
 .mast .bar p{margin:5px 0 0;color:var(--tx2);font-size:12.5px;max-width:660px}
 .scoperow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:11px}
-.scopepill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:7px 14px;font-size:11px;font-weight:700;color:#fff;background:var(--grad-cta);box-shadow:0 6px 14px rgba(56,189,248,.28)}
-.scopepill b{font-weight:800}
+.scopepill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 14px;font-size:10.5px;font-weight:700;letter-spacing:.03em;color:var(--cyan);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.45);font-family:"IBM Plex Mono",ui-monospace,monospace}
+.scopepill b{font-weight:700}
 .srctxt{font-size:11.5px;color:var(--tx2);font-weight:600}
 .mast .sp{flex:1}
 .mtt{flex:1 1 340px;min-width:0}
@@ -100,7 +100,8 @@ main{padding:0 0 70px;max-width:1580px}
 .fld{display:flex;flex-direction:column;gap:5px}
 .fld label{font-size:9px;letter-spacing:.12em;font-weight:800;color:var(--tx3);text-transform:uppercase;font-family:"IBM Plex Mono",ui-monospace,monospace}
 .fld input[type=date]{padding:8px 11px;font-weight:700;width:138px}
-.qwrap{display:flex;gap:6px;flex-wrap:wrap}
+.fld select{background:var(--card2);border:1px solid var(--line);border-radius:var(--r2);padding:9px 11px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--tx);outline:none;min-width:110px}
+html[data-theme="dark"] .fld select{color-scheme:dark}
 .livestat{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:var(--tx2)}
 .ldot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
 .ldot.off{background:var(--tx3);box-shadow:none}
@@ -148,14 +149,15 @@ body.viewer .adminonly{display:none!important}
 .t-lo{background:rgba(16,185,129,.13);color:var(--green)}
 
 /* ===== KPI CARD (theo ảnh mẫu) ===== */
-.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(246px,1fr));gap:16px;margin-bottom:16px}
-.hcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 19px;display:grid;grid-template-columns:1fr;gap:7px;align-content:start;transition:.16s}
+.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:12px;margin-bottom:16px}
+.hcard{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--sh);padding:13px 15px;display:grid;grid-template-columns:1fr;gap:6px;align-content:start;transition:.16s}
 .hcard:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
-.hcard .utag{justify-self:start;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9px;font-weight:700;letter-spacing:.1em;padding:4px 9px;border-radius:8px;border:1px solid}
-.hcard .k{font-size:11.5px;color:var(--tx2);font-weight:600}
+.hcard .hh{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.hcard .utag{justify-self:start;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9px;font-weight:700;letter-spacing:.1em;padding:3px 8px;border-radius:7px;border:1px solid}
+.hcard .k{font-size:11px;color:var(--tx2);font-weight:600;line-height:1.4}
 .kstrip{margin:16px 0 0}
 .hcard .row{display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap}
-.hcard .v{font-size:27px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1.15}
+.hcard .v{font-size:22px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1.15}
 .hcard .v small{font-size:12px;color:var(--tx3);font-weight:600;margin-left:4px}
 .hcard .foot{grid-column:1/-1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--tx2);font-weight:600;padding-top:13px;margin-top:2px;border-top:1px solid var(--line)}
 .hcard .foot span{display:inline-flex;align-items:center;gap:6px}
@@ -171,8 +173,10 @@ body.viewer .adminonly{display:none!important}
 .g21{grid-template-columns:1.6fr 1fr}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);min-width:0;break-inside:avoid;overflow:hidden}
 .phead{display:flex;align-items:center;gap:11px;padding:17px 20px 13px}
-.phead h3{font-size:14px;font-weight:800}
-.phead .hint{font-size:11px;color:var(--tx3);font-weight:600}
+.phead h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:9px}
+.phead h3:before{content:"";width:3px;height:15px;border-radius:2px;background:var(--grad-cta);flex-shrink:0}
+.phead .hint{font-size:10px;color:var(--tx3);font-weight:600;font-family:"IBM Plex Mono",ui-monospace,monospace;background:var(--card2);border:1px solid var(--line);border-radius:7px;padding:3px 9px;margin-left:auto}
+.phead .hint~.tools{margin-left:0}
 .phead .tools{margin-left:auto;display:flex;gap:7px}
 .rephead{display:flex;align-items:baseline;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
 .rephead h3{font-size:14.5px;font-weight:800}

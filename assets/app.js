@@ -34,7 +34,7 @@ let AUTH=null;
 const isAdmin=()=>!!AUTH&&AUTH.role==='admin';
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const fmtd=s=>s.split('-').reverse().join('/');
-let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),q:'ca'};
+let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),thang:null,tuan:null};
 
 /* ============================================================
    B. TIỆN ÍCH
@@ -722,31 +722,26 @@ REP.HRM8={
    E. RENDER
    ============================================================ */
 function heroCard(k,i){
-  const g=rag(k.cur,k.tgt,k.dir);
-  const col=g.c==="g"?"#10B981":g.c==="a"?"#F59E0B":"#F43F5E";
   const t=TILE[i%TILE.length];
-  return `<div class="hcard">
-    <span class="utag" style="background:${t}20;border-color:${t}55;color:${t}">${(k.u||"chỉ số").toUpperCase()}</span>
+  return `<div class="hcard" style="border-color:${t}45">
+    <div class="hh"><span class="utag" style="background:${t}20;border-color:${t}55;color:${t}">${(k.u||"chỉ số").toUpperCase()}</span>${k.live?'<span class="livetag">LIVE</span>':''}</div>
     <div class="k">${k.k}</div>
     <div class="row"><span class="v">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></span>${delta(k.cur,k.prev,k.dir)}</div>
-    <div class="foot">
-      <span><i class="dot" style="background:${col}"></i>Mục tiêu ${k.f?k.f(k.tgt):dec(k.tgt,k.p??1)} ${k.u}</span>
-      <span class="rag ${g.c}"><i></i>${g.t}</span>
-      ${k.live?'<span class="livetag">TRỰC TIẾP</span>':''}
-      <span style="margin-left:auto">${spark(k.sp,col)}</span>
-    </div></div>`;
+  </div>`;
 }
 
 function filterRow(){
   return `<div class="mrow noprint">
     <div class="fld"><label>Từ ngày</label><input type="date" id="d-from" value="${RANGE.from}" onchange="setRange()"></div>
     <div class="fld"><label>Đến ngày</label><input type="date" id="d-to" value="${RANGE.to}" onchange="setRange()"></div>
-    <div class="fld"><label>Nhanh</label><div class="qwrap">
-      <button class="qbtn ${RANGE.q==='7n'?'on':''}" onclick="quickRange('7n')">7N</button>
-      <button class="qbtn ${RANGE.q==='30n'?'on':''}" onclick="quickRange('30n')">30N</button>
-      <button class="qbtn ${RANGE.q==='thang'?'on':''}" onclick="quickRange('thang')">Tháng này</button>
-      <button class="qbtn ${RANGE.q==='ca'?'on':''}" onclick="quickRange('ca')">Cả kỳ</button>
-    </div></div>
+    <div class="fld"><label>Tháng</label><select id="f-thang" onchange="setThang(this.value)">
+      <option value="">— Cả kỳ —</option>
+      ${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${RANGE.thang===i+1?'selected':''}>Tháng ${i+1}</option>`).join('')}
+    </select></div>
+    <div class="fld"><label>Tuần</label><select id="f-tuan" onchange="setTuan(this.value)">
+      <option value="">— Chọn —</option>
+      ${Array.from({length:5},(_,i)=>`<option value="${i+1}" ${RANGE.tuan===i+1?'selected':''}>Tuần ${i+1}</option>`).join('')}
+    </select></div>
     <button class="btn mrefresh" onclick="reloadLive()">${SVG.refresh}Làm mới</button>
   </div>
   <div class="livestat noprint">${liveStat()}</div>`;
@@ -787,7 +782,7 @@ function mast(m,r){
 function renderReport(m){
   const r=REP[m.id];
   const K=(window.HQLive?HQLive.apply(m.id,r.kpis):r.kpis);
-  let ch="",group=[],span="g2";
+  let ch="",group=[],span="g3";
   r.charts.forEach(c=>{
     if(c.span){ if(group.length){ch+=`<div class="grid ${span}">${group.join('')}</div>`;group=[]} span=c.span }
     group.push(panel(c.t,c.h,`<div class="chartbox ${c.cls||''}"><canvas id="${c.id}"></canvas></div>`));
@@ -808,6 +803,7 @@ function renderReport(m){
 
   const hasSum=r.summary&&r.summary.length, hasAct=r.actions&&r.actions.length;
   const parts=[];
+  parts.push(["Phân tích","Diễn giải bằng biểu đồ",ch]);
   if(hasSum||hasAct){
     const boxes=(hasSum?`<div class="exbox"><h4>Nhận định chính</h4><ol>${r.summary.map(s=>`<li>${s}</li>`).join('')}</ol></div>`:'')+
       (hasAct?`<div class="exbox act"><h4>Việc cần quyết</h4><ol>${r.actions.map(([a,t])=>`<li>${a}<span class="tagr ${t}">${t==='t-hi'?'ƯU TIÊN CAO':t==='t-md'?'TRUNG BÌNH':'THEO DÕI'}</span></li>`).join('')}</ol></div>`:'');
@@ -816,11 +812,10 @@ function renderReport(m){
   }
   parts.push(["Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
     panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id))]);
-  parts.push(["Phân tích","Diễn giải bằng biểu đồ",ch]);
   parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
   parts.push(["Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta)]);
   return mast(m,r)+
-  `<div class="wrap"><div class="hero kstrip">${K.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div></div>
+  `<div class="wrap"><div class="hero kstrip">${K.map((k,i)=>heroCard(k,i)).join('')}</div></div>
    <div class="wrap">${parts.map((p,i)=>sec(i+1,p[0],p[1],p[2])).join('')}</div>`;
 }
 
@@ -1003,18 +998,23 @@ document.getElementById('btn-save').onclick=()=>{
 document.getElementById('btn-dens').onclick=function(){
   document.body.classList.toggle('compact');
   toast(document.body.classList.contains('compact')?"Đang xem chế độ thu gọn":"Đã trở lại chế độ giãn dòng")};
-function quickRange(k){
-  const t=new Date(); let f;
-  if(k==='7n'){f=new Date(t);f.setDate(t.getDate()-6)}
-  else if(k==='30n'){f=new Date(t);f.setDate(t.getDate()-29)}
-  else if(k==='thang'){f=new Date(t.getFullYear(),t.getMonth(),1)}
-  else{f=new Date(t.getFullYear(),0,1)}
-  RANGE={from:iso(f),to:iso(t),q:k};
-  go(current);toast("Đã áp phạm vi ngày — nối nguồn thật để số liệu đổi theo")}
+function setThang(v){
+  const y=new Date().getFullYear();
+  if(!v){RANGE={from:iso(new Date(y,0,1)),to:iso(new Date()),thang:null,tuan:null}}
+  else{const m=parseInt(v,10);RANGE={from:iso(new Date(y,m-1,1)),to:iso(new Date(y,m,0)),thang:m,tuan:null}}
+  go(current);toast("Đã áp phạm vi ngày")}
+function setTuan(v){
+  const y=new Date().getFullYear();
+  const m=RANGE.thang||new Date().getMonth()+1;
+  if(!v){setThang(RANGE.thang||"");return}
+  const w=parseInt(v,10), last=new Date(y,m,0).getDate();
+  const d1=Math.min((w-1)*7+1,last), d2=Math.min(w*7,last);
+  RANGE={from:iso(new Date(y,m-1,d1)),to:iso(new Date(y,m-1,d2)),thang:m,tuan:w};
+  go(current);toast("Đã áp phạm vi ngày")}
 function setRange(){
   const f=document.getElementById('d-from').value,t=document.getElementById('d-to').value;
-  if(f)RANGE.from=f; if(t)RANGE.to=t; RANGE.q=null;
-  go(current);toast("Đã áp phạm vi ngày — nối nguồn thật để số liệu đổi theo")}
+  if(f)RANGE.from=f; if(t)RANGE.to=t; RANGE.thang=null;RANGE.tuan=null;
+  go(current);toast("Đã áp phạm vi ngày")}
 async function reloadLive(){
   if(!window.HQLive){toast("Chưa nạp được module dữ liệu trực tiếp");return}
   const st=HQLive.status();
