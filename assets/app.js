@@ -30,7 +30,6 @@ const AUTHC={
   admins:((CFG.auth&&CFG.auth.quanTriCapCao)||["quynhhtn@hqplay.vn"]).map(e=>e.toLowerCase()),
   gcid:(CFG.auth&&CFG.auth.googleClientId||"").trim(),
   pass:(CFG.auth&&CFG.auth.matKhau||"").trim(),
-  hook:(CFG.auth&&CFG.auth.webhookThongBao||"").trim(),
   acc:Object.fromEntries(Object.entries((CFG.auth&&CFG.auth.taiKhoan)||{}).map(([e,v])=>[e.toLowerCase(),v]))
 };
 function grantOf(email){
@@ -42,21 +41,15 @@ const isAdmin=()=>!!AUTH&&AUTH.role==='admin';
 function canRead(id){
   if(!AUTH)return false;
   if(isAdmin())return true;
-  const ls=AUTHC.acc[AUTH.email];
-  return ls==="*"||(Array.isArray(ls)&&ls.includes(id));
+  const q=AUTH.quyen!==undefined?AUTH.quyen:AUTHC.acc[AUTH.email];
+  return q==="*"||(Array.isArray(q)&&q.includes(id));
 }
-function notifyHook(email,vaiTro,phuongThuc,trangThai){
-  if(!AUTHC.hook)return;
+async function apiAuth(body){
   try{
-    fetch(AUTHC.hook,{method:'POST',mode:'no-cors',body:JSON.stringify({
-      app:(CFG.brand&&CFG.brand.org)||"BC-PNS",email,vaiTro:vaiTro||"—",
-      phuongThuc,trangThai,luc:new Date().toLocaleString('vi-VN')})}).catch(()=>{});
-  }catch(e){}
-}
-function notifyLogin(){
-  if(!AUTH)return;
-  notifyHook(AUTH.email,AUTH.role,AUTH.method||"—","Đăng nhập thành công");
-  if(AUTHC.hook)toast(`Đã báo lượt đăng nhập tới ${AUTHC.admins[0]}`);
+    const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)return null;
+    return await r.json();
+  }catch(e){return null}
 }
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const fmtd=s=>s.split('-').reverse().join('/');
@@ -948,7 +941,6 @@ function renderSys(){
   const lastAt=(window.HQLive&&Object.values(HQLive.meta).filter(x=>x.ok).map(x=>x.at).sort().pop())||"—";
   const card=(label,val,sub)=>`<div class="hcard"><div class="k" style="text-transform:uppercase;letter-spacing:.07em;font-size:9.5px;font-family:'IBM Plex Mono',monospace">${label}</div><div class="row"><span class="v" style="font-size:20px">${val}</span></div><div class="k">${sub||""}</div></div>`;
   const method=(AUTH&&AUTH.method)||"—";
-  const qrows=Object.entries(AUTHC.acc).map(([em,ls])=>`<tr><td>${em}</td><td>${ls==="*"?"Tất cả báo cáo":(Array.isArray(ls)?ls.join(' · '):String(ls))}</td></tr>`).join('');
   const srcRows=Object.entries(SOURCES).map(([k,s],i)=>{
     const m=window.HQLive?HQLive.meta[k]:null;
     const gid=(s.url.match(/[?&]gid=(\d+)/)||[])[1]||"—";
@@ -976,20 +968,14 @@ function renderSys(){
     <div class="hero kstrip">
       ${card("Nguồn dữ liệu",`${st.oke}/${NSRC}`,`${NSRC} tab · ${files} file Google Sheet`)}
       ${card("Cách đọc","Trực tiếp Google","publish CSV, đọc từ trình duyệt")}
-      ${card("Tài khoản",AUTH?AUTH.email.split('@')[0]:"—",AUTH?`${isAdmin()?'Quản trị cấp cao nhất':'Chỉ xem'} · ${method}`:"")}
+      ${card("Tài khoản",`<span id="sys-acc-v">${AUTH?AUTH.email.split('@')[0]:"—"}</span>`,`<span id="sys-acc-s">${AUTH?`${isAdmin()?'Quản trị cấp cao nhất':'Chỉ xem'} · ${method}`:""}</span>`)}
       ${card("Tự làm mới",p>0?`${p} phút`:"Tắt",`lần cuối ${lastAt}`)}
     </div>
     ${AUTH&&AUTH.method!=="Google"?`<div class="warnnote">Bạn đang đăng nhập bằng <b>mật khẩu nội bộ</b> (không có token Google). Hãy <b>đăng nhập lại bằng Google</b> để định danh thật khi quản lý tài khoản.</div>`:''}
     ${panel("Quản lý đăng nhập &amp; phân quyền",`Admin cứng: ${AUTHC.admins.join(' · ')}`,
       `<div style="font-size:12.5px;line-height:1.7">
         <p><b>Phiên hiện tại:</b> ${AUTH?`${AUTH.email} · ${isAdmin()?'Quản trị cấp cao nhất':'Chỉ xem'} · đăng nhập bằng ${method}`:'—'}</p>
-        <p style="margin-top:7px"><b>Thông báo đăng nhập về mail quản trị:</b> ${AUTHC.hook
-          ?`<span class="pill p-ok">Đang bật</span> — mỗi lượt đăng nhập gửi về ${AUTHC.admins[0]}`
-          :`<span class="pill p-n">Chưa bật</span> — dán URL Web App Google Apps Script vào <span class="mono">auth.webhookThongBao</span> trong config.js`}</p>
-        <div style="margin-top:12px"><b>Tài khoản được cấp quyền</b> — Admin phê duyệt tại <span class="mono">auth.taiKhoan</span> trong config.js; email chưa có trong danh sách sẽ thấy thông báo chờ cấp quyền khi đăng nhập:</div>
-        <div class="tw" style="max-height:220px;margin-top:8px"><table id="t-quyen"><thead><tr><th>Email</th><th>Được đọc</th></tr></thead><tbody>
-          ${qrows||`<tr><td colspan="2" style="color:var(--tx2)">Chưa cấp quyền cho ai — hiện chỉ Admin cứng đăng nhập được.</td></tr>`}
-        </tbody></table></div>
+        <div id="qlbox" style="margin-top:10px">Đang tải danh sách tài khoản…</div>
       </div>`)}
     <div style="height:16px"></div>
     ${panelT("Chẩn đoán nguồn dữ liệu",`${st.oke}/${NSRC} tab đọc được`,
@@ -997,6 +983,125 @@ function renderSys(){
       tools("t-sys"))}
     <p style="margin-top:12px;font-size:11px;color:var(--tx3)">Luồng dữ liệu: Google Sheet → Publish CSV → Dashboard${p>0?` (${p} phút/lần)`:''} · "Chưa khai" = tab chưa có link trong config.js · "Trực tiếp lỗi" = tab chưa Publish to web hoặc link sai.</p>
   </div>`;
+}
+
+/* ---- Quản lý tài khoản qua KV (giống PVH) ---- */
+const ROLES=[["nhanvien","Nhân viên"],["leader","Leader (vận hành)"],["admin","Admin"]];
+const ROLE_DEF={nhanvien:[],leader:"*",admin:"*"};
+function rsumText(row){
+  if(row.querySelector('[data-all]').checked)return"Tất cả báo cáo";
+  const sel=[...row.querySelectorAll('[data-r]')].filter(c=>c.checked).map(c=>c.dataset.r.replace('HRM','HRM'));
+  return sel.length?sel.join(', '):"— Chọn báo cáo —";
+}
+function updRsum(row){const s=row.querySelector('.rsum');if(s)s.textContent=rsumText(row)}
+function toggleRbox(btn){
+  const box=btn.closest('.rbox');
+  document.querySelectorAll('.rbox.open').forEach(b=>{if(b!==box)b.classList.remove('open')});
+  box.classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.rbox'))document.querySelectorAll('.rbox.open').forEach(b=>b.classList.remove('open'));
+});
+function rpAll(btn,on){const row=btn.closest('.grantrow');
+  row.querySelector('[data-all]').checked=false;
+  row.querySelectorAll('[data-r]').forEach(c=>c.checked=on);
+  if(on)row.querySelector('[data-all]').checked=true;
+  updRsum(row)}
+function rpDef(btn){const row=btn.closest('.grantrow');
+  const q=ROLE_DEF[row.querySelector('.gsel').value]||[];
+  row.querySelector('[data-all]').checked=q==="*";
+  row.querySelectorAll('[data-r]').forEach(c=>c.checked=Array.isArray(q)&&q.includes(c.dataset.r));
+  updRsum(row)}
+function rowCtl(email,cur){
+  const all=cur&&cur.quyen==="*";
+  const items=MODULES.slice(1).map(m=>`<label class="ritem"><input type="checkbox" data-r="${m.id}" onchange="updRsum(this.closest('.grantrow'))" ${!all&&cur&&Array.isArray(cur.quyen)&&cur.quyen.includes(m.id)?'checked':''}><b>${m.code}</b><span>${m.title}</span></label>`).join('');
+  const sum=all?"Tất cả báo cáo":(cur&&Array.isArray(cur.quyen)&&cur.quyen.length?cur.quyen.join(', '):"Mặc định theo vai trò");
+  return `<div class="grantrow" data-email="${email}">
+    <select class="gsel">${ROLES.map(([v,l])=>`<option value="${v}" ${cur&&cur.vaiTro===v?'selected':''}>${l}</option>`).join('')}</select>
+    <div class="rbox">
+      <button type="button" class="rboxbtn" onclick="toggleRbox(this)"><span class="rsum">${sum}</span><i>▾</i></button>
+      <div class="rpanel">
+        <div class="rpbtns">
+          <button type="button" class="tbtn" onclick="rpAll(this,true)">Chọn tất cả</button>
+          <button type="button" class="tbtn" onclick="rpAll(this,false)">Bỏ chọn</button>
+          <button type="button" class="tbtn" onclick="rpDef(this)">Mặc định vai trò</button>
+        </div>
+        <label class="ritem"><input type="checkbox" data-all onchange="updRsum(this.closest('.grantrow'))" ${all?'checked':''}><b>ALL</b><span>Tất cả báo cáo</span></label>
+        ${items}
+      </div>
+    </div>
+  </div>`;
+}
+function cfgQuyenTable(){
+  const rows=Object.entries(AUTHC.acc).map(([em,ls])=>`<tr><td>${em}</td><td>${ls==="*"?"Tất cả báo cáo":(Array.isArray(ls)?ls.join(' · '):String(ls))}</td></tr>`).join('');
+  return `<div class="tw" style="max-height:220px;margin-top:8px"><table id="t-quyen"><thead><tr><th>Email</th><th>Được đọc</th></tr></thead><tbody>
+    ${rows||`<tr><td colspan="2" style="color:var(--tx2)">Chưa cấp quyền cho ai — hiện chỉ Admin cứng đăng nhập được.</td></tr>`}
+  </tbody></table></div>`;
+}
+function qlHTML(d){
+  const pend=Object.entries(d.pending||{});
+  const acc=Object.entries(d.accounts||{});
+  const av=em=>`<span class="accav">${em.slice(0,2).toUpperCase()}</span>`;
+  const pendHtml=pend.length?pend.map(([em,x])=>`<div class="accitem pend">
+      <div class="acchead">${av(em)}<div class="accid"><b>${em}</b><span class="hint2">đang chờ duyệt${x.ten?` · ${x.ten}`:''}${x.phuongThuc?` · ${x.phuongThuc}`:''}${x.luc?` · ${new Date(x.luc).toLocaleString('vi-VN')}`:''}</span></div>
+        ${rowCtl(em,null)}
+        <div class="tools"><button class="btn gsmall" onclick="grantAcc('${em}')">✓ Cấp quyền</button><button class="tbtn trej" onclick="revokeAcc('${em}')">Bỏ qua</button></div></div>
+    </div>`).join(''):`<p style="color:var(--tx2);margin-top:6px">Không có yêu cầu nào đang chờ.</p>`;
+  const adminRows=AUTHC.admins.map(em=>`<div class="accitem">
+      <div class="acchead">${av(em)}<div class="accid"><b>${em}</b><span class="hint2">admin cứng — không thể thu hồi</span></div>
+        <span class="pill p-w" style="font-weight:800">Admin</span>
+        <span class="hint2" style="margin-left:10px">Tất cả báo cáo + Cấu hình</span></div>
+    </div>`).join('');
+  const accHtml=acc.map(([em,x])=>`<div class="accitem">
+      <div class="acchead">${av(em)}<div class="accid"><b>${em}</b><span class="hint2">${x.ten||''} · ${(ROLES.find(r=>r[0]===x.vaiTro)||["","Nhân viên"])[1]}</span></div>
+        ${rowCtl(em,x)}
+        <div class="tools"><button class="btn gsmall" onclick="grantAcc('${em}')">Lưu</button><button class="tbtn trej" onclick="revokeAcc('${em}')">Thu hồi</button></div></div>
+    </div>`).join('');
+  return `<div class="qlsec amber"><b>Chờ cấp quyền</b><span class="hint2" style="margin-left:auto">${pend.length} email đăng nhập lần đầu</span></div>${pendHtml}
+    <div class="qlsec green" style="margin-top:14px"><b>Tài khoản đã cấp quyền</b><span class="hint2" style="margin-left:auto">${acc.length+AUTHC.admins.length} tài khoản</span></div>${adminRows}${accHtml}
+    <p class="hint2" style="margin-top:10px"><b>Cách dùng:</b> chọn vai trò, mở ô báo cáo để tick đúng báo cáo được xem (hoặc ALL = xem hết), rồi bấm Lưu / Cấp quyền.</p>`;
+}
+async function loadSys(){
+  const box=document.getElementById('qlbox'); if(!box)return;
+  if(!AUTH||AUTH.method!=="Google"||!AUTH.cred){
+    box.innerHTML=`<div class="warnnote">Phiên đăng nhập hết hạn hoặc bạn đăng nhập bằng mật khẩu (không có token Google). Hãy <b>đăng nhập lại bằng Google</b> để quản lý tài khoản.</div>`;
+    return;
+  }
+  const d=await apiAuth({action:'list',credential:AUTH.cred});
+  if(!d||d.kvOff||d.loi){
+    box.innerHTML=`<div class="warnnote">${d&&d.loi?d.loi:'Chưa nối kho lưu phân quyền (Upstash KV) — vào Vercel → Storage → Connect Project cho <b>bc-pns</b>. Tạm thời dùng danh sách tĩnh tại <span class="mono">auth.taiKhoan</span> trong config.js:'}</div>`+cfgQuyenTable();
+    return;
+  }
+  box.innerHTML=qlHTML(d);
+  const nA=Object.keys(d.accounts||{}).length+AUTHC.admins.length, nP=Object.keys(d.pending||{}).length;
+  const v=document.getElementById('sys-acc-v'), s=document.getElementById('sys-acc-s');
+  if(v)v.textContent=`${nA} tài khoản`;
+  if(s)s.innerHTML=nP?`<span style="color:var(--amber)">● ${nP} chờ cấp quyền</span>`:"không có yêu cầu chờ";
+}
+function readCtl(email){
+  const row=document.querySelector(`.grantrow[data-email="${email}"]`); if(!row)return null;
+  const vaiTro=row.querySelector('.gsel').value;
+  const all=row.querySelector('[data-all]').checked;
+  const quyen=all?"*":[...row.querySelectorAll('[data-r]')].filter(c=>c.checked).map(c=>c.dataset.r);
+  return {vaiTro,quyen};
+}
+async function grantAcc(email){
+  const c=readCtl(email); if(!c)return;
+  if(c.quyen!=="*"&&!c.quyen.length){
+    const d0=ROLE_DEF[c.vaiTro];
+    if(d0==="*")c.quyen="*";
+    else{toast("Chọn ít nhất một báo cáo hoặc tick ALL");return}
+  }
+  const d=await apiAuth({action:'grant',credential:AUTH.cred,email,vaiTro:c.vaiTro,quyen:c.quyen});
+  if(!d||d.loi){toast(d&&d.loi?d.loi:"Không lưu được — kiểm tra kết nối KV");return}
+  toast(`Đã cấp quyền cho ${email}`);
+  const box=document.getElementById('qlbox'); if(box)box.innerHTML=qlHTML(d);
+}
+async function revokeAcc(email){
+  const d=await apiAuth({action:'revoke',credential:AUTH.cred,email});
+  if(!d||d.loi){toast(d&&d.loi?d.loi:"Không lưu được — kiểm tra kết nối KV");return}
+  toast(`Đã thu hồi / từ chối ${email}`);
+  const box=document.getElementById('qlbox'); if(box)box.innerHTML=qlHTML(d);
 }
 
 /* ---- Tìm trong bảng ---- */
@@ -1048,7 +1153,7 @@ function go(id){
   if(id!=="HOME"&&id!=="SYS"&&!canRead(id)){toast("Bạn chưa được cấp quyền đọc báo cáo này — liên hệ Quản trị cấp cao");return}
   current=id;kill();
   const v=document.getElementById('view');
-  if(id==="SYS"){v.innerHTML=renderSys();buildNav();runSearch();window.scrollTo(0,0);return}
+  if(id==="SYS"){v.innerHTML=renderSys();loadSys();buildNav();runSearch();window.scrollTo(0,0);return}
   const m=MODULES.find(x=>x.id===id);
   v.innerHTML = id==="HOME"?renderHome():renderReport(m);
   if(id==="HOME"){homeCharts();MODULES.slice(1).forEach(x=>REP[x.id].charts.slice(0,2).forEach(c=>c.f()))}
@@ -1152,32 +1257,42 @@ function jwtPayload(t){
     return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
   }catch(e){return null}
 }
-function onGoogleCred(resp){
+async function onGoogleCred(resp){
   const err=document.getElementById('au-err');
   const p=jwtPayload(resp&&resp.credential||'');
   if(!p||!p.email){err.textContent="Không đọc được tài khoản Google. Thử lại.";return}
   const v=p.email.toLowerCase();
   if(!p.email_verified){err.textContent="Tài khoản Google chưa xác minh email.";return}
-  const g=grantOf(v);
-  if(!g){
-    notifyHook(v,null,"Google","Đăng nhập lần đầu — chờ cấp quyền");
-    err.textContent="Tài khoản chưa được cấp quyền truy cập — đã gửi thông báo tới Admin.";return}
-  AUTH={email:v,role:g,name:p.name||v.split('@')[0],method:"Google"};
+  err.textContent="Đang kiểm tra quyền truy cập…";
+  const d=await apiAuth({action:'login',credential:resp.credential});
+  if(!d||d.kvOff){
+    const g=grantOf(v);
+    if(!g){err.textContent="Tài khoản chưa được cấp quyền truy cập.";return}
+    AUTH={email:v,role:g,quyen:g==='admin'?'*':AUTHC.acc[v],name:p.name||v.split('@')[0],method:"Google",cred:resp.credential};
+  }else if(d.ok){
+    AUTH={email:v,role:d.vaiTro==='admin'?'admin':'viewer',vaiTro:d.vaiTro,quyen:d.quyen,name:p.name||v.split('@')[0],method:"Google",cred:resp.credential};
+  }else{
+    err.textContent="Tài khoản đang chờ Admin phê duyệt — sẽ vào được ngay khi được cấp quyền.";return}
   document.getElementById('authwall').remove();
   initApp();
 }
-function doLogin(){
+async function doLogin(){
   const v=document.getElementById('au-mail').value.trim().toLowerCase();
   const err=document.getElementById('au-err');
   if(!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(v)){err.textContent="Email không hợp lệ.";return}
   if(!AUTHC.pass){err.textContent="Đăng nhập tay đang tắt — dùng nút Đăng nhập với Google.";return}
   const pw=(document.getElementById('au-pass')||{}).value||'';
   if(pw!==AUTHC.pass){err.textContent="Mật khẩu không đúng. Liên hệ Admin.";return}
-  const g=grantOf(v);
-  if(!g){
-    notifyHook(v,null,"Mật khẩu nội bộ","Đăng nhập lần đầu — chờ cấp quyền");
-    err.textContent="Tài khoản chưa được cấp quyền truy cập — đã gửi thông báo tới Admin.";return}
-  AUTH={email:v,role:g,method:"Mật khẩu nội bộ"};
+  err.textContent="Đang kiểm tra quyền truy cập…";
+  const d=await apiAuth({action:'login',email:v});
+  if(!d||d.kvOff){
+    const g=grantOf(v);
+    if(!g){err.textContent="Tài khoản chưa được cấp quyền truy cập.";return}
+    AUTH={email:v,role:g,quyen:g==='admin'?'*':AUTHC.acc[v],method:"Mật khẩu nội bộ"};
+  }else if(d.ok){
+    AUTH={email:v,role:d.vaiTro==='admin'?'admin':'viewer',vaiTro:d.vaiTro,quyen:d.quyen,method:"Mật khẩu nội bộ"};
+  }else{
+    err.textContent="Tài khoản đang chờ Admin phê duyệt — sẽ vào được ngay khi được cấp quyền.";return}
   document.getElementById('authwall').remove();
   initApp();
 }
@@ -1189,14 +1304,13 @@ function applyAuthUI(){
     const name=AUTH.name||AUTH.email.split('@')[0];
     w.querySelector('.av').textContent=name.slice(0,1).toUpperCase();
     w.querySelector('b').textContent=name;
-    w.querySelector('span').textContent=isAdmin()?"Quản trị cấp cao nhất":"Phòng Nhân sự · Xem báo cáo";
+    w.querySelector('span').textContent=isAdmin()?"Quản trị cấp cao nhất":(AUTH.vaiTro==='leader'?"Leader":"Nhân viên · Xem báo cáo");
   }
 }
 function initApp(){
   applyAuthUI();
   buildNav();go("HOME");
   bootLive();
-  notifyLogin();
 }
 
 /* ---- Khởi động ---- */
