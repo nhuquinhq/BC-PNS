@@ -848,13 +848,7 @@ function renderHome(){
     <div class="hero">${kk.slice(0,4).map((k,i)=>heroCard(k,i)).join('')}</div>
     <div class="grid g2">${chs}</div>`;
   }).join('');
-  const hour=new Date().getHours();
-  const chao=hour<11?"Chào buổi sáng":hour<14?"Chào buổi trưa":hour<18?"Chào buổi chiều":"Chào buổi tối";
   return `
-  <div class="greet">
-    <div><h1>${chao}, chị Quinh 👋</h1>
-      <p>Báo cáo tổng hợp tám mã HRM để Phòng Nhân sự theo dõi. Có ${nHi} việc ưu tiên cao trong kỳ.</p></div>
-  </div>
   <div class="mast">
     <div class="bar">
       <div class="mtt">
