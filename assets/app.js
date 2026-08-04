@@ -20,6 +20,12 @@ const SOURCES={
 const CFG=window.HQ_CONFIG||{};
 Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
 let current="HOME";
+const AUTHC={
+  domain:((CFG.auth&&CFG.auth.mienChoPhep)||"hqplay.vn").toLowerCase(),
+  admins:((CFG.auth&&CFG.auth.quanTriCapCao)||["quynhhtn@hqplay.vn"]).map(e=>e.toLowerCase())
+};
+let AUTH=null;
+const isAdmin=()=>!!AUTH&&AUTH.role==='admin';
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const fmtd=s=>s.split('-').reverse().join('/');
 let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),q:'ca'};
@@ -864,7 +870,7 @@ function renderHome(){
       <div class="mside">
         <div class="mrow">
           <button class="btn g noprint" onclick="window.print()">${SVG.down}Xuất báo cáo</button>
-          <button class="btn g noprint" onclick="openDrawer()">${SVG.plug}Gắn nguồn dữ liệu</button>
+          <button class="btn g noprint adminonly" onclick="openDrawer()">${SVG.plug}Gắn nguồn dữ liệu</button>
         </div>
         ${filterRow()}
       </div>
@@ -947,6 +953,7 @@ function go(id){
 
 /* ---- Drawer ---- */
 function openDrawer(){
+  if(!isAdmin()){toast("Chỉ Quản trị cấp cao nhất được gắn / sửa nguồn dữ liệu");return}
   document.getElementById('srclist').innerHTML=Object.entries(SOURCES).map(([k,s])=>`
     <div class="srcrow"><div class="t"><b>${s.l}</b>
       <span class="pill ${(window.HQLive&&HQLive.has(k))?'p-ok':(s.url?'p-w':'p-n')}">${(window.HQLive&&HQLive.has(k))?('Đã đọc '+HQLive.rows(k).length+' dòng'):(s.url?'Đã khai báo':'Chưa nối')}</span>
@@ -966,6 +973,7 @@ function setTheme(t){
 document.getElementById('btn-theme').onclick=()=>
   setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
 document.getElementById('btn-close').onclick=closeDrawer;
+document.getElementById('btn-logout').onclick=logout;
 document.getElementById('scrim').onclick=closeDrawer;
 document.getElementById('btn-bell').onclick=()=>{
   const n=MODULES.slice(1).flatMap(x=>(REP[x.id].actions||[]).filter(a=>a[1]==='t-hi')).length;
@@ -1000,6 +1008,48 @@ async function reloadLive(){
     : `Đã nối ${r.loaded}/${st.khai} nguồn dữ liệu`);
 }
 
+/* ---- Đăng nhập theo email công ty ---- */
+function showLogin(){
+  const old=document.getElementById('authwall'); if(old)old.remove();
+  const org=(CFG.brand&&CFG.brand.org)||"HQ Group";
+  document.body.appendChild(el(`<div class="authwall" id="authwall"><div class="authcard">
+    <div class="alogo">HQ</div>
+    <h2>Trung tâm Báo cáo Nhân sự</h2>
+    <p>${org} — đăng nhập bằng email công ty</p>
+    <input type="text" id="au-mail" placeholder="ten@${AUTHC.domain}" autocomplete="off"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" onclick="doLogin()">Đăng nhập</button>
+    <div class="err" id="au-err"></div>
+    <p class="ahint">Chỉ email thuộc miền <b>@${AUTHC.domain}</b> được truy cập.</p>
+  </div></div>`));
+  document.getElementById('au-mail').focus();
+}
+function doLogin(){
+  const v=document.getElementById('au-mail').value.trim().toLowerCase();
+  const err=document.getElementById('au-err');
+  if(!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(v)){err.textContent="Email không hợp lệ.";return}
+  if(!v.endsWith('@'+AUTHC.domain)){err.textContent=`Chỉ email @${AUTHC.domain} được truy cập. Liên hệ Quản trị cấp cao.`;return}
+  AUTH={email:v,role:AUTHC.admins.includes(v)?'admin':'viewer'};
+  document.getElementById('authwall').remove();
+  initApp();
+}
+function logout(){location.reload()}
+function applyAuthUI(){
+  document.body.classList.toggle('viewer',!isAdmin());
+  const w=document.querySelector('.who');
+  if(w&&AUTH){
+    const name=AUTH.email.split('@')[0];
+    w.querySelector('.av').textContent=name.slice(0,1).toUpperCase();
+    w.querySelector('b').textContent=name;
+    w.querySelector('span').textContent=isAdmin()?"Quản trị cấp cao nhất":"Phòng Nhân sự · Xem báo cáo";
+  }
+}
+function initApp(){
+  applyAuthUI();
+  buildNav();go("HOME");
+  bootLive();
+}
+
 /* ---- Khởi động ---- */
 const mode=(CFG.ui&&CFG.ui.themeMacDinh)||"auto";
 const prefersDark = mode==="dark" || (mode==="auto" && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -1015,10 +1065,10 @@ if(CFG.brand){
   if(b){ b.querySelector('b').textContent=CFG.brand.org||"HQ Group";
          b.querySelector('span').textContent=CFG.brand.tagline||""; }
 }
-buildNav();go("HOME");
+showLogin();
 
 /* ---- Nạp dữ liệu thật từ Google Sheet ---- */
-(async function bootLive(){
+async function bootLive(){
   if(!window.HQLive) return;
   const st=HQLive.status();
   if(!st.khai) return;
@@ -1031,4 +1081,4 @@ buildNav();go("HOME");
     : `Đã nối ${r.loaded}/${st.khai} nguồn dữ liệu`);
   const p=(CFG.ui&&CFG.ui.tuTaiLai)||0;
   if(p>0) setInterval(async()=>{ await HQLive.loadAll(); go(current); }, p*60000);
-})();
+}

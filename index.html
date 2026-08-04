@@ -28,7 +28,7 @@
       <p>Gắn link Google Sheet để báo cáo chạy số thật thay cho dữ liệu mẫu.</p>
       <div class="b"><span>Đã nối</span><span id="linkcount">0/14</span></div>
       <div class="track"><i id="linkbar" style="width:0%"></i></div>
-      <button onclick="openDrawer()">Gắn nguồn ngay →</button>
+      <button class="adminonly" onclick="openDrawer()">Gắn nguồn ngay →</button>
     </div>
   </aside>
 
@@ -39,6 +39,7 @@
       <button class="iconbtn" id="btn-dens" title="Thu gọn dòng"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
       <button class="iconbtn" id="btn-bell" title="Cảnh báo"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge" id="bellcount">7</span></button>
       <div class="who"><div class="av">Q</div><div><b>Quinh</b><span>Quản trị Khối BO</span></div></div>
+      <button class="iconbtn" id="btn-logout" title="Đăng xuất"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg></button>
     </div>
     <main id="view"></main>
   </div>

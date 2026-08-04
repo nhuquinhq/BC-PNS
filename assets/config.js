@@ -19,10 +19,15 @@ window.HQ_CONFIG = {
   },
 
   /* ---------------------------------------------------------------
-     2. MÃ TRUY CẬP BÁO CÁO MẬT (HRM3 · HRM7 · HRM8)
-     Đổi chuỗi dưới đây trước khi phát hành nội bộ.
+     2. ĐĂNG NHẬP THEO EMAIL CÔNG TY
+     Chỉ email thuộc miền "mienChoPhep" mới đăng nhập được.
+     Email nằm trong "quanTriCapCao" có toàn quyền (gắn / sửa nguồn
+     dữ liệu…), các email còn lại chỉ xem báo cáo.
      --------------------------------------------------------------- */
-  passcode: "hq2026",
+  auth: {
+    mienChoPhep:   "hqplay.vn",
+    quanTriCapCao: ["quynhhtn@hqplay.vn"]
+  },
 
   /* ---------------------------------------------------------------
      3. LINK GOOGLE SHEET

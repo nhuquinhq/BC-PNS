@@ -105,6 +105,18 @@ main{padding:0 0 70px;max-width:1580px}
 .livestat{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:var(--tx2)}
 .ldot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
 .ldot.off{background:var(--tx3);box-shadow:none}
+
+/* ===== ĐĂNG NHẬP ===== */
+.authwall{position:fixed;inset:0;background:var(--bg);z-index:100;display:grid;place-items:center;padding:20px}
+.authcard{max-width:420px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh2);padding:36px 32px;text-align:center}
+.authcard .alogo{width:56px;height:56px;border-radius:16px;margin:0 auto 15px;display:grid;place-items:center;background:var(--grad-accent);color:#fff;font-weight:800;font-size:19px;letter-spacing:-.03em;box-shadow:0 10px 22px rgba(34,211,238,.3)}
+.authcard h2{font-size:17.5px}
+.authcard p{color:var(--tx2);font-size:12.5px;margin:7px 0 0}
+.authcard input{width:100%;text-align:center;margin-top:14px}
+.authcard .btn{width:100%;margin-top:10px;padding:11px;justify-content:center}
+.authcard .ahint{font-size:11px;color:var(--tx3);margin-top:14px}
+.err{color:var(--rose);font-size:11.5px;margin-top:10px;min-height:16px;font-weight:700}
+body.viewer .adminonly{display:none!important}
 .qbtn{border:1px solid var(--line);background:var(--card);color:var(--tx2);border-radius:9px;padding:7px 12px;font-size:11.5px;font-weight:700;transition:.14s}
 .qbtn:hover{color:var(--tx)}
 .qbtn.on{background:var(--grad-cta);color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(56,189,248,.3)}
