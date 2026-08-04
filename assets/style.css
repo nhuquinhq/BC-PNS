@@ -109,8 +109,13 @@ html[data-theme="dark"] .fld select{color-scheme:dark}
 /* ===== ĐĂNG NHẬP ===== */
 .authwall{position:fixed;inset:0;background:var(--bg);z-index:100;display:grid;place-items:center;padding:20px}
 .authcard{max-width:420px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh2);padding:36px 32px;text-align:center}
-.authcard .alogo{width:56px;height:56px;border-radius:16px;margin:0 auto 15px;display:grid;place-items:center;background:var(--grad-accent);color:#fff;font-weight:800;font-size:19px;letter-spacing:-.03em;box-shadow:0 10px 22px rgba(34,211,238,.3)}
-.authcard h2{font-size:17.5px}
+.authcard .alogo{width:58px;height:58px;border-radius:16px;margin:0 auto 15px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);color:#0B1428;font-weight:800;font-size:19px;letter-spacing:-.04em;line-height:1;box-shadow:0 10px 22px rgba(34,211,238,.3)}
+.authcard .alogo i{font-style:normal;font-size:8px;font-weight:800;letter-spacing:.04em;margin-top:2px}
+.authcard h2{font-size:17.5px;color:var(--indigo)}
+.authcard .gbtn{margin-top:16px;display:flex;justify-content:center;min-height:44px}
+.authcard .adiv{display:flex;align-items:center;gap:10px;color:var(--tx3);font-size:11px;font-weight:600;margin-top:13px}
+.authcard .adiv:before,.authcard .adiv:after{content:"";flex:1;height:1px;background:var(--line)}
+.authcard input+input{margin-top:10px}
 .authcard p{color:var(--tx2);font-size:12.5px;margin:7px 0 0}
 .authcard input{width:100%;text-align:center;margin-top:14px}
 .authcard .btn{width:100%;margin-top:10px;padding:11px;justify-content:center}
