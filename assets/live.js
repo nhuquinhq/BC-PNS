@@ -50,22 +50,30 @@ window.HQLive = (function () {
      hay Google trả HTML thì đọc lại qua /api/csv trên Vercel.        */
   const gio = () => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
-  async function tai(url) {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const text = await res.text();
-    if (/^\s*<(!doctype|html)/i.test(text)) throw new Error("Tab chưa Publish dạng CSV (nhận về HTML)");
-    return text;
+  /* Có thời gian chờ tối đa: không để cuộc gọi treo vô hạn khiến bảng
+     chẩn đoán đứng mãi ở trạng thái "chưa tải trong phiên này". */
+  async function tai(url, giay) {
+    const ac = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const hen = setTimeout(() => ac && ac.abort(), (giay || 10) * 1000);
+    try {
+      const res = await fetch(url, { cache: "no-store", signal: ac ? ac.signal : undefined });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      if (/^\s*<(!doctype|html)/i.test(text)) throw new Error("Tab chưa Publish dạng CSV (nhận về HTML)");
+      return text;
+    } catch (e) {
+      throw new Error(e.name === "AbortError" ? `Quá ${giay || 10} giây không phản hồi` : e.message);
+    } finally { clearTimeout(hen); }
   }
 
   async function fetchOne(key, url) {
     let text = null, via = "Trực tiếp Google", loi = "";
     try {
-      text = await tai(url);
+      text = await tai(url, 8);
     } catch (e) {
       loi = e.message;
       try {
-        text = await tai("/api/csv?u=" + encodeURIComponent(url));
+        text = await tai("/api/csv?u=" + encodeURIComponent(url), 25);
         via = "/api/csv dự phòng";
       } catch (e2) {
         meta[key] = { ok: false, err: `${loi} · dự phòng: ${e2.message}`, at: gio() };
@@ -85,13 +93,16 @@ window.HQLive = (function () {
   }
 
   /* ---------- 3. Tải toàn bộ nguồn đã khai báo ---------- */
+  let dangTai = false;
   async function loadAll() {
-    const jobs = Object.entries(CFG.sheets || {})
-      .filter(([, url]) => url && url.trim())
-      .map(([k, url]) => fetchOne(k, url.trim()));
-    if (!jobs.length) return { loaded: 0, failed: 0 };
-    const res = await Promise.all(jobs);
-    return { loaded: res.filter(Boolean).length, failed: res.filter(x => !x).length };
+    const ds = Object.entries(CFG.sheets || {}).filter(([, url]) => url && url.trim());
+    if (!ds.length) return { loaded: 0, failed: 0 };
+    dangTai = true;
+    ds.forEach(([k]) => { if (!meta[k]) meta[k] = { dangTai: true }; });
+    try {
+      const res = await Promise.all(ds.map(([k, url]) => fetchOne(k, url.trim())));
+      return { loaded: res.filter(Boolean).length, failed: res.filter(x => !x).length };
+    } finally { dangTai = false; }
   }
 
   /* ---------- 4. Tiện ích ---------- */
@@ -508,8 +519,8 @@ window.HQLive = (function () {
   function status() {
     const khai = Object.entries(CFG.sheets || {}).filter(([, u]) => u && u.trim()).length;
     const oke  = Object.values(meta).filter(m => m.ok).length;
-    const loi  = Object.values(meta).filter(m => !m.ok).length;
-    return { khai, oke, loi, meta };
+    const loi  = Object.values(meta).filter(m => !m.ok && !m.dangTai).length;
+    return { khai, oke, loi, meta, dangTai };
   }
 
   return { loadAll, apply, rows, has, num, nhanSu, dem, tuoi, sheetTable, status, store, meta, parseCSV, HR };

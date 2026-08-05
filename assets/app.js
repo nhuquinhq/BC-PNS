@@ -1105,9 +1105,12 @@ function renderSys(){
     const m=window.HQLive?HQLive.meta[k]:null;
     const gid=(s.url.match(/[?&]gid=(\d+)/)||[])[1]||"—";
     const stt=!s.url?'<span class="pill p-n">Chưa khai</span>'
-      :(m?(m.ok?`<span class="pill p-ok">${m.via||'Trực tiếp Google'}</span>`:'<span class="pill p-b">Đọc lỗi</span>')
+      :(m?(m.dangTai?'<span class="pill p-w">Đang đọc…</span>'
+           :m.ok?`<span class="pill p-ok">${m.via||'Trực tiếp Google'}</span>`:'<span class="pill p-b">Đọc lỗi</span>')
          :'<span class="pill p-w">Chưa đọc</span>');
-    const note=!s.url?'—':(m?(m.ok?`đọc lúc ${m.at}`:`<span style="color:var(--rose)">${(m.err||'').slice(0,120)}</span>`):'chưa tải trong phiên này');
+    const note=!s.url?'—'
+      :(m?(m.dangTai?'đang gọi…':m.ok?`đọc lúc ${m.at}`:`<span style="color:var(--rose)">${(m.err||'').slice(0,120)}</span>`)
+         :'bấm ↻ Làm mới để đọc lại');
     return `<tr><td class="idx">${i+1}</td><td><b>${s.n}</b><div style="font-size:10.5px;color:var(--tx3)">${s.l} · ${s.m}</div></td><td class="mono" style="font-size:10.5px">${gid}</td><td>${stt}</td><td style="text-align:right;font-weight:700">${m&&m.ok?m.n:'—'}</td><td>${note}</td></tr>`;
   }).join('');
   return `<div class="mast"><div class="bar">
@@ -1228,6 +1231,8 @@ function qlHTML(d){
     <p class="hint2" style="margin-top:10px"><b>Cách dùng:</b> chọn vai trò, mở ô báo cáo để tick đúng báo cáo được xem (hoặc ALL = xem hết), rồi bấm Lưu / Cấp quyền.</p>`;
 }
 async function loadSys(){
+  /* Đang tải nguồn thì tự vẽ lại để bảng chẩn đoán cập nhật theo */
+  if(window.HQLive&&HQLive.status().dangTai)setTimeout(()=>{if(current==='SYS')go('SYS')},1500);
   const box=document.getElementById('qlbox'); if(!box)return;
   if(!AUTH||AUTH.method!=="Google"||!AUTH.cred){
     box.innerHTML=`<div class="warnnote">Phiên đăng nhập hết hạn hoặc bạn đăng nhập bằng mật khẩu (không có token Google). Hãy <b>đăng nhập lại bằng Google</b> để quản lý tài khoản.</div>`;
