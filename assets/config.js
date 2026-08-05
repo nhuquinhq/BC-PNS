@@ -63,7 +63,20 @@ window.HQ_CONFIG = {
     DM_NhanSu:     "https://docs.google.com/spreadsheets/d/e/2PACX-1vRP-JhLeyIMgMhuqwoo2-YhIrPoAgezeObu-Em0zZgdzhm7oUiQ95tkS7dKQJzULiGDp_MTeb_alyHL/pub?gid=0&single=true&output=csv",
     DM_PhongBan:   "",
     DM_Grade:      "",
-    RAW_TuyenDung: "",
+
+    /* ---- TUYỂN DỤNG (HRM1) ----
+       RAW_TuyenDung: file "BÁO CÁO TUYỂN DỤNG" — tab dữ liệu phễu ứng viên,
+                      mỗi dòng là một CV (STT · Ngày · NV tuyển dụng · Nguồn …).
+       RAW_DeXuatTD : file "ĐỀ XUẤT & KẾT QUẢ TUYỂN DỤNG" — tab
+                      "2. Đề xuất tuyển dụng và kết quả" (gid 1512586930).
+       RAW_SLA_TD   : cùng file trên — tab "Bảng theo dõi tiến độ theo SLA".
+                      Mở tab đó trên Google Sheet, chép số sau chữ "gid=" trên
+                      thanh địa chỉ rồi thay vào chỗ GID_SLA bên dưới.
+       Ba link dùng dạng export CSV; nếu trình duyệt chặn thì hệ thống tự
+       đọc lại qua /api/csv nên không cần Publish riêng.                     */
+    RAW_TuyenDung: "https://docs.google.com/spreadsheets/d/1YZltbbJSc1wDCMTxmwK3pmuOLAe190A8RT0YEim3Bys/export?format=csv&gid=1209894745",
+    RAW_DeXuatTD:  "https://docs.google.com/spreadsheets/d/1d8tng7UX8fxRYeh1SZmnch0rjkwn4JIJMxaU7LB9Ld8/export?format=csv&gid=1512586930",
+    RAW_SLA_TD:    "",
     /* Chấm công theo tháng — mỗi tháng một tab (HRM2) */
     RAW_ChamCong_T1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=921865850&single=true&output=csv",
     RAW_ChamCong_T2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=520204105&single=true&output=csv",
