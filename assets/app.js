@@ -67,6 +67,8 @@ let RANGE={from:iso(new Date(new Date().getFullYear(),0,1)),to:iso(new Date()),t
    ============================================================ */
 const vnd=n=>new Intl.NumberFormat('vi-VN').format(Math.round(n));
 const dec=(n,d=1)=>n.toFixed(d).replace('.',',');
+const r1=(n,d=1)=>Math.round(n*Math.pow(10,d))/Math.pow(10,d);
+const dmy=d=>d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`:"—";
 const el=h=>{const d=document.createElement('div');d.innerHTML=h.trim();return d.firstElementChild};
 let charts=[]; const kill=()=>{charts.forEach(c=>c.destroy());charts=[]};
 
@@ -205,7 +207,7 @@ const MODULES=[
  {id:"HRM4",code:"HRM4",title:"Chi phí vận hành VP",src:["RAW_ChiPhiVP"]},
  {id:"HRM5",code:"HRM5",title:"Chi phí truyền thông NB",src:["RAW_ChiPhiTT"]},
  {id:"HRM6",code:"HRM6",title:"Tình hình nhân sự",src:["DM_NhanSu","RAW_Onboard","RAW_Offboard","RAW_HoSo"]},
- {id:"HRM7",code:"HRM7",title:"Báo cáo BHXH",src:["RAW_BHXH","DM_NhanSu"]},
+ {id:"HRM7",code:"HRM7",title:"Hợp đồng & BHXH",src:["RAW_BHXH","DM_NhanSu"]},
  {id:"HRM8",code:"HRM8",title:"Workload & Phân bổ lương",src:["RAW_Workload","RAW_Luong"]}
 ];
 
@@ -357,43 +359,89 @@ REP.HRM3={
   {k:"Tổng quỹ lương kỳ",u:"triệu",cur:1952,prev:1938,tgt:2000,dir:-1,p:0,f:v=>vnd(v),sp:[1861,1890,1904,1921,1938,1952]},
   {k:"Lương bình quân đầu người",u:"triệu",cur:13.19,prev:13.10,tgt:13.0,dir:1,p:2,sp:[12.8,12.9,13.0,13.0,13.1,13.2]},
   {k:"Tỷ trọng P1 cố định",d:"Theo thiết kế lương 2P",u:"%",cur:80.0,prev:80.0,tgt:80,dir:1,p:0,sp:[80,80,80,80,80,80]},
+  {k:"Tổng phụ cấp và thưởng",u:"triệu",cur:148,prev:145,tgt:150,dir:-1,p:0,f:v=>vnd(v),sp:[132,136,139,142,145,148]},
   {k:"Tỷ lệ nhân sự đạt đủ P2",u:"%",cur:71.0,prev:68.0,tgt:85,dir:1,p:0,sp:[59,62,65,66,68,71]},
-  {k:"Chi phí nhân sự trên doanh thu",u:"%",cur:18.4,prev:18.9,tgt:20.0,dir:-1,sp:[20.1,19.7,19.4,19.1,18.9,18.4]},
-  {k:"Hồ sơ bị chặn chi lương",d:"Do chưa xác nhận công",u:"người",cur:6,prev:9,tgt:0,dir:-1,p:0,sp:[14,12,11,10,9,6]},
-  {k:"Compa-ratio bình quân",d:"Lương thực tế trên điểm giữa dải",u:"lần",cur:0.97,prev:0.96,tgt:1.00,dir:1,p:2,sp:[0.93,0.94,0.95,0.95,0.96,0.97]},
-  {k:"Chênh lệch bảng lương và MISA",u:"đồng",cur:0,prev:0,tgt:0,dir:-1,p:0,f:v=>vnd(v),sp:[0,0,0,0,0,0]}],
+  {k:"Tỷ lệ nhân sự đã tăng lương",u:"%",cur:58.1,prev:55.4,tgt:60,dir:1,sp:[46,49,52,54,55,58]},
+  {k:"Mức tăng lương bình quân",d:"So lương khởi điểm",u:"%",cur:18.6,prev:17.9,tgt:15,dir:1,sp:[14,15,16,17,18,19]},
+  {k:"Chưa tăng lương trên 12 tháng",u:"người",cur:14,prev:17,tgt:0,dir:-1,p:0,sp:[24,22,20,19,17,14]},
+  {k:"Nhân sự lệch dải lương",d:"Ngoài dải Level đang xếp",u:"người",cur:5,prev:7,tgt:0,dir:-1,p:0,sp:[11,10,9,8,7,5]},
+  {k:"Chi phí nhân sự trên doanh thu",u:"%",cur:18.4,prev:18.9,tgt:20.0,dir:-1,sp:[20.1,19.7,19.4,19.1,18.9,18.4]}],
  charts:[
-  {id:"c1",t:"Cơ cấu P1 và P2 theo phòng ban",h:"triệu đồng",span:"g2",
-   f:()=>mk("c1","bar",{labels:DEPTS,datasets:[
-     {label:"P1 cố định",data:[398,289,236,212,131,84,68],backgroundColor:C.navy,borderRadius:1},
-     {label:"P2 biến động",data:[99,72,59,53,33,21,17],backgroundColor:C.navy2,borderRadius:1}]},
-     {plugins:{legend:{display:true,position:"bottom"}},scales:{x:{stacked:true,grid:{display:false},border:{color:"rgba(148,163,184,.28)"}},y:{stacked:true,grid:{color:cssv("--grid")},border:{display:false}}}})},
-  {id:"c2",t:"Cơ cấu chi phí lương",h:"% quỹ lương",
-   f:()=>mk("c2","doughnut",{labels:["Lương P1 + P2","Phụ cấp","Thưởng","Bảo hiểm công ty đóng"],
-     datasets:[{data:[78.4,12.1,5.3,4.2],backgroundColor:PAL,borderWidth:0}]},{cutout:"58%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})},
-  {id:"c3",t:"Quỹ lương và headcount 12 kỳ",h:"triệu đồng · người",span:"g2",
-   f:()=>mk("c3","bar",{labels:M12,datasets:[
-     {label:"Quỹ lương",data:[1712,1748,1760,1755,1802,1836,1861,1890,1904,1921,1938,1952],backgroundColor:C.navy,borderRadius:1},
-     {label:"Headcount",type:"line",data:[128,131,134,133,136,139,141,144,146,147,148,148],borderColor:C.gold,borderWidth:2,pointRadius:2,yAxisID:"y1"}]},
-     {plugins:{legend:{display:true,position:"bottom"}},scales:{x:AX.x,y:AX.y,y1:{position:"right",min:100,max:170,grid:{display:false},border:{display:false}}}})},
-  {id:"c4",t:"Dải lương theo Grade",h:"triệu đồng · min – mid – max",
-   f:()=>mk("c4","bar",{labels:["G1","G2","G3","G4","G5","G6","G7"],datasets:[
-     {label:"Min",data:[6,8,10,14,20,30,45],backgroundColor:C.light,borderRadius:1},
-     {label:"Mid",data:[7.5,10,13,18,26,40,60],backgroundColor:C.navy2,borderRadius:1},
-     {label:"Max",data:[9,12,16,23,34,52,80],backgroundColor:C.navy,borderRadius:1}]},{plugins:{legend:{display:true,position:"bottom"}}})}],
- tables:[{id:"t3",t:"Bảng lương chi tiết kỳ 07/2026",
-   cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Phòng ban"},{t:"Grade",a:"c"},{t:"Track",a:"c"},{t:"P1 cố định",a:"n"},{t:"P2 vận hành",a:"n"},{t:"P2 báo cáo",a:"n"},{t:"Phụ cấp",a:"n"},{t:"Thưởng",a:"n"},{t:"Khấu trừ BH",a:"n"},{t:"Thực nhận",a:"n"},{t:"Trạng thái",a:"c"}],
-   groups:[{t:"Nhân sự",s:6},{t:"Cấu phần lương 2P",s:3},{t:"Khoản khác",s:3},{t:"Kết quả",s:2}],
-   rows:[
-    ["NV-0142","Lã Thị Kiều Trang","Nhân sự","G4.1","IC","14.400.000","1.800.000","1.800.000","1.500.000","0","1.890.000","17.610.000",'<span class="pill p-ok">Đủ điều kiện chi</span>'],
-    ["NV-0087","Lương Minh Quang","Nhân sự","G3.2","IC","11.200.000","1.400.000","1.260.000","1.000.000","500.000","1.470.000","13.890.000",'<span class="pill p-ok">Đủ điều kiện chi</span>'],
-    ["NV-0203","Nguyễn Thị Hạnh","Kế toán","G3.1","IC","10.400.000","1.300.000","1.300.000","1.000.000","0","1.365.000","12.635.000",'<span class="pill p-ok">Đủ điều kiện chi</span>'],
-    ["NV-0311","Trần Văn Đức","Vận hành","G2.2","IC","8.800.000","1.100.000","880.000","800.000","0","1.155.000","10.425.000",'<span class="pill p-b">Chặn — chưa xác nhận công</span>'],
-    ["NV-0356","Phạm Thu Hương","Chăm sóc KH","G2.1","IC","8.000.000","1.000.000","1.000.000","800.000","300.000","1.050.000","10.050.000",'<span class="pill p-ok">Đủ điều kiện chi</span>'],
-    ["NV-0402","Đỗ Minh Khôi","Công nghệ","G4.2","IC","16.000.000","2.000.000","1.800.000","1.500.000","1.000.000","2.100.000","19.200.000",'<span class="pill p-w">Thiếu chấm công</span>'],
-    ["NV-0418","Vũ Hải Yến","Marketing","G3.1","IC","10.400.000","1.300.000","1.300.000","1.000.000","0","1.365.000","12.635.000",'<span class="pill p-ok">Đủ điều kiện chi</span>'],
-    ["NV-0455","Bùi Quốc Anh","Kinh doanh","G5.1","MGMT","20.000.000","2.500.000","2.000.000","2.000.000","2.500.000","2.625.000","24.375.000",'<span class="pill p-b">Chặn — chưa xác nhận công</span>']],
-   total:["TỔNG CỘNG","8 nhân sự","—","—","—","99.200.000","12.400.000","11.340.000","9.600.000","4.300.000","13.020.000","120.820.000","2 hồ sơ bị chặn"]}],
+  {id:"c1",t:"Quỹ lương P1 – P2 theo phòng ban",h:"triệu đồng",cls:"tall",span:"g21",
+   f:()=>{let ph=[["Maverick",180,42],["HQS200",165,38],["VX101",150,35]];
+     if(HRon()){const m={};HRx().active().forEach(r=>{const k=r.phong;m[k]=m[k]||[0,0];m[k][0]+=r.p1||0;m[k][1]+=r.p2||0});
+       ph=Object.entries(m).map(([k,v])=>[k,v[0]/1e6,v[1]/1e6]).sort((a,b)=>(b[1]+b[2])-(a[1]+a[2])).slice(0,12)}
+     mk("c1","bar",{labels:ph.map(x=>x[0]),datasets:[
+       {label:"P1 cố định",data:ph.map(x=>r1(x[1],1)),backgroundColor:C.navy,borderRadius:6,maxBarThickness:26},
+       {label:"P2 hiệu suất",data:ph.map(x=>r1(x[2],1)),backgroundColor:C.green,borderRadius:6,maxBarThickness:26}]},
+       {plugins:{legend:{display:true,position:"bottom"}},scales:{x:Object.assign({stacked:true},AX.x),y:Object.assign({stacked:true},AX.y)}})}},
+  {id:"c2",t:"Cơ cấu chi phí lương",h:"triệu đồng",
+   f:()=>{let e=[["P1 cố định",1560],["P2 hiệu suất",392],["Phụ cấp và thưởng",148]];
+     if(HRon()){const a=HRx().active();
+       e=[["P1 cố định",a.reduce((s,r)=>s+(r.p1||0),0)/1e6],["P2 hiệu suất",a.reduce((s,r)=>s+(r.p2||0),0)/1e6],
+          ["Phụ cấp và thưởng",a.reduce((s,r)=>s+(r.pc||0),0)/1e6]]}
+     mk("c2","doughnut",{labels:lab(e),datasets:[{data:e.map(x=>r1(x[1],1)),backgroundColor:[C.navy,C.green,C.gold],borderWidth:0,hoverOffset:6}]},
+       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"c3",t:"Dải lương theo Level",h:"triệu đồng · thấp nhất – trung vị – cao nhất",cls:"tall",span:"g21",
+   f:()=>{let d=[{level:"G1",min:8,mid:9.5,max:11},{level:"G2",min:10,mid:12,max:14}];
+     if(HRon())d=HRx().dailuong();
+     mk("c3","bar",{labels:d.map(x=>x.level),datasets:[
+       {label:"Thấp nhất",data:d.map(x=>r1(x.min/1e6||x.min,1)),backgroundColor:C.light,borderRadius:6,maxBarThickness:20},
+       {label:"Trung vị",data:d.map(x=>r1(x.mid/1e6||x.mid,1)),backgroundColor:C.navy,borderRadius:6,maxBarThickness:20},
+       {label:"Cao nhất",data:d.map(x=>r1(x.max/1e6||x.max,1)),backgroundColor:C.navy2,borderRadius:6,maxBarThickness:20}]},
+       {plugins:{legend:{display:true,position:"bottom"}}})}},
+  {id:"c4",t:"Lương bình quân theo phòng ban",h:"triệu đồng",
+   f:()=>{let e=[["BOD",38],["Công nghệ",19],["Kinh doanh",13]];
+     if(HRon()){const m={};HRx().active().filter(r=>r.luong>0).forEach(r=>{(m[r.phong]=m[r.phong]||[]).push(r.luong)});
+       e=Object.entries(m).map(([k,v])=>[k,v.reduce((a,b)=>a+b,0)/v.length/1e6]).sort((a,b)=>b[1]-a[1]).slice(0,12)}
+     mk("c4","bar",barSet(lab(e),e.map(x=>r1(x[1],1)),C.navy2),{indexAxis:"y",scales:AXH})}},
+  {id:"c5",t:"Phân bố mức lương",h:"người",span:"g3",
+   f:()=>{let e=[["Dưới 8tr",22],["8 – 12tr",54],["12 – 18tr",41],["18 – 25tr",19],["Trên 25tr",12]];
+     if(HRon()){const b={"Dưới 8tr":0,"8 – 12tr":0,"12 – 18tr":0,"18 – 25tr":0,"Trên 25tr":0};
+       HRx().active().filter(r=>r.luong>0).forEach(r=>{const v=r.luong/1e6;
+         if(v<8)b["Dưới 8tr"]++;else if(v<12)b["8 – 12tr"]++;else if(v<18)b["12 – 18tr"]++;else if(v<25)b["18 – 25tr"]++;else b["Trên 25tr"]++});
+       e=Object.entries(b)}
+     mk("c5","bar",barSet(lab(e),val(e),C.navy),{})}},
+  {id:"c6",t:"Cơ cấu phụ cấp và thưởng",h:"triệu đồng",
+   f:()=>{let e=[["Chuyên cần",42],["Trách nhiệm",38],["Tiền ăn",44],["Thiết bị",12],["Thưởng chuyên cần",12]];
+     if(HRon()){const a=HRx().active();
+       e=[["Lương chuyên cần",a.reduce((s,r)=>s+r.lcc,0)/1e6],["Phụ cấp trách nhiệm",a.reduce((s,r)=>s+r.pctn,0)/1e6],
+          ["Tiền ăn",a.reduce((s,r)=>s+r.an,0)/1e6],["Phụ cấp thiết bị",a.reduce((s,r)=>s+r.pctb,0)/1e6],
+          ["Thưởng chuyên cần",a.reduce((s,r)=>s+r.tcc,0)/1e6]].filter(x=>x[1]>0)}
+     mk("c6","doughnut",{labels:lab(e),datasets:[{data:e.map(x=>r1(x[1],1)),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
+       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"c7",t:"Số lần tăng lương của đội ngũ",h:"người",
+   f:()=>{let e=[["Chưa tăng",62],["1 lần",44],["2 lần",25],["3 lần trở lên",17]];
+     if(HRon()){const b={"Chưa tăng":0,"1 lần":0,"2 lần":0,"3 lần trở lên":0};
+       HRx().active().forEach(r=>{const n=r.tang.length;b[n===0?"Chưa tăng":n===1?"1 lần":n===2?"2 lần":"3 lần trở lên"]++});
+       e=Object.entries(b)}
+     mk("c7","bar",barSet(lab(e),val(e),C.amber),{})}}],
+ tables:[
+  {id:"t3",t:"Bảng lương chi tiết theo nhân sự",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Level",a:"c"},{t:"P1",a:"n"},{t:"P2",a:"n"},{t:"Phụ cấp",a:"n"},{t:"Tổng",a:"n"}],
+   groups:[{t:"Định danh",s:4},{t:"Cơ cấu lương (đồng)",s:4}],
+   rows:()=>{if(!HRon())return [["00083","Hoàng Thị Như Quỳnh","BOD","G7","32.000.000","8.000.000","2.000.000","42.000.000"]];
+     return HRx().active().filter(r=>r.luong>0).sort((a,b)=>b.luong-a.luong).slice(0,300)
+       .map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,r.level,vnd(r.p1),vnd(r.p2),vnd(r.pc),`<b>${vnd(r.luong)}</b>`])},
+   total:rw=>["TỔNG","—","—","—","—","—","—",`${rw.length} nhân sự`]},
+  {id:"t3b",t:"Dải lương theo Level",
+   cols:[{t:"Level"},{t:"Số người",a:"n"},{t:"Thấp nhất",a:"n"},{t:"Trung vị",a:"n"},{t:"Cao nhất",a:"n"},{t:"Bình quân",a:"n"}],
+   rows:()=>{const d=HRon()?HRx().dailuong():[{level:"G3",n:24,min:9e6,mid:12e6,max:16e6,bq:12.4e6}];
+     return d.map(x=>[`<b>${x.level}</b>`,x.n,vnd(x.min),vnd(x.mid),vnd(x.max),vnd(x.bq)])}},
+  {id:"t3c",t:"Nhân sự lệch dải lương của Level",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Level",a:"c"},{t:"Lương",a:"n"},{t:"Trạng thái",a:"c"}],
+   rows:()=>{if(!HRon())return [];
+     const b=HRx().dailuong();
+     return HRx().active().filter(r=>r.luong>0).map(r=>{const x=b.find(y=>y.level===r.level);
+       if(!x||x.n<3)return null;
+       if(r.luong<x.min*1.0001&&r.luong<x.mid*0.7)return [r.ma,`<b>${r.ten}</b>`,r.phong,r.level,vnd(r.luong),'<span class="pill p-b">Dưới dải</span>'];
+       if(r.luong>x.mid*1.6)return [r.ma,`<b>${r.ten}</b>`,r.phong,r.level,vnd(r.luong),'<span class="pill p-w">Trên dải</span>'];
+       return null}).filter(Boolean).slice(0,200)}},
+  {id:"t3d",t:"Nhân sự trên 12 tháng chưa tăng lương",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Ngày vào",a:"c"},{t:"Thâm niên (tháng)",a:"n"},{t:"Lương hiện tại",a:"n"}],
+   rows:()=>{if(!HRon())return [];
+     return HRx().tangLuong().chuaTang.sort((a,b)=>b.tn-a.tn).slice(0,200)
+       .map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,dmy(r.vao),`<span class="pill ${r.tn>=24?'p-b':'p-w'}">${r.tn}</span>`,vnd(r.luong)])}}],
  defs:[["Lương 2P","P1 là phần cố định theo vị trí, chiếm 80%. P2 là phần biến động 20%, gồm 10% hiệu quả vận hành và 10% chất lượng báo cáo, chi trả theo tháng."],
    ["Compa-ratio","Lương thực tế chia cho điểm giữa dải lương của Grade tương ứng. Bằng 1,00 nghĩa là đúng điểm giữa."],
    ["Đạt đủ P2","Nhân sự nhận trọn 20% phần biến động, không bị trừ ở cả hai cấu phần."],
@@ -540,71 +588,123 @@ REP.HRM6={
   ['Nghỉ dưới 12 tháng chiếm 27%. Cần rà lại chất lượng onboarding và mức độ rõ ràng của JD ở hai phòng Vận hành và Kinh doanh.','t-hi'],
   ['2 Exit Interview chưa thực hiện. Theo quy trình, HR phỏng vấn chứ không phải quản lý trực tiếp.','t-md']],
  kpis:[
-  {k:"Headcount cuối kỳ",u:"người",cur:148,prev:148,tgt:150,dir:1,p:0,sp:[141,144,146,147,148,148]},
+  {k:"Headcount cuối kỳ",d:"Nhân sự đang làm tại ngày chốt",u:"người",cur:148,prev:146,tgt:150,dir:1,p:0,sp:[141,144,146,147,148,148]},
+  {k:"Nhân sự onboard trong kỳ",u:"người",cur:6,prev:5,tgt:8,dir:1,p:0,sp:[4,5,7,6,5,6]},
+  {k:"Nhân sự nghỉ trong kỳ",u:"người",cur:2,prev:3,tgt:2,dir:-1,p:0,sp:[3,4,2,3,3,2]},
   {k:"Turnover tháng",u:"%",cur:1.4,prev:1.9,tgt:2.0,dir:-1,sp:[2.4,2.1,1.8,2.0,1.9,1.4]},
   {k:"Turnover luỹ kế năm",u:"%",cur:9.8,prev:8.4,tgt:15.0,dir:-1,sp:[2.1,4.0,5.6,7.0,8.4,9.8]},
+  {k:"Tỷ lệ nghỉ trong thử việc",d:"Nghỉ trước 3 tháng làm việc",u:"%",cur:12.0,prev:14.0,tgt:10.0,dir:-1,sp:[18,17,15,14,14,12]},
   {k:"Tỷ lệ nghỉ dưới 12 tháng",u:"%",cur:27.3,prev:22.0,tgt:20.0,dir:-1,sp:[18,19,21,23,22,27]},
-  {k:"Tỷ lệ hồ sơ đầy đủ",u:"%",cur:92.6,prev:90.5,tgt:100,dir:1,sp:[84,86,88,89,91,93]},
-  {k:"Hồ sơ quá hạn 30 ngày",u:"hồ sơ",cur:4,prev:6,tgt:0,dir:-1,p:0,sp:[9,8,7,7,6,4]},
+  {k:"Thâm niên bình quân",u:"tháng",cur:18.4,prev:17.9,tgt:24,dir:1,sp:[15,16,16.8,17.4,17.9,18.4]},
+  {k:"Tuổi bình quân",u:"tuổi",cur:26.4,prev:26.3,tgt:28,dir:1,sp:[26,26.1,26.2,26.2,26.3,26.4]},
   {k:"Tỷ lệ nhân sự toàn thời gian",u:"%",cur:81.8,prev:82.4,tgt:80.0,dir:1,sp:[84,83,83,82,82,82]},
-  {k:"Tỷ lệ hoàn tất Exit Interview",u:"%",cur:81.8,prev:88.9,tgt:100,dir:1,sp:[75,80,83,86,89,82]}],
+  {k:"Tỷ lệ hồ sơ đầy đủ",d:"Bình quân các trường thông tin bắt buộc",u:"%",cur:92.6,prev:90.5,tgt:100,dir:1,sp:[84,86,88,89,91,93]},
+  {k:"Quản lý quá tải",d:"Trên 10 nhân sự trực tiếp",u:"người",cur:2,prev:2,tgt:0,dir:-1,p:0,sp:[3,3,2,2,2,2]}],
  charts:[
-  {id:"f1",t:"Cơ cấu theo phòng ban",h:"người",span:"g3",
-   f:()=>mk("f1","bar",{labels:DEPTS,datasets:[{data:[42,31,26,19,14,9,7],backgroundColor:C.navy,borderRadius:1}]},{indexAxis:'y',scales:AXH})},
-  {id:"f2",t:"Cơ cấu theo BU",h:"người",
-   f:()=>mk("f2","bar",{labels:BUS,datasets:[{data:[38,27,22,19,14,11,17],backgroundColor:C.navy2,borderRadius:1}]},{indexAxis:'y',scales:AXH})},
-  {id:"f3",t:"Cơ cấu theo loại hợp đồng",h:"người",
-   f:()=>mk("f3","doughnut",{labels:["Toàn thời gian","Bán thời gian","Thực tập sinh","Cộng tác viên"],
-     datasets:[{data:[121,14,9,4],backgroundColor:PAL,borderWidth:0}]},{cutout:"58%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})},
-  {id:"f4",t:"Cơ cấu theo Grade",h:"người",span:"g3",
-   f:()=>mk("f4","bar",{labels:["G1","G2","G3","G4","G5","G6","G7"],datasets:[{data:[12,29,38,31,22,11,5],backgroundColor:C.navy,borderRadius:1}]})},
-  {id:"f5",t:"Cơ cấu theo nhóm tuổi",h:"người",
-   f:()=>mk("f5","bar",{labels:["Dưới 22","22–25","25–30","30–35","Trên 35"],datasets:[{data:[9,48,57,26,8],backgroundColor:C.steel,borderRadius:1}]})},
-  {id:"f6",t:"Cơ cấu theo giới tính",h:"người",
-   f:()=>mk("f6","doughnut",{labels:["Nam","Nữ"],datasets:[{data:[86,62],backgroundColor:[C.navy,C.cream],borderWidth:0}]},{cutout:"58%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})},
-  {id:"f7",t:"Biến động headcount 12 kỳ",h:"người vào – ra – tổng",cls:"tall",span:"g21",
-   f:()=>mk("f7","bar",{labels:M12,datasets:[
-     {label:"Vào",data:[8,9,7,6,11,9,7,10,8,9,12,12],backgroundColor:C.green,borderRadius:1},
-     {label:"Ra",data:[-5,-6,-8,-7,-8,-6,-5,-7,-6,-8,-11,-11],backgroundColor:C.red,borderRadius:1},
-     {label:"Tổng headcount",type:"line",data:[128,131,134,133,136,139,141,144,146,147,148,148],borderColor:C.gold,borderWidth:2,pointRadius:2,yAxisID:"y1"}]},
-     {plugins:{legend:{display:true,position:"bottom"}},scales:{x:{stacked:true,grid:{display:false},border:{color:"rgba(148,163,184,.28)"}},
-       y:{stacked:true,grid:{color:cssv("--grid")},border:{display:false}},y1:{position:"right",min:100,max:170,grid:{display:false},border:{display:false}}}})},
-  {id:"f8",t:"Lý do nghỉ việc trong kỳ",h:"số người",
-   f:()=>mk("f8","bar",{labels:["Cơ hội tốt hơn","Lương – đãi ngộ","Lý do cá nhân","Không đạt hiệu suất","Chuyển ngành","Không qua thử việc"],
-     datasets:[{data:[3,2,2,2,1,1],backgroundColor:C.navy,borderRadius:1}]},{indexAxis:'y',scales:AXH})}],
+  {id:"f1",t:"Cơ cấu theo Khối",h:"người",span:"g3",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.khoi):[["BOD",4],["BO",46],["Kinh doanh",98]];
+     mk("f1","bar",barSet(lab(e),val(e),C.navy),{})}},
+  {id:"f2",t:"Cơ cấu theo Chức năng",h:"người",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.cn,8):[["BD",52],["CSKH",34],["Vận hành",21],["HR",9],["Design",8],["IT",7]];
+     mk("f2","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
+       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"f3",t:"Hình thức lao động",h:"người",
+   f:()=>{const a=HRon()?HRx().active():[];
+     const e=HRon()?[["Chính thức",a.filter(r=>!r.ctv).length],["Cộng tác viên · Parttime",a.filter(r=>r.ctv).length]]
+       :[["Chính thức",121],["Cộng tác viên · Parttime",27]];
+     mk("f3","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.navy,C.gold],borderWidth:0,hoverOffset:6}]},
+       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"f4",t:"Cơ cấu theo Phòng ban",h:"người · 12 phòng lớn nhất",cls:"tall",span:"g21",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.phong,12):[["Maverick Team",22],["HQS200",19],["VX101 Team",17],["WGG100 Team",15]];
+     mk("f4","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}},
+  {id:"f5",t:"Nhóm tuổi",h:"người",
+   f:()=>{const e=HRon()?HRx().nhomTuoi(HRx().active()):[["Dưới 22",18],["22 – 25",57],["26 – 30",44],["31 – 35",21],["Trên 35",8]];
+     mk("f5","bar",barSet(lab(e),val(e),C.green),{})}},
+  {id:"f6",t:"Biến động nhân sự 12 tháng",h:"vào – ra – tổng đội ngũ",cls:"tall",span:"g21",
+   f:()=>{const b=HRon()?HRx().bienDong(12,RANGE&&RANGE.to?new Date(RANGE.to):null)
+       :M12.map((m,i)=>({nhan:m,vao:3+i%4,ra:1+i%3,hc:130+i*2}));
+     mk("f6","bar",{labels:b.map(x=>x.nhan),datasets:[
+       {label:"Vào",data:b.map(x=>x.vao),backgroundColor:C.green,borderRadius:6,maxBarThickness:22},
+       {label:"Ra",data:b.map(x=>-x.ra),backgroundColor:C.red,borderRadius:6,maxBarThickness:22},
+       {label:"Tổng đội ngũ",type:"line",data:b.map(x=>x.hc),borderColor:C.gold,borderWidth:2.6,pointRadius:3,
+        pointBackgroundColor:C.gold,tension:.38,yAxisID:"y1"}]},
+       {plugins:{legend:{display:true,position:"bottom"}},
+        scales:{x:AX.x,y:AX.y,y1:{position:"right",grid:{display:false},border:{display:false}}}})}},
+  {id:"f7",t:"Giới tính",h:"người",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.gt):[["Nữ",81],["Nam",67]];
+     mk("f7","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.navy2,C.navy],borderWidth:0,hoverOffset:6}]},
+       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"f8",t:"Thâm niên đội ngũ",h:"người",span:"g3",
+   f:()=>{const e=HRon()?HRx().nhomThamNien(HRx().active()):[["Dưới 3 tháng",21],["3 – 6 tháng",25],["6 – 12 tháng",38],["1 – 2 năm",41],["Trên 2 năm",23]];
+     mk("f8","bar",barSet(lab(e),val(e),C.amber),{})}},
+  {id:"f9",t:"Trình độ học vấn",h:"người",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.hv,6):[["Đại học",94],["Cao đẳng",29],["Trung cấp",14],["Khác",11]];
+     mk("f9","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
+       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"f10",t:"Số nhân sự theo quản lý trực tiếp",h:"người · 12 quản lý nhiều nhất",cls:"tall",span:"g21",
+   f:()=>{const e=HRon()?HRx().spanQL().slice(0,12):[["Hoàng Minh Quân",14],["Trần Tây Đức",11],["Lê Tấn Thọ",9]];
+     mk("f10","bar",barSet(lab(e),val(e),e.map(x=>x[1]>10?C.red:C.navy)),{indexAxis:"y",scales:AXH})}},
+  {id:"f11",t:"Mức độ hoàn thiện hồ sơ",h:"% nhân sự có thông tin",
+   f:()=>{const d=HRon()?HRx().thieuHoSo():[{ten:"Email công ty",ty:96},{ten:"CCCD",ty:88},{ten:"Số tài khoản",ty:81}];
+     mk("f11","bar",barSet(d.map(x=>x.ten),d.map(x=>r1(x.ty,0)),d.map(x=>x.ty>=95?C.green:x.ty>=80?C.amber:C.red)),
+       {indexAxis:"y",scales:AXH})}},
+  {id:"f12",t:"Phân bố theo văn phòng",h:"người",span:"g3",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.vp,8):[["Hà Nội",132],["Lào Cai",9],["Khác",7]];
+     mk("f12","bar",barSet(lab(e),val(e),C.cyan||C.navy2),{})}},
+  {id:"f13",t:"Tình trạng hôn nhân",h:"người",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.hn,5):[["Độc thân",112],["Đã kết hôn",36]];
+     mk("f13","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
+       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"f14",t:"Top ngành học",h:"người",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active().filter(r=>r.nganh),r=>r.nganh,8):[["Kinh tế",34],["CNTT",21],["Marketing",18]];
+     mk("f14","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}}],
  tables:[
-  {id:"t6a",t:"Danh sách nhân sự onboard trong kỳ",
-   cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Vị trí"},{t:"Phòng ban"},{t:"BU"},{t:"Ngày vào",a:"c"},{t:"Nguồn tuyển",a:"c"},{t:"Culture Buddy",a:"c"},{t:"D30",a:"c"},{t:"D60",a:"c"},{t:"D90",a:"c"},{t:"Kết quả",a:"c"}],
-   groups:[{t:"Nhân sự",s:6},{t:"Nguồn",s:3},{t:"Mốc đánh giá",s:3},{t:"",s:1}],
-   rows:[
-    ["NV-0501","Nguyễn Hoài Nam","CV Vận hành đơn","Vận hành","Ritokey","01/07/2026","Referral","HàDT",'<span class="pill p-ok">Đạt</span>','<span class="pill p-w">Đang chờ</span>','<span class="pill p-n">Chưa tới</span>','<span class="pill p-w">Thử việc</span>'],
-    ["NV-0502","Trần Bảo Ngọc","NV CSKH quốc tế","Chăm sóc KH","WGG","01/07/2026","LinkedIn","QuangLM",'<span class="pill p-ok">Đạt</span>','<span class="pill p-w">Đang chờ</span>','<span class="pill p-n">Chưa tới</span>','<span class="pill p-w">Thử việc</span>'],
-    ["NV-0498","Lê Đình Phúc","Backend Developer","Công nghệ","Khối BO","16/06/2026","Headhunt","TuấnNA",'<span class="pill p-ok">Đạt</span>','<span class="pill p-ok">Đạt</span>','<span class="pill p-n">Chưa tới</span>','<span class="pill p-w">Thử việc</span>'],
-    ["NV-0489","Phạm Khánh Linh","CV Kế toán","Kế toán","Khối BO","02/06/2026","Website HQ","HạnhNTH",'<span class="pill p-ok">Đạt</span>','<span class="pill p-ok">Đạt</span>','<span class="pill p-ok">Đạt</span>','<span class="pill p-ok">Chính thức</span>'],
-    ["NV-0476","Hoàng Anh Tuấn","NV Kinh doanh","Kinh doanh","A10GG","15/05/2026","Referral","QuânHM",'<span class="pill p-ok">Đạt</span>','<span class="pill p-ok">Đạt</span>','<span class="pill p-ok">Đạt</span>','<span class="pill p-ok">Chính thức</span>'],
-    ["NV-0471","Đặng Thuỳ Dương","Content Marketing","Marketing","VX Team","05/05/2026","Facebook","QuangLM",'<span class="pill p-ok">Đạt</span>','<span class="pill p-b">Không đạt</span>',"—",'<span class="pill p-b">Dừng thử việc</span>']],
-   total:["TỔNG CỘNG","12 người onboard","—","—","—","—","4 referral","12 đã gán","12 đạt","7 đạt","4 đạt","4 chính thức · 7 thử việc · 1 dừng"]},
-  {id:"t6b",t:"Danh sách nhân sự off trong kỳ",
-   cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Phòng ban"},{t:"BU"},{t:"Ngày vào",a:"c"},{t:"Ngày nghỉ",a:"c"},{t:"Thâm niên",a:"n"},{t:"Loại nghỉ",a:"c"},{t:"Lý do"},{t:"Exit Interview",a:"c"},{t:"Bàn giao",a:"c"}],
-   rows:[
-    ["NV-0322","Ngô Thanh Bình","Vận hành","Ritokey","10/03/2024","15/07/2026","2,3 năm","Tự nguyện","Cơ hội tốt hơn",'<span class="pill p-ok">Đã phỏng vấn</span>','<span class="pill p-ok">Hoàn tất</span>'],
-    ["NV-0287","Lý Mai Phương","Chăm sóc KH","WGG","01/09/2023","20/07/2026","2,9 năm","Tự nguyện","Lý do cá nhân",'<span class="pill p-ok">Đã phỏng vấn</span>','<span class="pill p-ok">Hoàn tất</span>'],
-    ["NV-0410","Vương Đức Hải","Kinh doanh","A10GG","12/01/2025","31/07/2026","1,6 năm","Không tự nguyện","Không đạt hiệu suất",'<span class="pill p-ok">Đã phỏng vấn</span>','<span class="pill p-w">Đang bàn giao</span>'],
-    ["NV-0365","Trịnh Bảo Châu","Marketing","VX Team","05/06/2024","28/07/2026","2,1 năm","Tự nguyện","Chuyển ngành",'<span class="pill p-w">Chưa xếp lịch</span>','<span class="pill p-w">Đang bàn giao</span>'],
-    ["NV-0298","Cao Minh Đức","Công nghệ","Khối BO","20/02/2023","25/07/2026","3,4 năm","Tự nguyện","Lương – đãi ngộ",'<span class="pill p-ok">Đã phỏng vấn</span>','<span class="pill p-ok">Hoàn tất</span>'],
-    ["NV-0451","Hà Thu Trang","Vận hành","Maverick","03/03/2026","18/07/2026","0,4 năm","Không tự nguyện","Không qua thử việc",'<span class="pill p-n">Không áp dụng</span>','<span class="pill p-ok">Hoàn tất</span>']],
-   total:["TỔNG CỘNG","11 người off","—","—","—","—","2,1 năm","8 tự nguyện · 3 không","—","9 đã phỏng vấn","3 đang bàn giao"]},
-  {id:"t6c",t:"Tình trạng hoàn thiện hồ sơ nhân sự",
-   cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Phòng ban"},{t:"Ngày vào",a:"c"},{t:"CCCD",a:"c"},{t:"SYLL",a:"c"},{t:"Bằng cấp",a:"c"},{t:"Khám SK",a:"c"},{t:"HĐLĐ",a:"c"},{t:"Sổ BH",a:"c"},{t:"TK NH",a:"c"},{t:"MST",a:"c"},{t:"Hoàn thiện",a:"n"},{t:"Ghi chú",a:"c"}],
-   groups:[{t:"Nhân sự",s:5},{t:"Đầu mục hồ sơ bắt buộc",s:8},{t:"Đánh giá",s:2}],
-   rows:[
-    ["NV-0501","Nguyễn Hoài Nam","Vận hành","01/07/2026","✔","✔","✔","✔","✔","—","✔","✔","89%",'<span class="pill p-w">Thiếu sổ BH</span>'],
-    ["NV-0502","Trần Bảo Ngọc","Chăm sóc KH","01/07/2026","✔","✔","—","✔","✔","—","✔","—","67%",'<span class="pill p-b">Thiếu 3 mục</span>'],
-    ["NV-0498","Lê Đình Phúc","Công nghệ","16/06/2026","✔","✔","✔","✔","✔","✔","✔","✔","100%",'<span class="pill p-ok">Đầy đủ</span>'],
-    ["NV-0489","Phạm Khánh Linh","Kế toán","02/06/2026","✔","✔","✔","✔","✔","✔","✔","✔","100%",'<span class="pill p-ok">Đầy đủ</span>'],
-    ["NV-0476","Hoàng Anh Tuấn","Kinh doanh","15/05/2026","✔","✔","✔","—","✔","✔","✔","✔","89%",'<span class="pill p-b">Quá hạn 30 ngày</span>'],
-    ["NV-0455","Bùi Quốc Anh","Kinh doanh","12/01/2024","✔","✔","✔","✔","✔","✔","✔","—","89%",'<span class="pill p-w">Thiếu MST</span>']],
-   total:["TỔNG CỘNG","148 nhân sự","—","—","148","147","145","145","148","142","148","144","96,1%","137 đầy đủ · 11 còn thiếu"]}],
+  {id:"t6a",t:"Nhân sự onboard trong phạm vi lọc",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Vị trí"},{t:"Quản lý"},{t:"Ngày vào",a:"c"}],
+   rows:()=>{if(!HRon())return [["00892","Nguyễn Văn A","HQS200","Nhân viên phát triển kinh doanh","Trần Việt Trí","01/07/2026"]];
+     const f=new Date(RANGE.from),t=new Date(RANGE.to);
+     return HRx().rows().filter(r=>r.vao&&r.vao>=f&&r.vao<=t).sort((a,b)=>b.vao-a.vao).slice(0,300)
+       .map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,r.vt||r.cv,r.ql||"—",dmy(r.vao)])}},
+  {id:"t6b",t:"Nhân sự nghỉ việc trong phạm vi lọc",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Ngày vào",a:"c"},{t:"Ngày nghỉ",a:"c"},{t:"Thâm niên (tháng)",a:"n"}],
+   rows:()=>{if(!HRon())return [["00641","Đỗ Thị Hương","Công nghệ","12/01/2003","08/04/2026","14"]];
+     const f=new Date(RANGE.from),t=new Date(RANGE.to);
+     return HRx().rows().filter(r=>r.nghi&&r.nghi>=f&&r.nghi<=t).sort((a,b)=>b.nghi-a.nghi).slice(0,300)
+       .map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,dmy(r.vao),dmy(r.nghi),
+         `<span class="pill ${r.tn<3?'p-b':r.tn<12?'p-w':'p-ok'}">${r.tn}</span>`])}},
+  {id:"t6c",t:"Mức độ hoàn thiện hồ sơ theo từng trường thông tin",
+   cols:[{t:"Trường thông tin"},{t:"Đã có",a:"n"},{t:"Còn thiếu",a:"n"},{t:"Tỷ lệ đủ",a:"n"}],
+   rows:()=>{const d=HRon()?HRx().thieuHoSo():[{ten:"Email công ty",du:142,thieu:6,ty:95.9}];
+     return d.map(x=>[x.ten,dec(x.du,0),x.thieu?`<span class="pill p-b">${x.thieu}</span>`:'<span class="pill p-ok">0</span>',
+       progCell(x.ty,x.ty>=95?"#10B981":x.ty>=80?"#F59E0B":"#F43F5E")])}},
+  {id:"t6d",t:"Số nhân sự theo quản lý trực tiếp",
+   cols:[{t:"Quản lý trực tiếp"},{t:"Số nhân sự",a:"n"},{t:"Đánh giá",a:"c"}],
+   rows:()=>{const e=HRon()?HRx().spanQL():[["Hoàng Minh Quân",14]];
+     return e.map(([ten,n])=>[`<b>${ten}</b>`,n,
+       n>10?'<span class="pill p-b">Quá tải</span>':n<3?'<span class="pill p-w">Quản ít</span>':'<span class="pill p-ok">Hợp lý</span>'])}},
+  {id:"t6e",t:"Nhân sự chưa gán quản lý trực tiếp",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Chức vụ"},{t:"Ngày vào",a:"c"}],
+   rows:()=>{if(!HRon())return [];
+     return HRx().active().filter(r=>!r.ql).slice(0,200).map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,r.cv,dmy(r.vao)])}},
+  {id:"t6f",t:"Sinh nhật và kỷ niệm ngày vào trong tháng",
+   cols:[{t:"Họ và tên"},{t:"Phòng ban"},{t:"Sự kiện"},{t:"Ngày",a:"c"},{t:"Số năm",a:"n"}],
+   rows:()=>{if(!HRon())return [];
+     const m=(RANGE&&RANGE.to?new Date(RANGE.to):new Date()).getMonth(),now=new Date(),out=[];
+     HRx().active().forEach(r=>{
+       if(r.sinh&&r.sinh.getMonth()===m)out.push([`<b>${r.ten}</b>`,r.phong,'<span class="pill p-w">Sinh nhật</span>',dmy(r.sinh),now.getFullYear()-r.sinh.getFullYear()]);
+       if(r.vao&&r.vao.getMonth()===m&&r.vao.getFullYear()<now.getFullYear())
+         out.push([`<b>${r.ten}</b>`,r.phong,'<span class="pill p-ok">Kỷ niệm vào công ty</span>',dmy(r.vao),now.getFullYear()-r.vao.getFullYear()]);
+     });return out.slice(0,300)}},
+  {id:"t6g",t:"Nhân sự sắp hết thử việc trong 30 ngày",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Ngày vào",a:"c"},{t:"Đủ 60 ngày",a:"c"},{t:"Đủ 90 ngày",a:"c"}],
+   rows:()=>{if(!HRon())return [];
+     const now=new Date();
+     return HRx().active().filter(r=>r.vao&&r.tn<4).map(r=>{
+       const d60=new Date(r.vao.getTime()+60*864e5),d90=new Date(r.vao.getTime()+90*864e5);
+       return {r,d60,d90,con:Math.round((d90-now)/864e5)}})
+       .filter(x=>x.con>=-30&&x.con<=30).sort((a,b)=>a.con-b.con).slice(0,200)
+       .map(x=>[x.r.ma,`<b>${x.r.ten}</b>`,x.r.phong,dmy(x.r.vao),dmy(x.d60),
+         `<span class="pill ${x.con<0?'p-b':x.con<=15?'p-w':'p-ok'}">${dmy(x.d90)}</span>`])}}],
  defs:[["Headcount","Số nhân sự có trạng thái Đang làm tại ngày chốt số, bao gồm cả nhân sự đang thử việc."],
    ["Turnover tháng","Số người nghỉ trong kỳ chia cho headcount bình quân kỳ."],
    ["Nghỉ dưới 12 tháng","Số người nghỉ có thâm niên dưới 12 tháng, chia cho tổng số nghỉ trong kỳ."],
@@ -615,8 +715,8 @@ REP.HRM6={
 
 /* ---------------- HRM7 ---------------- */
 REP.HRM7={
- title:"Báo cáo Bảo hiểm xã hội",
- sub:"Mức độ tham gia, báo tăng – báo giảm, chi phí đóng và tiến độ giải quyết chế độ.",
+ title:"Báo cáo hợp đồng và bảo hiểm",
+ sub:"Hạn hợp đồng, NDA và hồ sơ pháp lý; mức độ tham gia và chi phí đóng bảo hiểm.",
  meta:{cycle:"Tháng",close:"31/07/2026",issue:"06/08/2026",ver:"1.2",
    by:"Đoàn Thu Hà",byRole:"Hành chính nhân sự · PNS",
    chk:"Nguyễn Thị Hạnh",chkRole:"Kế toán thanh toán · PKT",
@@ -631,6 +731,14 @@ REP.HRM7={
   ['Hai nhân sự onboard 01/07 chưa hoàn thiện sổ bảo hiểm, ảnh hưởng tới hồ sơ báo tăng kỳ 08. Xử lý cùng đầu mục hồ sơ tại HRM6.','t-md'],
   ['Đối chiếu số liệu với cơ quan BHXH trước ngày 25 hằng tháng theo lịch cố định.','t-lo']],
  kpis:[
+  {k:"Hợp đồng hết hạn trong 30 ngày",u:"hợp đồng",cur:7,prev:5,tgt:0,dir:-1,p:0,sp:[3,4,6,5,5,7]},
+  {k:"Hợp đồng hết hạn trong 60 ngày",u:"hợp đồng",cur:15,prev:12,tgt:0,dir:-1,p:0,sp:[9,10,11,13,12,15]},
+  {k:"Hợp đồng đã quá hạn",u:"hợp đồng",cur:2,prev:3,tgt:0,dir:-1,p:0,sp:[6,5,4,4,3,2]},
+  {k:"Nhân sự đang thử việc",u:"người",cur:11,prev:9,tgt:12,dir:1,p:0,sp:[7,8,10,9,9,11]},
+  {k:"Tỷ lệ đã ký NDA",u:"%",cur:94.6,prev:92.1,tgt:100,dir:1,sp:[86,88,90,91,92,95]},
+  {k:"Nhân sự chưa ký NDA",u:"người",cur:8,prev:11,tgt:0,dir:-1,p:0,sp:[18,16,14,13,11,8]},
+  {k:"Cảnh báo hợp đồng đang mở",u:"cảnh báo",cur:9,prev:12,tgt:0,dir:-1,p:0,sp:[17,15,14,13,12,9]},
+
   {k:"Tỷ lệ phủ bảo hiểm",d:"Trên số nhân sự thuộc diện",u:"%",cur:100.0,prev:98.6,tgt:100,dir:1,p:0,sp:[96,97,98,98,99,100]},
   {k:"Số người đang tham gia",u:"người",cur:141,prev:139,tgt:141,dir:1,p:0,sp:[133,135,137,138,139,141]},
   {k:"Quỹ lương đóng bảo hiểm",u:"triệu",cur:1618,prev:1601,tgt:1650,dir:-1,p:0,f:v=>vnd(v),sp:[1542,1563,1578,1590,1601,1618]},
@@ -640,6 +748,24 @@ REP.HRM7={
   {k:"Hồ sơ chế độ đang xử lý",u:"hồ sơ",cur:3,prev:2,tgt:0,dir:-1,p:0,sp:[4,3,2,3,2,3]},
   {k:"Chênh lệch đối chiếu cơ quan BH",u:"đồng",cur:0,prev:0,tgt:0,dir:-1,p:0,f:v=>vnd(v),sp:[0,0,0,0,0,0]}],
  charts:[
+  {id:"h1",t:"Hợp đồng theo thời hạn còn lại",h:"hợp đồng",span:"g3",
+   f:()=>{let e=[["Đã quá hạn",2],["Dưới 30 ngày",7],["30 – 60 ngày",8],["60 – 90 ngày",11],["Trên 90 ngày",96]];
+     if(HRon()){const b={"Đã quá hạn":0,"Dưới 30 ngày":0,"30 – 60 ngày":0,"60 – 90 ngày":0,"Trên 90 ngày":0};
+       HRx().active().forEach(r=>{const c=r.conLai;if(c===null)return;
+         if(c<0)b["Đã quá hạn"]++;else if(c<=30)b["Dưới 30 ngày"]++;else if(c<=60)b["30 – 60 ngày"]++;
+         else if(c<=90)b["60 – 90 ngày"]++;else b["Trên 90 ngày"]++});
+       e=Object.entries(b)}
+     mk("h1","bar",barSet(lab(e),val(e),[C.red,C.gold,C.amber,C.navy2,C.green]),{})}},
+  {id:"h2",t:"Tình trạng ký NDA",h:"người",
+   f:()=>{let e=[["Đã ký",140],["Chưa ký",8]];
+     if(HRon()){const a=HRx().active();e=[["Đã ký",a.filter(r=>r.nda).length],["Chưa ký",a.filter(r=>!r.nda).length]]}
+     mk("h2","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.green,C.red],borderWidth:0,hoverOffset:6}]},
+       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"h3",t:"Nhân sự theo tình trạng lao động",h:"người",
+   f:()=>{let e=[["Đang làm",137],["Thử việc",11]];
+     if(HRon())e=HRx().demTheo(HRx().active(),r=>r.tt||"Không rõ",6);
+     mk("h3","bar",barSet(lab(e),val(e),C.navy),{indexAxis:"y",scales:AXH})}},
+
   {id:"g1",t:"Cơ cấu tỷ lệ đóng bảo hiểm",h:"% lương cơ bản",span:"g2",
    f:()=>mk("g1","bar",{labels:["BHXH","BHYT","BHTN"],datasets:[
      {label:"Công ty đóng",data:[17,3,1.5],backgroundColor:C.navy,borderRadius:1},
@@ -655,7 +781,23 @@ REP.HRM7={
      {plugins:{legend:{display:true,position:"bottom"}},scales:{x:{stacked:true,grid:{display:false},border:{color:"rgba(148,163,184,.28)"}},y:{stacked:true,grid:{color:cssv("--grid")},border:{display:false}}}})},
   {id:"g4",t:"Chi phí bảo hiểm theo phòng ban",h:"triệu đồng · công ty đóng",
    f:()=>mk("g4","bar",{labels:DEPTS,datasets:[{data:[142,102,84,76,47,30,24],backgroundColor:C.navy2,borderRadius:1}]},{indexAxis:'y',scales:AXH})}],
- tables:[{id:"t7",t:"Chi tiết tham gia và giải quyết chế độ bảo hiểm",
+ tables:[
+  {id:"t7a",t:"Hợp đồng sắp hết hạn và đã quá hạn",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Chức vụ"},{t:"Ngày hết hạn",a:"c"},{t:"Còn lại (ngày)",a:"n"}],
+   rows:()=>{if(!HRon())return [["00590","Nguyễn Vũ Minh Tùng","Cung ứng","Nhân viên","30/09/2026","24"]];
+     return HRx().hetHanHD(90).slice(0,300).map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,r.cv,dmy(r.hetHan),
+       `<span class="pill ${r.conLai<0?'p-b':r.conLai<=30?'p-w':'p-ok'}">${r.conLai}</span>`])}},
+  {id:"t7b",t:"Nhân sự chưa ký NDA",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Ngày vào",a:"c"},{t:"Thâm niên (tháng)",a:"n"}],
+   rows:()=>{if(!HRon())return [];
+     return HRx().active().filter(r=>!r.nda).sort((a,b)=>b.tn-a.tn).slice(0,200)
+       .map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,dmy(r.vao),r.tn])}},
+  {id:"t7c",t:"Cảnh báo hợp đồng ghi nhận trên hồ sơ",
+   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Nội dung cảnh báo"}],
+   rows:()=>{if(!HRon())return [];
+     return HRx().active().filter(r=>r.canhBao.length).slice(0,200)
+       .map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,r.canhBao.join(' · ')])}},
+{id:"t7",t:"Chi tiết tham gia và giải quyết chế độ bảo hiểm",
    cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Phòng ban"},{t:"Số sổ BH",a:"c"},{t:"Mức lương đóng",a:"n"},{t:"Công ty đóng",a:"n"},{t:"NLĐ đóng",a:"n"},{t:"Ngày hiệu lực",a:"c"},{t:"Nghiệp vụ",a:"c"},{t:"Trạng thái",a:"c"}],
    groups:[{t:"Nhân sự",s:4},{t:"Mức đóng",s:4},{t:"Nghiệp vụ trong kỳ",s:3}],
    rows:[
@@ -744,6 +886,14 @@ REP.HRM8={
 
 
 
+
+/* ---- Cầu nối dữ liệu nhân sự thật ---- */
+const HRon=()=>!!(window.HQLive&&HQLive.HR&&HQLive.HR.has());
+const HRx=()=>HQLive.HR;
+const lab=e=>e.map(x=>x[0]), val=e=>e.map(x=>x[1]);
+const tr=v=>dec(v/1e6,1);
+function barSet(labels,data,color,extra){return{labels,datasets:[Object.assign({data,backgroundColor:color||C.navy,borderRadius:6,maxBarThickness:34},extra||{})]}}
+
 /* ============================================================
    E. RENDER
    ============================================================ */
@@ -815,8 +965,11 @@ function renderReport(m){
     if(group.length===(span==="g3"?3:2)){ch+=`<div class="grid ${span}">${group.join('')}</div>`;group=[]}
   });
   if(group.length)ch+=`<div class="grid ${span}">${group.join('')}</div>`;
-  let tb=r.tables.map(t=>panelT(t.t,`${t.rows.length} dòng dữ liệu`,dataTable(t.id,t.cols,t.rows,t.total,t.groups),tools(t.id),tfoot(t.rows.length)))
-    .join('<div style="height:16px"></div>');
+  let tb=r.tables.map(t=>{
+    const rw=typeof t.rows==='function'?(t.rows()||[]):t.rows;
+    const tt=typeof t.total==='function'?t.total(rw):t.total;
+    return panelT(t.t,`${rw.length} dòng dữ liệu`,dataTable(t.id,t.cols,rw,tt,t.groups),tools(t.id),tfoot(rw.length));
+  }).join('<div style="height:16px"></div>');
   if(window.HQLive){
     m.src.filter(k=>HQLive.has(k)).forEach(k=>{
       const id="live-"+k, n=HQLive.rows(k).length;
