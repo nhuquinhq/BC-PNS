@@ -14,12 +14,12 @@ html[data-theme="light"]{
   --grid:#EAF1F9;
 }
 html[data-theme="dark"]{
-  --bg:#060B18; --card:#0B1428; --card2:#091120; --line:#1C2A4A; --line2:#152039;
-  --tx:#E8EFFC; --tx2:#96A7CB; --tx3:#61759B;
-  --rail:#070F20; --railtx:#96A7CB; --railhead:#4E638D; --railhov:#122142;
-  --sh:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.26);
-  --sh2:0 14px 34px rgba(0,0,0,.34);
-  --grid:#1C2A4A;
+  --bg:#0C1326; --card:#141D36; --card2:#101A30; --line:#293A5E; --line2:#1F2D4C;
+  --tx:#EEF4FF; --tx2:#A9B8D8; --tx3:#7488AB;
+  --rail:#0E1729; --railtx:#A9B8D8; --railhead:#6076A0; --railhov:#1C2A4A;
+  --sh:0 1px 2px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.20);
+  --sh2:0 14px 34px rgba(0,0,0,.28);
+  --grid:#293A5E;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
