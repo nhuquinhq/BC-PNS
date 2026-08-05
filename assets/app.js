@@ -93,10 +93,10 @@ const SVG={
 };
 const ICONSET=[SVG.users,SVG.clock,SVG.cash,SVG.chart,SVG.layers,SVG.shield,SVG.build,SVG.spark];
 const NAVICON={HOME:SVG.grid,HRM1:SVG.user,HRM2:SVG.clock,HRM3:SVG.cash,HRM4:SVG.build,HRM5:SVG.spark,HRM6:SVG.users,HRM7:SVG.shield,HRM8:SVG.layers};
-const TILE=["#38BDF8","#818CF8","#10B981","#F59E0B","#F5487F","#22D3EE","#FF7A45","#3B82F6"];
+const TILE=["#22D3EE","#8B5CF6","#D946EF","#4C7DF0","#10B981","#F59E0B","#38BDF8","#F43F5E"];
 
-const C={navy:"#38BDF8",navy2:"#818CF8",steel:"#94A3B8",red:"#F43F5E",amber:"#F59E0B",green:"#10B981",light:"#7DD3FC",cream:"#C7D2FE",gold:"#FF7A45"};
-const PAL=[C.navy,C.navy2,C.green,C.amber,C.gold,C.red,C.light,C.cream];
+const C={navy:"#22D3EE",navy2:"#8B5CF6",steel:"#8FA6D8",red:"#F43F5E",amber:"#F59E0B",green:"#10B981",light:"#7DD3FC",cream:"#D946EF",gold:"#4C7DF0"};
+const PAL=[C.navy,C.navy2,C.cream,C.gold,C.green,C.amber,C.light,C.red];
 function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
 let AX={},AXH={};
 function applyChartTheme(){
@@ -108,7 +108,7 @@ function applyChartTheme(){
   Chart.defaults.plugins.legend.labels.boxHeight=8;
   Chart.defaults.plugins.legend.labels.usePointStyle=true;
   Chart.defaults.plugins.legend.labels.padding=13;
-  Chart.defaults.plugins.tooltip.backgroundColor="#1E2436";
+  Chart.defaults.plugins.tooltip.backgroundColor="#101F4A";
   Chart.defaults.plugins.tooltip.padding=11;
   Chart.defaults.plugins.tooltip.cornerRadius=10;
   Chart.defaults.plugins.tooltip.titleFont={weight:'700'};
