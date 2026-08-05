@@ -95,30 +95,39 @@ const ICONSET=[SVG.users,SVG.clock,SVG.cash,SVG.chart,SVG.layers,SVG.shield,SVG.
 const NAVICON={HOME:SVG.grid,HRM1:SVG.user,HRM2:SVG.clock,HRM3:SVG.cash,HRM4:SVG.build,HRM5:SVG.spark,HRM6:SVG.users,HRM7:SVG.shield,HRM8:SVG.layers};
 const TILE=["#22D3EE","#8B5CF6","#D946EF","#4C7DF0","#10B981","#F59E0B","#38BDF8","#F43F5E"];
 
-const C={navy:"#22D3EE",navy2:"#8B5CF6",steel:"#8FA6D8",red:"#F43F5E",amber:"#F59E0B",green:"#10B981",light:"#7DD3FC",cream:"#D946EF",gold:"#4C7DF0"};
-const PAL=[C.navy,C.navy2,C.cream,C.gold,C.green,C.amber,C.light,C.red];
+/* Bảng màu thương hiệu HQ — đồng bộ với BC-PKT (ChartBlock) */
+const C={navy:"#189BD8",navy2:"#1B75BB",steel:"#8FA6D8",red:"#D96F00",amber:"#7E9C00",green:"#00A651",light:"#00A99D",cream:"#189BD8",gold:"#D96F00"};
+const PAL=["#189BD8","#7E9C00","#1B75BB","#00A99D","#D96F00","#00A651"];
 function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
 let AX={},AXH={};
 function applyChartTheme(){
   const g=cssv('--grid'), t=cssv('--tx3');
-  Chart.defaults.font.family="'Plus Jakarta Sans',system-ui,sans-serif";
-  Chart.defaults.font.size=11; Chart.defaults.color=t;
+  Chart.defaults.font.family="'IBM Plex Mono',ui-monospace,monospace";
+  Chart.defaults.font.size=11; Chart.defaults.color=cssv('--tick')||t;
   Chart.defaults.maintainAspectRatio=false;
   Chart.defaults.plugins.legend.labels.boxWidth=8;
   Chart.defaults.plugins.legend.labels.boxHeight=8;
   Chart.defaults.plugins.legend.labels.usePointStyle=true;
   Chart.defaults.plugins.legend.labels.padding=13;
-  Chart.defaults.plugins.tooltip.backgroundColor="#101F4A";
+  Chart.defaults.plugins.tooltip.backgroundColor="#0B1020";
+  Chart.defaults.plugins.tooltip.borderColor="rgba(255,255,255,.14)";
+  Chart.defaults.plugins.tooltip.borderWidth=1;
+  Chart.defaults.plugins.tooltip.bodyColor="#EAF0FF";
+  Chart.defaults.plugins.tooltip.titleColor="#A6B3D4";
   Chart.defaults.plugins.tooltip.padding=11;
   Chart.defaults.plugins.tooltip.cornerRadius=10;
   Chart.defaults.plugins.tooltip.titleFont={weight:'700'};
   AX={x:{grid:{display:false},border:{display:false}},y:{grid:{color:g},border:{display:false},beginAtZero:true}};
   AXH={x:{grid:{color:g},border:{display:false},beginAtZero:true},y:{grid:{display:false},border:{display:false}}};
+  /* Cột bo góc nhẹ và đường mảnh như BC-PKT */
+  Chart.defaults.datasets.bar.borderRadius=2;
+  Chart.defaults.datasets.line.borderWidth=2;
+  Chart.defaults.datasets.line.tension=.3;
 }
 applyChartTheme();
 function mk(id,type,data,opts={}){
   const cv=document.getElementById(id); if(!cv)return;
-  if(data.datasets)data.datasets.forEach(d=>{if(type==='bar'&&d.type!=='line'&&d.borderRadius===1)d.borderRadius=6});
+  if(data.datasets)data.datasets.forEach(d=>{if(type==='bar'&&d.type!=='line'&&d.borderRadius===1)d.borderRadius=2});
   charts.push(new Chart(cv,{type,data,options:Object.assign({plugins:{legend:{display:false}},scales:AX},opts)}));
 }
 function spark(arr,color,w=58,h=20){
@@ -368,8 +377,8 @@ REP.HRM3={
      if(HRon()){const m={};HRx().active().forEach(r=>{const k=r.phong;m[k]=m[k]||[0,0];m[k][0]+=r.p1||0;m[k][1]+=r.p2||0});
        ph=Object.entries(m).map(([k,v])=>[k,v[0]/1e6,v[1]/1e6]).sort((a,b)=>(b[1]+b[2])-(a[1]+a[2])).slice(0,12)}
      mk("c1","bar",{labels:ph.map(x=>x[0]),datasets:[
-       {label:"P1 cố định",data:ph.map(x=>r1(x[1],1)),backgroundColor:C.navy,borderRadius:6,maxBarThickness:26},
-       {label:"P2 hiệu suất",data:ph.map(x=>r1(x[2],1)),backgroundColor:C.green,borderRadius:6,maxBarThickness:26}]},
+       {label:"P1 cố định",data:ph.map(x=>r1(x[1],1)),backgroundColor:C.navy,borderRadius:2,maxBarThickness:26},
+       {label:"P2 hiệu suất",data:ph.map(x=>r1(x[2],1)),backgroundColor:C.green,borderRadius:2,maxBarThickness:26}]},
        {plugins:{legend:{display:true,position:"bottom"}},scales:{x:Object.assign({stacked:true},AX.x),y:Object.assign({stacked:true},AX.y)}})}},
   {id:"c2",t:"Cơ cấu chi phí lương",h:"triệu đồng",
    f:()=>{let e=[["P1 cố định",1560],["P2 hiệu suất",392],["Phụ cấp và thưởng",148]];
@@ -377,14 +386,14 @@ REP.HRM3={
        e=[["P1 cố định",a.reduce((s,r)=>s+(r.p1||0),0)/1e6],["P2 hiệu suất",a.reduce((s,r)=>s+(r.p2||0),0)/1e6],
           ["Phụ cấp và thưởng",a.reduce((s,r)=>s+(r.pc||0),0)/1e6]]}
      mk("c2","doughnut",{labels:lab(e),datasets:[{data:e.map(x=>r1(x[1],1)),backgroundColor:[C.navy,C.green,C.gold],borderWidth:0,hoverOffset:6}]},
-       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"c3",t:"Dải lương theo Level",h:"triệu đồng · thấp nhất – trung vị – cao nhất",cls:"tall",span:"g21",
    f:()=>{let d=[{level:"G1",min:8,mid:9.5,max:11},{level:"G2",min:10,mid:12,max:14}];
      if(HRon())d=HRx().dailuong();
      mk("c3","bar",{labels:d.map(x=>x.level),datasets:[
-       {label:"Thấp nhất",data:d.map(x=>r1(x.min/1e6||x.min,1)),backgroundColor:C.light,borderRadius:6,maxBarThickness:20},
-       {label:"Trung vị",data:d.map(x=>r1(x.mid/1e6||x.mid,1)),backgroundColor:C.navy,borderRadius:6,maxBarThickness:20},
-       {label:"Cao nhất",data:d.map(x=>r1(x.max/1e6||x.max,1)),backgroundColor:C.navy2,borderRadius:6,maxBarThickness:20}]},
+       {label:"Thấp nhất",data:d.map(x=>r1(x.min/1e6||x.min,1)),backgroundColor:C.light,borderRadius:2,maxBarThickness:20},
+       {label:"Trung vị",data:d.map(x=>r1(x.mid/1e6||x.mid,1)),backgroundColor:C.navy,borderRadius:2,maxBarThickness:20},
+       {label:"Cao nhất",data:d.map(x=>r1(x.max/1e6||x.max,1)),backgroundColor:C.navy2,borderRadius:2,maxBarThickness:20}]},
        {plugins:{legend:{display:true,position:"bottom"}}})}},
   {id:"c4",t:"Lương bình quân theo phòng ban",h:"triệu đồng",
    f:()=>{let e=[["BOD",38],["Công nghệ",19],["Kinh doanh",13]];
@@ -405,7 +414,7 @@ REP.HRM3={
           ["Tiền ăn",a.reduce((s,r)=>s+r.an,0)/1e6],["Phụ cấp thiết bị",a.reduce((s,r)=>s+r.pctb,0)/1e6],
           ["Thưởng chuyên cần",a.reduce((s,r)=>s+r.tcc,0)/1e6]].filter(x=>x[1]>0)}
      mk("c6","doughnut",{labels:lab(e),datasets:[{data:e.map(x=>r1(x[1],1)),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
-       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"c7",t:"Số lần tăng lương của đội ngũ",h:"người",
    f:()=>{let e=[["Chưa tăng",62],["1 lần",44],["2 lần",25],["3 lần trở lên",17]];
      if(HRon()){const b={"Chưa tăng":0,"1 lần":0,"2 lần":0,"3 lần trở lên":0};
@@ -603,13 +612,13 @@ REP.HRM6={
   {id:"f2",t:"Cơ cấu theo Chức năng",h:"người",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.cn,8):[["BD",52],["CSKH",34],["Vận hành",21],["HR",9],["Design",8],["IT",7]];
      mk("f2","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
-       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"f3",t:"Hình thức lao động",h:"người",
    f:()=>{const a=HRon()?HRx().active():[];
      const e=HRon()?[["Chính thức",a.filter(r=>!r.ctv).length],["Cộng tác viên · Parttime",a.filter(r=>r.ctv).length]]
        :[["Chính thức",121],["Cộng tác viên · Parttime",27]];
      mk("f3","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.navy,C.gold],borderWidth:0,hoverOffset:6}]},
-       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"f4",t:"Cơ cấu theo Phòng ban",h:"người · 12 phòng lớn nhất",cls:"tall",span:"g21",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.phong,12):[["Maverick Team",22],["HQS200",19],["VX101 Team",17],["WGG100 Team",15]];
      mk("f4","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}},
@@ -620,8 +629,8 @@ REP.HRM6={
    f:()=>{const b=HRon()?HRx().bienDong(12,RANGE&&RANGE.to?new Date(RANGE.to):null)
        :M12.map((m,i)=>({nhan:m,vao:3+i%4,ra:1+i%3,hc:130+i*2}));
      mk("f6","bar",{labels:b.map(x=>x.nhan),datasets:[
-       {label:"Vào",data:b.map(x=>x.vao),backgroundColor:C.green,borderRadius:6,maxBarThickness:22},
-       {label:"Ra",data:b.map(x=>-x.ra),backgroundColor:C.red,borderRadius:6,maxBarThickness:22},
+       {label:"Vào",data:b.map(x=>x.vao),backgroundColor:C.green,borderRadius:2,maxBarThickness:22},
+       {label:"Ra",data:b.map(x=>-x.ra),backgroundColor:C.red,borderRadius:2,maxBarThickness:22},
        {label:"Tổng đội ngũ",type:"line",data:b.map(x=>x.hc),borderColor:C.gold,borderWidth:2.6,pointRadius:3,
         pointBackgroundColor:C.gold,tension:.38,yAxisID:"y1"}]},
        {plugins:{legend:{display:true,position:"bottom"}},
@@ -629,14 +638,14 @@ REP.HRM6={
   {id:"f7",t:"Giới tính",h:"người",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.gt):[["Nữ",81],["Nam",67]];
      mk("f7","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.navy2,C.navy],borderWidth:0,hoverOffset:6}]},
-       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"f8",t:"Thâm niên đội ngũ",h:"người",span:"g3",
    f:()=>{const e=HRon()?HRx().nhomThamNien(HRx().active()):[["Dưới 3 tháng",21],["3 – 6 tháng",25],["6 – 12 tháng",38],["1 – 2 năm",41],["Trên 2 năm",23]];
      mk("f8","bar",barSet(lab(e),val(e),C.amber),{})}},
   {id:"f9",t:"Trình độ học vấn",h:"người",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.hv,6):[["Đại học",94],["Cao đẳng",29],["Trung cấp",14],["Khác",11]];
      mk("f9","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
-       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"f10",t:"Số nhân sự theo quản lý trực tiếp",h:"người · 12 quản lý nhiều nhất",cls:"tall",span:"g21",
    f:()=>{const e=HRon()?HRx().spanQL().slice(0,12):[["Hoàng Minh Quân",14],["Trần Tây Đức",11],["Lê Tấn Thọ",9]];
      mk("f10","bar",barSet(lab(e),val(e),e.map(x=>x[1]>10?C.red:C.navy)),{indexAxis:"y",scales:AXH})}},
@@ -650,7 +659,7 @@ REP.HRM6={
   {id:"f13",t:"Tình trạng hôn nhân",h:"người",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.hn,5):[["Độc thân",112],["Đã kết hôn",36]];
      mk("f13","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
-       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"f14",t:"Top ngành học",h:"người",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active().filter(r=>r.nganh),r=>r.nganh,8):[["Kinh tế",34],["CNTT",21],["Marketing",18]];
      mk("f14","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}}],
@@ -756,7 +765,7 @@ REP.HRM7={
    f:()=>{let e=[["Đã ký",140],["Chưa ký",8]];
      if(HRon()){const a=HRx().active();e=[["Đã ký",a.filter(r=>r.nda).length],["Chưa ký",a.filter(r=>!r.nda).length]]}
      mk("h2","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.green,C.red],borderWidth:0,hoverOffset:6}]},
-       {cutout:"62%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"h3",t:"Nhân sự theo tình trạng lao động",h:"người",
    f:()=>{let e=[["Đang làm",137],["Thử việc",11]];
      if(HRon())e=HRx().demTheo(HRx().active(),r=>r.tt||"Không rõ",6);
@@ -888,17 +897,19 @@ const HRon=()=>!!(window.HQLive&&HQLive.HR&&HQLive.HR.has());
 const HRx=()=>HQLive.HR;
 const lab=e=>e.map(x=>x[0]), val=e=>e.map(x=>x[1]);
 const tr=v=>dec(v/1e6,1);
-function barSet(labels,data,color,extra){return{labels,datasets:[Object.assign({data,backgroundColor:color||C.navy,borderRadius:6,maxBarThickness:34},extra||{})]}}
+function barSet(labels,data,color,extra){return{labels,datasets:[Object.assign({data,backgroundColor:color||C.navy,borderRadius:2,maxBarThickness:34},extra||{})]}}
 
 /* ============================================================
    E. RENDER
    ============================================================ */
 function heroCard(k,i){
-  const t=TILE[i%TILE.length];
-  return `<div class="hcard" style="border-color:${t}45">
-    <div class="hh"><span class="utag" style="background:${t}20;border-color:${t}55;color:${t}">${(k.u||"chỉ số").toUpperCase()}</span>${k.live?'<span class="livetag">LIVE</span>':''}</div>
-    <div class="k">${k.k}</div>
-    <div class="row"><span class="v" style="color:${t}">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></span>${delta(k.cur,k.prev,k.dir)}</div>
+  const g=rag(k.cur,k.tgt,k.dir);
+  const tone=g.c==="g"?"gain":g.c==="a"?"warn":"loss";
+  return `<div class="kpi is-${tone}">
+    <span class="code">${(k.u||"chỉ số").toUpperCase()}</span>
+    <div class="lb">${k.k}</div>
+    <div class="val">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></div>
+    <div class="foot">MT ${k.f?k.f(k.tgt):dec(k.tgt,k.p??1)} · ${g.t}${k.live?' · LIVE':''}${delta(k.cur,k.prev,k.dir)}</div>
   </div>`;
 }
 
@@ -1082,11 +1093,11 @@ function renderHome(){
 }
 function homeCharts(){
   mk("z1","bar",{labels:M12,datasets:[
-    {label:"Quỹ lương (triệu)",data:[1712,1748,1760,1755,1802,1836,1861,1890,1904,1921,1938,1952],backgroundColor:C.navy,borderRadius:6,maxBarThickness:26},
+    {label:"Quỹ lương (triệu)",data:[1712,1748,1760,1755,1802,1836,1861,1890,1904,1921,1938,1952],backgroundColor:C.navy,borderRadius:2,maxBarThickness:26},
     {label:"Nhân sự",type:"line",data:[128,131,134,133,136,139,141,144,146,147,148,148],borderColor:C.gold,borderWidth:2.6,pointRadius:3,pointBackgroundColor:C.gold,tension:.38,yAxisID:"y1"}]},
     {plugins:{legend:{display:true,position:"bottom"}},scales:{x:AX.x,y:AX.y,y1:{position:"right",min:100,max:170,grid:{display:false},border:{display:false}}}});
   mk("z2","doughnut",{labels:BUS,datasets:[{data:[38,27,22,19,14,11,17],backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
-    {cutout:"64%",plugins:{legend:{display:true,position:"bottom"}},scales:{}});
+    {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}});
 }
 
 /* ---- Trang Nguồn & Cấu hình (hệ thống) ---- */
