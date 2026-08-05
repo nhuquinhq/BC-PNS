@@ -944,13 +944,10 @@ function mast(m,r){
       <div class="mtt">
         <div class="eyebrow">${m.code} · Chu kỳ ${r.meta.cycle} · Chốt số ${r.meta.close}</div>
         <h1>${r.title}</h1>
-        <p>${r.sub}</p>
         <div class="scoperow">
           <span class="scopepill">Phạm vi: <b>${fmtd(RANGE.from)} → ${fmtd(RANGE.to)}</b></span>
-          <span class="srctxt">Nguồn: ${m.src.map(k=>SOURCES[k].n).join(' · ')} — Google Sheet</span>
         </div>
       </div>
-      <div class="sp"></div>
       <div class="mside">
         <div class="mrow">
           <div class="chip ${st}"><i></i>${sl[0]} · ${sl[1]}</div>
@@ -1047,13 +1044,10 @@ function renderHome(){
       <div class="mtt">
         <div class="eyebrow">Báo cáo tổng hợp · HRM1 → HRM8</div>
         <h1>Báo cáo tổng hợp nhân sự</h1>
-        <p>Toàn bộ chỉ số của tám mã báo cáo — Phòng Nhân sự theo dõi vận hành theo kỳ.</p>
         <div class="scoperow">
           <span class="scopepill">Phạm vi: <b>${fmtd(RANGE.from)} → ${fmtd(RANGE.to)}</b></span>
-          <span class="srctxt">Nguồn: ${linkedAll}/${NSRC} tab Google Sheet đã nối</span>
         </div>
       </div>
-      <div class="sp"></div>
       <div class="mside">
         <div class="mrow">
           <button class="btn g noprint" onclick="window.print()">${SVG.down}Xuất báo cáo</button>
