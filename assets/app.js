@@ -180,10 +180,6 @@ function scorecard(id,rows){
   return `<div class="tw"><table id="${id}"><thead>${th}</thead><tbody>${tb}</tbody></table></div>`;
 }
 function defsBox(list){return `<div class="defs"><dl>${list.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>`}
-function signBlock(m){return `<div class="sign">
-  <div><div class="r">Người lập</div><div class="n">${m.by}</div><div class="d">${m.byRole}</div></div>
-  <div><div class="r">Người kiểm soát</div><div class="n">${m.chk}</div><div class="d">${m.chkRole}</div></div>
-  <div><div class="r">Người duyệt</div><div class="n">${m.apv}</div><div class="d">${m.apvRole}</div></div></div>`}
 function rankList(items){
   return `<div class="rank">${items.map((it,i)=>{const c=TILE[i%TILE.length];
     return `<div class="r"><div class="av" style="background:${c}">${it[0].slice(0,2).toUpperCase()}</div>
@@ -992,7 +988,7 @@ function renderReport(m){
   parts.push(["Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
     panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id))]);
   parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
-  parts.push(["Định nghĩa chỉ số và phê duyệt","",defsBox(r.defs)+`<div class="note">${r.note}</div>`+signBlock(r.meta)]);
+  parts.push(["Định nghĩa chỉ số","",defsBox(r.defs)+`<div class="note">${r.note}</div>`]);
   return mast(m,r)+
   `<div class="wrap"><div class="hero kstrip">${K.map((k,i)=>heroCard(k,i)).join('')}</div></div>
    <div class="wrap">${parts.map((p,i)=>sec(i+1,p[0],p[1],p[2])).join('')}</div>`;
