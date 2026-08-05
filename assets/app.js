@@ -902,7 +902,7 @@ function heroCard(k,i){
   return `<div class="hcard" style="border-color:${t}45">
     <div class="hh"><span class="utag" style="background:${t}20;border-color:${t}55;color:${t}">${(k.u||"chỉ số").toUpperCase()}</span>${k.live?'<span class="livetag">LIVE</span>':''}</div>
     <div class="k">${k.k}</div>
-    <div class="row"><span class="v">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></span>${delta(k.cur,k.prev,k.dir)}</div>
+    <div class="row"><span class="v" style="color:${t}">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></span>${delta(k.cur,k.prev,k.dir)}</div>
   </div>`;
 }
 

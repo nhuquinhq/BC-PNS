@@ -12,13 +12,10 @@ html[data-theme="light"]{
   --sh:0 1px 2px rgba(22,35,60,.04), 0 6px 20px rgba(22,35,60,.05);
   --sh2:0 12px 30px rgba(22,35,60,.10);
   --grid:#EAF1F9;
-  --glass:rgba(255,255,255,.78);
+  --glass:#FFFFFF;
   --ambient:
-    linear-gradient(rgba(59,130,246,.035) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(59,130,246,.035) 1px,transparent 1px),
-    radial-gradient(900px 520px at 88% -8%,rgba(56,189,248,.13),transparent 62%),
-    radial-gradient(760px 540px at -8% 108%,rgba(129,140,248,.12),transparent 62%),
-    radial-gradient(560px 380px at 55% 118%,rgba(34,211,238,.07),transparent 60%);
+    radial-gradient(900px 520px at 88% -8%,rgba(56,189,248,.07),transparent 62%),
+    radial-gradient(760px 540px at -8% 108%,rgba(129,140,248,.06),transparent 62%);
 }
 html[data-theme="dark"]{
   --bg:#0C1326; --card:#141D36; --card2:#101A30; --line:#293A5E; --line2:#1F2D4C;
@@ -27,23 +24,16 @@ html[data-theme="dark"]{
   --sh:0 1px 2px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.20);
   --sh2:0 14px 34px rgba(0,0,0,.28);
   --grid:#293A5E;
-  --glass:rgba(20,29,54,.72);
+  --glass:#141D36;
   --ambient:
-    linear-gradient(rgba(56,189,248,.045) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(56,189,248,.045) 1px,transparent 1px),
-    radial-gradient(1000px 600px at 88% -8%,rgba(34,211,238,.16),transparent 62%),
-    radial-gradient(820px 600px at -8% 108%,rgba(99,102,241,.18),transparent 62%),
-    radial-gradient(600px 420px at 55% 118%,rgba(245,72,127,.07),transparent 60%);
+    radial-gradient(1100px 640px at 82% -12%,rgba(34,211,238,.07),transparent 60%),
+    radial-gradient(900px 620px at -6% 106%,rgba(99,102,241,.07),transparent 60%);
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 html{background:var(--bg)}
 body{background:transparent;color:var(--tx);font-family:"Plus Jakarta Sans",system-ui,sans-serif;font-size:var(--fs);line-height:1.55;-webkit-font-smoothing:antialiased}
-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background-image:var(--ambient);
-  background-size:38px 38px,38px 38px,auto,auto,auto}
-body::after{content:"";position:fixed;top:0;left:0;right:0;height:2px;z-index:98;pointer-events:none;
-  background:linear-gradient(90deg,#22D3EE,#3B82F6 38%,#818CF8 70%,#22D3EE);opacity:.85}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:var(--ambient)}
 body.compact{--pad:12px;--fs:12px}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
 button{font-family:inherit;cursor:pointer}
@@ -116,8 +106,8 @@ main{padding:0 0 70px;max-width:1580px}
 .mast h1{font-size:21px;font-weight:800;text-transform:uppercase;background:linear-gradient(92deg,var(--tx) 45%,var(--indigo));-webkit-background-clip:text;background-clip:text;color:transparent}
 .mast .bar p{margin:5px 0 0;color:var(--tx2);font-size:12.5px;max-width:660px}
 .scoperow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:11px}
-.scopepill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 14px;font-size:10.5px;font-weight:700;letter-spacing:.03em;color:var(--cyan);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.45);font-family:"IBM Plex Mono",ui-monospace,monospace}
-.scopepill b{font-weight:700}
+.scopepill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:7px 15px;font-size:11px;font-weight:700;letter-spacing:.02em;color:#fff;background:var(--grad-cta);box-shadow:0 6px 16px rgba(56,189,248,.28);font-family:"IBM Plex Mono",ui-monospace,monospace}
+.scopepill b{font-weight:800}
 .srctxt{font-size:11.5px;color:var(--tx2);font-weight:600}
 .mast .sp{flex:1}
 .mtt{flex:1 1 340px;min-width:0}
@@ -217,8 +207,8 @@ body.viewer .adminonly{display:none!important}
 .hcard .k{font-size:11px;color:var(--tx2);font-weight:600;line-height:1.4}
 .kstrip{margin:16px 0 0}
 .hcard .row{display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap}
-.hcard .v{font-size:22px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1.15}
-.hcard .v small{font-size:12px;color:var(--tx3);font-weight:600;margin-left:4px}
+.hcard .v{font-size:23px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1.15}
+.hcard .v small{font-size:11.5px;color:var(--tx3);font-weight:600;margin-left:4px}
 .hcard .foot{grid-column:1/-1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--tx2);font-weight:600;padding-top:13px;margin-top:2px;border-top:1px solid var(--line)}
 .hcard .foot span{display:inline-flex;align-items:center;gap:6px}
 .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
@@ -330,8 +320,8 @@ tbody td b{color:var(--tx);font-weight:800}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-/* ===== CHẤT LIỆU KÍNH MỜ (glassmorphism) ===== */
-.panel,.hcard,.exbox,.accitem,.authcard,.defs,.sign{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+/* ===== BỀ MẶT PHẲNG KIỂU PKT ===== */
+.panel,.hcard,.exbox,.accitem,.authcard,.defs,.sign{background:var(--glass)}
 .panel:hover{border-color:rgba(56,189,248,.35)}
 .hcard:hover{box-shadow:var(--sh2),0 0 0 1px rgba(56,189,248,.25)}
 
