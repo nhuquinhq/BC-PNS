@@ -15,14 +15,20 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+<div class="mobile-bar">
+  <div class="mb-brand"><span class="logo">HQ<i>group</i></span><b>BÁO CÁO PNS</b></div>
+  <button class="mb-burger" id="btn-menu" aria-label="Mở menu">☰</button>
+</div>
+<div class="rail-backdrop" id="railbd"></div>
 <div class="shell">
-  <aside class="rail">
-    <div class="brand">
-      <div class="logo">HQ<i>group</i></div>
-      <div><b>Trung tâm Báo cáo PNS</b><span>Realtime Google Sheet · v3</span></div>
+  <aside class="rail" id="rail">
+    <div class="rail-scroll">
+      <div class="brand">
+        <div class="logo">HQ<i>group</i></div>
+        <div><b>Trung tâm Báo cáo PNS</b><span>Realtime Google Sheet · v3</span></div>
+      </div>
+      <div id="navwrap"></div>
     </div>
-    <div id="navwrap"></div>
-    <div class="raildiv"></div>
     <div class="railuser">
       <div class="ru1">
         <div class="who"><div class="av">Q</div><div><b>Quinh</b><span>Quản trị Khối BO</span></div></div>

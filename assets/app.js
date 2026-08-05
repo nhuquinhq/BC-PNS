@@ -1299,7 +1299,7 @@ function navBtn(m){
     <span class="code">${m.id==="HOME"?"◆":m.code}</span>
     <span class="st ${st==='ok'?'done':st==='draft'?'draft':st==='wait'?'wait':''}"></span>
     <span>${m.title}</span></button>`);
-  b.onclick=()=>go(m.id);return b;
+  b.onclick=()=>{go(m.id);closeRail()};return b;
 }
 function buildNav(){
   const w=document.getElementById('navwrap');w.innerHTML='';
@@ -1318,7 +1318,7 @@ function buildNav(){
     w.appendChild(rsec("Hệ thống"));
     const gs=nv();
     const bs=el(`<button class="${current==='SYS'?'on':''}"><span class="code">·</span><span class="st done"></span><span>Nguồn &amp; Cấu hình</span></button>`);
-    bs.onclick=()=>go('SYS');gs.appendChild(bs);w.appendChild(gs);
+    bs.onclick=()=>{go('SYS');closeRail()};gs.appendChild(bs);w.appendChild(gs);
   }
 }
 function go(id){
@@ -1355,6 +1355,13 @@ function setTheme(t){
 }
 document.getElementById('btn-theme').onclick=()=>
   setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+/* ---- Menu trượt trên điện thoại ---- */
+const railEl=document.getElementById('rail'), railBd=document.getElementById('railbd');
+function openRail(){railEl.classList.add('open');railBd.classList.add('on')}
+function closeRail(){railEl.classList.remove('open');railBd.classList.remove('on')}
+document.getElementById('btn-menu').onclick=()=>railEl.classList.contains('open')?closeRail():openRail();
+railBd.onclick=closeRail;
+
 document.getElementById('btn-close').onclick=closeDrawer;
 document.getElementById('btn-logout').onclick=logout;
 document.getElementById('scrim').onclick=closeDrawer;
