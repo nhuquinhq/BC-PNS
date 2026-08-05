@@ -11,10 +11,15 @@ window.HQLive = (function () {
   const P     = CFG.params  || {};
   const F     = CFG.filters || {};
   const store = {};          // { DM_NhanSu: [ {…}, {…} ], … }
+  const thoRaw = {};         // { RAW_TuyenDung: [ ["STT","Ngày",…], … ] } — dạng mảng thô
   const meta  = {};          // { DM_NhanSu: {ok:true, n:148, at:"09:12"} }
 
-  /* ---------- 1. Parser CSV (xử lý được dấu phẩy trong ngoặc kép) ---------- */
-  function parseCSV(text) {
+  /* ---------- 1. Parser CSV (xử lý được dấu phẩy trong ngoặc kép) ----------
+     tachCSV  → mảng hai chiều đúng thứ tự cột, KHÔNG bỏ dòng nào.
+                Dùng cho các sheet có tiêu đề nằm giữa bảng (đề xuất tuyển
+                dụng, theo dõi SLA) — phải đọc theo vị trí cột.
+     parseCSV → gán tiêu đề dòng đầu thành khoá object (các sheet còn lại). */
+  function tachCSV(text) {
     const rows = [];
     let row = [], cell = "", q = false;
     for (let i = 0; i < text.length; i++) {
@@ -31,6 +36,10 @@ window.HQLive = (function () {
       }
     }
     if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  function parseCSV(text) {
+    const rows = tachCSV(text);
     if (!rows.length) return [];
     /* Tiêu đề trùng tên (sheet nhân sự có nhiều cột "Cảnh báo", "Ngày hết hạn"…)
        được đánh số để không ghi đè nhau: "Cảnh báo", "Cảnh báo #2", … */
@@ -84,6 +93,7 @@ window.HQLive = (function () {
     try {
       const rows = parseCSV(text);
       store[key] = rows;
+      thoRaw[key] = tachCSV(text);
       meta[key] = { ok: true, n: rows.length, at: gio(), via };
       return true;
     } catch (e) {
@@ -247,10 +257,51 @@ window.HQLive = (function () {
       set("Tỷ trọng P1 cố định", (p1 + p2) ? p1 / (p1 + p2) * 100 : null);
     }
 
-    if (reportId === "HRM1" && has("RAW_TuyenDung")) {
-      const td = rows("RAW_TuyenDung");
-      const mo = td.filter(r => !/đã đóng/i.test(r["Kết quả"] || "")).length;
-      set("Vị trí đang mở", mo);
+    /* ---- HRM1 · Tuyển dụng (phễu ứng viên + đề xuất + SLA) ---- */
+    if (reportId === "HRM1") {
+      const setSp = (ten, v, sp, prev) => {
+        const k = kpis.find(x => x.k === ten); if (!k || v == null || !isFinite(v)) return;
+        k.cur = v; k.live = true;
+        if (prev != null && isFinite(prev)) k.prev = prev;
+        if (sp && sp.length >= 2) k.sp = sp;
+      };
+      const ty = (a, b) => b > 0 ? a / b * 100 : null;
+
+      if (coTD()) {
+        const s = tdStats();
+        const mt = tdThang().filter(m => m.total > 0 || m.nhanViec > 0);
+        const cot = f => mt.map(f);
+        const truoc = f => mt.length > 1 ? f(mt[mt.length - 2]) : null;
+        setSp("Tổng CV thu thập", s.total, cot(m => m.total), truoc(m => m.total));
+        setSp("CV pass lọc HR", s.hrPass, cot(m => m.hrPass), truoc(m => m.hrPass));
+        setSp("Tỷ lệ pass lọc HR", ty(s.hrPass, s.total),
+          cot(m => m.total ? m.hrPass / m.total * 100 : 0));
+        setSp("Ứng viên tới phỏng vấn", s.thamGiaPV, cot(m => m.thamGiaPV), truoc(m => m.thamGiaPV));
+        setSp("Ứng viên pass phỏng vấn", s.passPV, cot(m => m.passPV), truoc(m => m.passPV));
+        setSp("Ứng viên nhận việc", s.nhanViec, cot(m => m.nhanViec), truoc(m => m.nhanViec));
+        setSp("Ứng viên đi làm đủ 10 ngày", s.d10, cot(m => m.d10), truoc(m => m.d10));
+        setSp("Tỷ lệ CV thành nhận việc", ty(s.nhanViec, s.total),
+          cot(m => m.total ? m.nhanViec / m.total * 100 : 0));
+        setSp("Tỷ lệ bỏ cuộc sau nhận việc", ty(s.dropout, s.nhanViec));
+        setSp("Số CV trên một vị trí", tdNhom(c => c.viTri).length
+          ? s.total / tdNhom(c => c.viTri).length : null);
+      }
+
+      if (coDX()) {
+        const d = dxStats();
+        setSp("Tổng chỉ tiêu cần tuyển", d.can);
+        setSp("Đã nhận việc theo đề xuất", d.nhan);
+        setSp("Chỉ tiêu còn lại", d.conLai);
+        setSp("Tỷ lệ hoàn thành chỉ tiêu", ty(d.nhan, d.can));
+        setSp("Vị trí đang tuyển", d.dangTuyen);
+        setSp("Vị trí đang mở", d.dangTuyen);
+      }
+
+      if (coSLA()) {
+        const q = slaStats();
+        setSp("Tỷ lệ đúng hạn SLA gửi CV", q.tyDungHanCV);
+        setSp("Vị trí trễ hạn SLA", q.treCV);
+      }
     }
 
     if (reportId === "HRM7" && has("RAW_BHXH")) {
@@ -504,6 +555,293 @@ window.HQLive = (function () {
   const HR = { rows: hrRows, active: dangLamHR, has: hasHR, demTheo, nhomTuoi, nhomThamNien,
     bienDong, spanQL, thieuHoSo, tyLeHoSoDu, dailuong, tangLuong, hetHanHD, dt, thang };
 
+  /* =====================================================================
+     5c. BỘ DỮ LIỆU TUYỂN DỤNG (HRM1)
+     Ba nguồn, đọc theo VỊ TRÍ CỘT vì tiêu đề nằm giữa bảng:
+       RAW_TuyenDung  — phễu ứng viên (mỗi dòng một CV)
+       RAW_DeXuatTD   — đề xuất tuyển dụng và kết quả (mỗi dòng một order)
+       RAW_SLA_TD     — bảng theo dõi tiến độ theo SLA
+     ===================================================================== */
+  const TDSRC = "RAW_TuyenDung", DXSRC = "RAW_DeXuatTD", SLASRC = "RAW_SLA_TD";
+  const raws = k => thoRaw[k] || [];
+
+  /* bỏ dấu + hạ chữ thường để so tiêu đề / giá trị không phụ thuộc cách gõ */
+  const kd = s => String(s == null ? "" : s)
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d").replace(/\s+/g, " ").trim().toLowerCase();
+  const laCo    = v => kd(v) === "co";
+  const laPass  = v => kd(v) === "pass";
+  const laFail  = v => kd(v) === "fail";
+  const laDongY = v => kd(v) === "dong y";
+  const laTuChoi= v => kd(v) === "tu choi";
+
+  /* "05/01/2026" → 1 · "Tháng 3" → 3 · "T3" → 3 */
+  function thangSo(s) {
+    const t = String(s || "").trim(); if (!t) return 0;
+    const sl = t.split("/");
+    if (sl.length >= 2) { const m = +sl[1]; if (m >= 1 && m <= 12) return m; }
+    const m = t.match(/\d+/);
+    if (m) { const v = +m[0]; if (v >= 1 && v <= 12) return v; }
+    return 0;
+  }
+  function tuanSo(s) {
+    const d = dt(s); if (!d) return 0;
+    const dau = new Date(d.getFullYear(), 0, 1);
+    return Math.ceil(((d - dau) / 86400000 + dau.getDay() + 1) / 7);
+  }
+
+  /* ---- 5c.1 Phễu ứng viên ---- */
+  function tdLevel(c) {
+    if (laCo(c.du10))        return "L9";
+    if (laCo(c.nhanViec))    return "L8";
+    if (laCo(c.dongYLam))    return "L7";
+    if (laPass(c.ketQuaPV))  return "L4A";
+    if (laFail(c.ketQuaPV))  return "L4B";
+    if (laCo(c.thamGiaPV))   return "L3A";
+    if (laDongY(c.goiMoi))   return "L3";
+    if (laTuChoi(c.goiMoi))  return "L3X";
+    if (laPass(c.locCV))     return "L1";
+    return "L0";
+  }
+  let _td = null, _tdLen = -1;
+  function tdRows() {
+    const src = raws(TDSRC);
+    if (!src.length) return [];
+    if (_td && _tdLen === src.length) return _td;
+    /* Tiêu đề bảng nằm sau vài dòng tựa đề — dò dòng có ô đầu là "STT" */
+    let start = -1;
+    for (let i = 0; i < Math.min(src.length, 25); i++) {
+      if (kd(src[i][0]) === "stt") { start = i + 1; break; }
+    }
+    if (start < 0) {
+      for (let i = 0; i < Math.min(src.length, 25); i++) {
+        if (src[i][0] && !isNaN(+src[i][0])) { start = i; break; }
+      }
+    }
+    if (start < 0) start = 0;
+    const out = [];
+    for (let i = start; i < src.length; i++) {
+      const r = src[i];
+      if (!r || !r[0] || isNaN(+r[0])) continue;
+      const g = j => String(r[j] || "").trim();
+      const ngayHen = g(24), ngay10 = g(27);
+      const o = {
+        stt: +r[0], ngay: g(1), thang: thangSo(g(1)), tuan: tuanSo(g(1)),
+        thangNhan: thangSo(ngayHen), thang10: thangSo(ngay10),
+        nv: g(2) || "Khác", nguon: g(3) || "Khác", hinhThuc: g(4),
+        capBac: g(6) || "Chưa rõ", viTri: g(7) || "Chưa xác định", ten: g(8),
+        team: g(14) || g(13) || "Khác",
+        locCV: g(15), goiMoi: g(16), ngayPV: g(19), thamGiaPV: g(20),
+        ketQuaPV: g(21), dongYLam: g(23), ngayHen,
+        nhanViec: g(25), du10: g(26), ngay10
+      };
+      o.level = tdLevel(o);
+      out.push(o);
+    }
+    _td = out; _tdLen = src.length;
+    return out;
+  }
+  const coTD = () => tdRows().length > 0;
+  /* Ô "Tháng" trên thanh công cụ lọc luôn phễu và đề xuất — chọn một tháng
+     thì mọi số liệu, biểu đồ và bảng của HRM1 chỉ tính tháng đó. */
+  const thangLoc = () => (typeof RANGE !== "undefined" && RANGE && RANGE.thang) ? RANGE.thang : null;
+  function tdLoc() { const t = thangLoc(); const L = tdRows(); return t ? L.filter(c => c.thang === t) : L; }
+
+  function tdStats(list) {
+    const L = list || tdLoc();
+    const n = f => L.filter(f).length;
+    const s = {
+      total: L.length,
+      hrPass:   n(c => laPass(c.locCV)),   hrFail:   n(c => laFail(c.locCV)),
+      dongYPV:  n(c => laDongY(c.goiMoi)), tuChoiPV: n(c => laTuChoi(c.goiMoi)),
+      thamGiaPV:n(c => laCo(c.thamGiaPV)),
+      passPV:   n(c => laPass(c.ketQuaPV)),failPV:   n(c => laFail(c.ketQuaPV)),
+      dongYLam: n(c => laCo(c.dongYLam)),
+      nhanViec: n(c => laCo(c.nhanViec)),
+      d10:      n(c => laCo(c.du10))
+    };
+    s.dropout = n(c => laCo(c.nhanViec) && !laCo(c.du10));
+    return s;
+  }
+  /* Phễu 8 bậc — dùng chung cho biểu đồ và bảng */
+  function tdPheu(list) {
+    const s = tdStats(list);
+    return [
+      { lv: "L0",  ten: "CV thu thập",          n: s.total },
+      { lv: "L1",  ten: "Pass lọc HR",          n: s.hrPass },
+      { lv: "L3",  ten: "Đồng ý phỏng vấn",     n: s.dongYPV },
+      { lv: "L3A", ten: "Tới phỏng vấn",        n: s.thamGiaPV },
+      { lv: "L4A", ten: "Pass phỏng vấn V1",    n: s.passPV },
+      { lv: "L7",  ten: "Có lịch đi làm",       n: s.dongYLam },
+      { lv: "L8",  ten: "Đi làm ngày đầu",      n: s.nhanViec },
+      { lv: "L9",  ten: "Đi làm đủ 10 ngày",    n: s.d10 }
+    ];
+  }
+  /* Số liệu 12 tháng — nhận việc / đủ 10 ngày đếm theo tháng THỰC nhận việc */
+  function tdThang() {
+    const all = tdRows();
+    return [1,2,3,4,5,6,7,8,9,10,11,12].map(m => {
+      const mc = all.filter(c => c.thang === m);
+      const s = tdStats(mc);
+      return {
+        thang: m, nhan: "T" + m, total: s.total, hrPass: s.hrPass,
+        dongYPV: s.dongYPV, thamGiaPV: s.thamGiaPV, passPV: s.passPV,
+        dongYLam: s.dongYLam,
+        nhanViec: all.filter(c => c.thangNhan === m && laCo(c.nhanViec)).length,
+        d10:      all.filter(c => c.thang10  === m && laCo(c.du10)).length
+      };
+    });
+  }
+  /* Gom nhóm theo một thuộc tính bất kỳ (nguồn, vị trí, chuyên viên, team…) */
+  function tdNhom(f, top, list) {
+    const m = new Map();
+    (list || tdLoc()).forEach(c => {
+      const k = (f(c) || "Khác").trim() || "Khác";
+      if (!m.has(k)) m.set(k, { ten: k, total: 0, hrPass: 0, thamGiaPV: 0, passPV: 0, nhanViec: 0 });
+      const o = m.get(k);
+      o.total++;
+      if (laPass(c.locCV))    o.hrPass++;
+      if (laCo(c.thamGiaPV))  o.thamGiaPV++;
+      if (laPass(c.ketQuaPV)) o.passPV++;
+      if (laCo(c.nhanViec))   o.nhanViec++;
+    });
+    let e = [...m.values()].sort((a, b) => b.total - a.total);
+    return top ? e.slice(0, top) : e;
+  }
+
+  /* ---- 5c.2 Đề xuất tuyển dụng và kết quả ---- */
+  let _dx = null, _dxLen = -1;
+  function dxRows() {
+    const src = raws(DXSRC);
+    if (!src.length) return [];
+    if (_dx && _dxLen === src.length) return _dx;
+    /* Vị trí cột mặc định theo sheet "Đề xuất tuyển dụng và kết quả";
+       nếu tìm được dòng tiêu đề thì dò lại theo tên cột cho chắc. */
+    const C = { thang:0, tt:1, team:2, nguoi:3, ngay:4, cap:5, vt:6,
+                lyDo:8, trang:9, can:10, offer:11, nhan:12, conLai:13 };
+    let h = -1;
+    for (let i = 0; i < Math.min(src.length, 30); i++) {
+      const j = src[i].map(kd).join(" | ");
+      if (j.includes("vi tri") && (j.includes("so luong") || j.includes("tinh trang"))) { h = i; break; }
+    }
+    if (h >= 0) src[h].forEach((c, i) => {
+      const t = kd(c); if (!t) return;
+      if (t === "thang")                   C.thang = i;
+      else if (t.includes("thi truong"))   C.tt = i;
+      else if (t === "team")               C.team = i;
+      else if (t.includes("nguoi de xuat"))C.nguoi = i;
+      else if (t.includes("ngay de xuat")) C.ngay = i;
+      else if (t.includes("cap bac"))      C.cap = i;
+      else if (t.includes("vi tri"))       C.vt = i;
+      else if (t.includes("ly do"))        C.lyDo = i;
+      else if (t.includes("tinh trang"))   C.trang = i;
+      else if (t.includes("so luong"))     C.can = i;
+      else if (t.includes("da offer"))     C.offer = i;
+      else if (t.includes("da nhan viec")) C.nhan = i;
+      else if (t.includes("con lai"))      C.conLai = i;
+    });
+    const out = [];
+    for (let i = (h >= 0 ? h + 1 : 0); i < src.length; i++) {
+      const r = src[i]; if (!r) continue;
+      const g = j => String(r[j] || "").trim();
+      const vt = g(C.vt), th = g(C.thang);
+      if (!vt || !th) continue;                 // bỏ dòng trống và dòng tổng
+      if (kd(vt) === "vi tri") continue;        // bỏ dòng tiêu đề lặp
+      out.push({
+        thang: th, thangSo: thangSo(th), thiTruong: g(C.tt) || "Khác",
+        team: g(C.team) || "Khác", nguoi: g(C.nguoi) || "—", ngay: g(C.ngay),
+        capBac: g(C.cap) || "Chưa rõ", viTri: vt,
+        lyDo: g(C.lyDo) || "Chưa rõ", trangThai: g(C.trang) || "Chưa rõ",
+        can: num(g(C.can)), offer: num(g(C.offer)),
+        nhan: num(g(C.nhan)), conLai: num(g(C.conLai))
+      });
+    }
+    _dx = out; _dxLen = src.length;
+    return out;
+  }
+  const coDX = () => dxRows().length > 0;
+  function dxLoc() { const t = thangLoc(); const L = dxRows(); return t ? L.filter(o => o.thangSo === t) : L; }
+  function dxStats(list) {
+    const L = list || dxLoc();
+    const c = f => L.filter(f).length;
+    const s = (f) => L.reduce((a, o) => a + f(o), 0);
+    return {
+      viTri: L.length,
+      can: s(o => o.can), offer: s(o => o.offer),
+      nhan: s(o => o.nhan), conLai: s(o => o.conLai),
+      dangTuyen: c(o => kd(o.trangThai) === "dang tuyen"),
+      hoanThanh: c(o => kd(o.trangThai) === "hoan thanh"),
+      tamDung:   c(o => kd(o.trangThai) === "tam dung")
+    };
+  }
+  function dxNhom(f, top, list) {
+    const m = new Map();
+    (list || dxLoc()).forEach(o => {
+      const k = (f(o) || "Khác").trim() || "Khác";
+      if (!m.has(k)) m.set(k, { ten: k, viTri: 0, can: 0, offer: 0, nhan: 0, conLai: 0 });
+      const t = m.get(k);
+      t.viTri++; t.can += o.can; t.offer += o.offer; t.nhan += o.nhan; t.conLai += o.conLai;
+    });
+    let e = [...m.values()].sort((a, b) => b.can - a.can);
+    return top ? e.slice(0, top) : e;
+  }
+
+  /* ---- 5c.3 Bảng theo dõi tiến độ theo SLA ---- */
+  let _sla = null, _slaLen = -1;
+  function slaRows() {
+    const src = raws(SLASRC);
+    if (!src.length) return [];
+    if (_sla && _slaLen === src.length) return _sla;
+    let h = -1;
+    for (let i = 0; i < Math.min(src.length, 30); i++) {
+      if (kd(src[i][0]) === "stt") { h = i; break; }
+    }
+    const out = [];
+    for (let i = (h >= 0 ? h + 1 : 0); i < src.length; i++) {
+      const r = src[i];
+      if (!r || !r[0] || isNaN(+r[0])) continue;
+      const g = j => String(r[j] || "").trim();
+      const o = {
+        stt: +r[0], ngayDeXuat: g(1), boPhan: g(2) || "Khác", nguoi: g(3),
+        capBac: g(4) || "Chưa rõ", viTri: g(5), soLuong: num(g(6)),
+        ngayDuyet: g(7),
+        camKetCV: g(8), hanCV: g(9), camKetNhan: g(10), hanNhan: g(11),
+        thucCV: g(12), ketCV: g(13), thucNhan: g(14), ketNhan: g(15)
+      };
+      const sng = t => { const m = String(t || "").match(/\d+/); return m ? +m[0] : 0; };
+      o.ngayCamKetCV   = sng(o.camKetCV);
+      o.ngayCamKetNhan = sng(o.camKetNhan);
+      o.treCV   = kd(o.ketCV).startsWith("tre");
+      o.treNhan = kd(o.ketNhan).startsWith("tre");
+      o.soNgayTreCV   = o.treCV   ? sng(o.ketCV)   : 0;
+      o.soNgayTreNhan = o.treNhan ? sng(o.ketNhan) : 0;
+      o.conCV   = kd(o.ketCV).startsWith("con")   ? sng(o.ketCV)   : null;
+      o.conNhan = kd(o.ketNhan).startsWith("con") ? sng(o.ketNhan) : null;
+      out.push(o);
+    }
+    _sla = out; _slaLen = src.length;
+    return out;
+  }
+  const coSLA = () => slaRows().length > 0;
+  function slaStats() {
+    const L = slaRows();
+    const treCV = L.filter(o => o.treCV).length, treNhan = L.filter(o => o.treNhan).length;
+    return {
+      n: L.length, treCV, treNhan,
+      dungHanCV:   L.length - treCV,
+      dungHanNhan: L.length - treNhan,
+      tyDungHanCV:   L.length ? (L.length - treCV) / L.length * 100 : null,
+      tyDungHanNhan: L.length ? (L.length - treNhan) / L.length * 100 : null,
+      treBQ: treCV ? L.filter(o => o.treCV).reduce((s, o) => s + o.soNgayTreCV, 0) / treCV : 0
+    };
+  }
+
+  const TD = {
+    has: coTD, rows: tdRows, loc: tdLoc, stats: tdStats, pheu: tdPheu, theoThang: tdThang, nhom: tdNhom,
+    coDX, dx: dxLoc, dxTatCa: dxRows, dxStats, dxNhom,
+    coSLA, sla: slaRows, slaStats, thangSo
+  };
+
   /* ---------- 6. Bảng dữ liệu nguồn trực tiếp ---------- */
   function sheetTable(key, id) {
     if (!has(key)) return "";
@@ -523,5 +861,5 @@ window.HQLive = (function () {
     return { khai, oke, loi, meta, dangTai };
   }
 
-  return { loadAll, apply, rows, has, num, nhanSu, dem, tuoi, sheetTable, status, store, meta, parseCSV, HR };
+  return { loadAll, apply, rows, has, num, nhanSu, dem, tuoi, sheetTable, status, store, meta, parseCSV, HR, TD };
 })();

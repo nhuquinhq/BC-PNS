@@ -5,7 +5,9 @@ const SOURCES={
  DM_NhanSu:{n:"DM_NhanSu",l:"Danh mục nhân sự (master)",m:"HRM2,3,6,7,8",url:"",c:"Mã NV · Họ tên · Giới tính · Ngày sinh · Phòng ban · BU · Chức danh · Grade · Loại hợp đồng · Ngày vào · Trạng thái"},
  DM_PhongBan:{n:"DM_PhongBan_BU",l:"Danh mục Phòng ban ↔ BU",m:"Tất cả",url:"",c:"Mã phòng · Tên phòng · BU · Khối · Trưởng phòng"},
  DM_Grade:{n:"DM_Grade",l:"Khung Grade G1–G7",m:"HRM3,6,8",url:"",c:"Grade · Track (IC/MGMT) · Min · Mid · Max"},
- RAW_TuyenDung:{n:"RAW_TuyenDung",l:"Pipeline tuyển dụng",m:"HRM1",url:"",c:"Mã JD · Vị trí · Phòng ban · BU · Grade · Nguồn CV · Ứng viên · Vòng hiện tại · Ngày mở · Ngày nhận việc · Kết quả"},
+ RAW_TuyenDung:{n:"RAW_TuyenDung",l:"Phễu ứng viên (mỗi dòng một CV)",m:"HRM1",url:"",c:"STT · Ngày · NV tuyển dụng · Nguồn · Hình thức · Cấp bậc · Vị trí · Tên UV · Team · HR lọc CV · Kết quả gọi mời · Ngày PV · Tham gia PV · Kết quả PV · Đồng ý đi làm · Ngày hẹn làm việc · UV nhận việc · UV đi làm 10 ngày"},
+ RAW_DeXuatTD:{n:"RAW_DeXuatTD",l:"Đề xuất tuyển dụng và kết quả",m:"HRM1",url:"",c:"Tháng · Thị trường · Team · Người đề xuất · Ngày đề xuất · Cấp bậc · Vị trí · Lý do tuyển · Tình trạng · Số lượng cần · Đã offer · Đã nhận việc · Cần tuyển còn lại"},
+ RAW_SLA_TD:{n:"RAW_SLA_TD",l:"Theo dõi tiến độ theo SLA",m:"HRM1",url:"",c:"STT · Ngày đề xuất · Bộ phận · Người đề xuất · Cấp bậc · Vị trí · Số lượng cần · Ngày phê duyệt · SLA có CV · Hạn gửi CV · SLA nhận việc · Hạn nhận việc · Ngày gửi CV thực tế · Ngày UV nhận việc thực tế"},
  RAW_ChamCong_T1:{n:"RAW_ChamCong_T1",l:"Chấm công T1/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
  RAW_ChamCong_T2:{n:"RAW_ChamCong_T2",l:"Chấm công T2/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
  RAW_ChamCong_T3:{n:"RAW_ChamCong_T3",l:"Chấm công T3/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
@@ -127,6 +129,10 @@ function applyChartTheme(){
 applyChartTheme();
 function mk(id,type,data,opts={}){
   const cv=document.getElementById(id); if(!cv)return;
+  /* Canvas còn chart cũ (id trùng giữa hai báo cáo trên trang tổng hợp) thì
+     huỷ trước — nếu không Chart.js ném lỗi và dừng luôn phần render còn lại. */
+  const cu=Chart.getChart&&Chart.getChart(cv);
+  if(cu){cu.destroy();charts=charts.filter(c=>c!==cu)}
   if(data.datasets)data.datasets.forEach(d=>{if(type==='bar'&&d.type!=='line'&&d.borderRadius===1)d.borderRadius=2});
   charts.push(new Chart(cv,{type,data,options:Object.assign({plugins:{legend:{display:false}},scales:AX},opts)}));
 }
@@ -206,7 +212,7 @@ const BUS=["Ritokey","WGG","A10GG","HQS10000","VX Team","Maverick","Khối BO"];
 
 const MODULES=[
  {id:"HOME",code:"—",title:"Tổng quan (HRM1 → HRM8)",src:[]},
- {id:"HRM1",code:"HRM1",title:"Báo cáo tuyển dụng",src:["RAW_TuyenDung","DM_PhongBan"]},
+ {id:"HRM1",code:"HRM1",title:"Báo cáo tuyển dụng",src:["RAW_TuyenDung","RAW_DeXuatTD","RAW_SLA_TD"]},
  {id:"HRM2",code:"HRM2",title:"Chấm công & Phép",src:["RAW_ChamCong_T1","RAW_ChamCong_T2","RAW_ChamCong_T3","RAW_ChamCong_T4","RAW_ChamCong_T5","RAW_ChamCong_T6","RAW_Phep","DM_NhanSu"]},
  {id:"HRM3",code:"HRM3",title:"Payroll & C&B",src:["RAW_Luong","DM_NhanSu","DM_Grade"]},
  {id:"HRM4",code:"HRM4",title:"Chi phí vận hành VP",src:["RAW_ChiPhiVP"]},
@@ -226,59 +232,203 @@ const STLABEL={draft:["BẢN NHÁP","Chưa trình duyệt"],wait:["CHỜ DUYỆT
 const REP={};
 
 /* ---------------- HRM1 ---------------- */
+/* Khung SLA tuyển dụng theo cấp bậc — chính sách cố định trong file
+   "ĐỀ XUẤT & KẾT QUẢ TUYỂN DỤNG", không đọc từ CSV vì đây là bảng quy định. */
+const KHUNG_SLA=[
+ {cap:"TTS",           vd:"TTS BD, TTS Content, CTV vận hành…", cv:10, tt:"15 ngày",      moi:"15 ngày", n:15, gc:"Vị trí nguồn ứng viên phổ biến"},
+ {cap:"CTV",           vd:"TTS BD, TTS Content, CTV vận hành…", cv:10, tt:"15 ngày",      moi:"15 ngày", n:15, gc:"Vị trí nguồn ứng viên phổ biến"},
+ {cap:"Nhân viên",     vd:"BD, CSKH, Vận hành, Admin…",         cv:20, tt:"20 – 30 ngày", moi:"60 ngày", n:30, gc:"Áp dụng vị trí phổ thông"},
+ {cap:"Chuyên viên",   vd:"Kế toán, C&B, SEO, IT…",             cv:20, tt:"20 – 30 ngày", moi:"60 ngày", n:30, gc:"Phụ thuộc thời gian báo nghỉ của ứng viên"},
+ {cap:"Senior",        vd:"Team Leader, Senior chuyên môn…",    cv:20, tt:"60 ngày",      moi:"60 ngày", n:60, gc:"Cần chủ động sourcing"},
+ {cap:"Trưởng nhóm",   vd:"Team Leader, Senior chuyên môn…",    cv:20, tt:"60 ngày",      moi:"60 ngày", n:60, gc:"Cần chủ động sourcing"},
+ {cap:"Quản lý",       vd:"Manager, Head, vị trí hiếm",         cv:20, tt:"60 ngày",      moi:"60 ngày", n:60, gc:"Vị trí hiếm có thể kéo dài theo phê duyệt của CEO"},
+ {cap:"Vị trí đặc thù",vd:"Manager, Head, vị trí hiếm",         cv:20, tt:"60 ngày",      moi:"60 ngày", n:60, gc:"Vị trí hiếm có thể kéo dài theo phê duyệt của CEO"}
+];
+/* Số liệu mẫu dùng khi chưa nối được nguồn — giữ đúng hình dạng dữ liệu thật */
+const TD_MAU={
+ pheu:[{lv:"L0",ten:"CV thu thập",n:318},{lv:"L1",ten:"Pass lọc HR",n:142},
+   {lv:"L3",ten:"Đồng ý phỏng vấn",n:96},{lv:"L3A",ten:"Tới phỏng vấn",n:71},
+   {lv:"L4A",ten:"Pass phỏng vấn V1",n:38},{lv:"L7",ten:"Có lịch đi làm",n:22},
+   {lv:"L8",ten:"Đi làm ngày đầu",n:19},{lv:"L9",ten:"Đi làm đủ 10 ngày",n:14}],
+ nguon:[{ten:"Facebook",total:104,hrPass:44,thamGiaPV:23,passPV:13,nhanViec:7},
+   {ten:"TopCV",total:88,hrPass:41,thamGiaPV:21,passPV:12,nhanViec:6},
+   {ten:"Referral nội bộ",total:62,hrPass:33,thamGiaPV:17,passPV:9,nhanViec:4},
+   {ten:"TikTok",total:41,hrPass:15,thamGiaPV:7,passPV:3,nhanViec:1},
+   {ten:"Website HQ",total:23,hrPass:9,thamGiaPV:3,passPV:1,nhanViec:1}],
+ thang:[1,2,3,4,5,6].map((m,i)=>({thang:m,nhan:"T"+m,
+   total:[38,52,61,49,58,60][i],hrPass:[18,24,27,21,26,26][i],
+   dongYPV:[12,16,18,14,18,18][i],thamGiaPV:[9,12,14,10,13,13][i],
+   passPV:[5,7,7,5,7,7][i],dongYLam:[3,4,4,3,4,4][i],
+   nhanViec:[2,4,3,3,4,3][i],d10:[2,3,2,2,3,2][i]}))
+};
+
 REP.HRM1={
  title:"Báo cáo tuyển dụng",
- sub:"Nhu cầu tuyển, hiệu quả phễu ứng viên, tốc độ tuyển và chất lượng nguồn theo kỳ.",
- meta:{cycle:"Tháng",close:"31/07/2026",issue:"05/08/2026",ver:"2.1",
+ sub:"Phễu ứng viên từ CV tới ngày làm việc thứ 10, tiến độ đề xuất tuyển của các bộ phận và mức tuân thủ SLA tuyển dụng.",
+ meta:{cycle:"Tháng",close:"31/07/2026",issue:"05/08/2026",ver:"3.0",
    by:"Lương Minh Quang",byRole:"Chuyên viên Tuyển dụng · PNS",
    chk:"Lã Thị Kiều Trang",chkRole:"Chuyên viên C&B · PNS",
    apv:"Hoàng Thị Như Quỳnh",apvRole:"Quản trị Khối BO"},
  summary:[], actions:[],
  kpis:[
-  {k:"Time-to-Hire",d:"Từ ngày duyệt JD tới ngày nhận việc",u:"ngày",cur:26,prev:28,tgt:30,dir:-1,p:0,sp:[33,31,30,29,28,26]},
-  {k:"Tỷ lệ hoàn thành kế hoạch tuyển",d:"Số tuyển được / kế hoạch kỳ",u:"%",cur:85.7,prev:78.6,tgt:100,dir:1,sp:[71,75,79,82,79,86]},
-  {k:"Tỷ lệ nhận offer",d:"Offer được chấp nhận / offer gửi",u:"%",cur:84.2,prev:81.0,tgt:80,dir:1,sp:[76,78,80,81,81,84]},
-  {k:"Tỷ trọng nguồn giới thiệu nội bộ",u:"%",cur:32.0,prev:29.0,tgt:30,dir:1,sp:[22,24,26,28,29,32]},
-  {k:"Tỷ lệ nghỉ trong thử việc",d:"Trong 90 ngày đầu",u:"%",cur:8.0,prev:11.0,tgt:10,dir:-1,sp:[15,14,12,12,11,8]},
-  {k:"Chi phí cho một tuyển dụng thành công",u:"triệu",cur:4.2,prev:4.8,tgt:5.0,dir:-1,sp:[6.1,5.7,5.4,5.0,4.8,4.2]},
+  {k:"Tổng CV thu thập",d:"L0 — toàn bộ CV nhận về",u:"CV",cur:318,prev:281,tgt:300,dir:1,p:0,sp:[186,214,238,265,281,318]},
+  {k:"CV pass lọc HR",d:"L1 — qua vòng lọc hồ sơ",u:"CV",cur:142,prev:126,tgt:130,dir:1,p:0,sp:[82,94,106,118,126,142]},
+  {k:"Tỷ lệ pass lọc HR",d:"L1 trên tổng CV",u:"%",cur:44.7,prev:44.8,tgt:40,dir:1,sp:[44,44,45,45,45,45]},
+  {k:"Ứng viên tới phỏng vấn",d:"L3A — có mặt phỏng vấn",u:"UV",cur:71,prev:63,tgt:70,dir:1,p:0,sp:[41,47,52,58,63,71]},
+  {k:"Ứng viên pass phỏng vấn",d:"L4A — đạt vòng 1",u:"UV",cur:38,prev:34,tgt:35,dir:1,p:0,sp:[22,25,28,31,34,38]},
+  {k:"Ứng viên nhận việc",d:"L8 — đi làm ngày đầu",u:"UV",cur:19,prev:17,tgt:20,dir:1,p:0,sp:[11,13,14,16,17,19]},
+  {k:"Ứng viên đi làm đủ 10 ngày",d:"L9 — vượt mốc giữ chân đầu tiên",u:"UV",cur:14,prev:13,tgt:16,dir:1,p:0,sp:[8,9,11,12,13,14]},
+  {k:"Tỷ lệ CV thành nhận việc",d:"L8 trên tổng CV thu thập",u:"%",cur:6.0,prev:6.0,tgt:6.5,dir:1,sp:[5.9,6.1,5.9,6.0,6.0,6.0]},
+  {k:"Tỷ lệ bỏ cuộc sau nhận việc",d:"Nhận việc nhưng không đủ 10 ngày",u:"%",cur:26.3,prev:23.5,tgt:20,dir:-1,sp:[27,31,21,25,24,26]},
   {k:"Số CV trên một vị trí",u:"CV",cur:45,prev:38,tgt:30,dir:1,p:0,sp:[26,29,33,36,38,45]},
-  {k:"Tỷ lệ qua vòng sàng lọc",u:"%",cur:44.7,prev:41.0,tgt:40,dir:1,sp:[35,37,39,40,41,45]}],
+  {k:"Tổng chỉ tiêu cần tuyển",d:"Theo đề xuất đã duyệt",u:"người",cur:36,prev:33,tgt:36,dir:1,p:0,sp:[18,22,26,30,33,36]},
+  {k:"Đã nhận việc theo đề xuất",u:"người",cur:29,prev:25,tgt:36,dir:1,p:0,sp:[13,17,20,23,25,29]},
+  {k:"Tỷ lệ hoàn thành chỉ tiêu",d:"Đã nhận việc trên chỉ tiêu",u:"%",cur:80.6,prev:75.8,tgt:100,dir:1,sp:[72,77,77,77,76,81]},
+  {k:"Chỉ tiêu còn lại",d:"Vị trí chưa tuyển đủ",u:"người",cur:7,prev:8,tgt:0,dir:-1,p:0,sp:[5,5,6,7,8,7]},
+  {k:"Vị trí đang tuyển",u:"vị trí",cur:4,prev:5,tgt:0,dir:-1,p:0,sp:[3,4,5,5,5,4]},
+  {k:"Tỷ lệ đúng hạn SLA gửi CV",d:"Order gửi CV đầu tiên trong hạn",u:"%",cur:50.0,prev:50.0,tgt:90,dir:1,p:0,sp:[100,100,50,50,50,50]}],
  charts:[
-  {id:"a1",t:"Phễu tuyển dụng 7 bước",h:"số ứng viên · kỳ 07/2026",cls:"tall",span:"g21",
-   f:()=>mk("a1","bar",{labels:["CV nhận","Sàng lọc đạt","PV vòng 1","PV vòng 2","Gửi offer","Nhận việc","Qua thử việc"],
-     datasets:[{data:[318,142,71,38,19,14,12],backgroundColor:[C.light,C.steel,C.navy2,C.navy2,C.navy,C.navy,C.green],borderRadius:1}]},
-     {indexAxis:'y',scales:AXH})},
-  {id:"a2",t:"Cơ cấu nguồn ứng viên",h:"% tổng CV",cls:"tall",
-   f:()=>mk("a2","doughnut",{labels:["Referral nội bộ","Website HQ","LinkedIn","Facebook Careers","Headhunt"],
-     datasets:[{data:[32,26,16,14,12],backgroundColor:PAL,borderWidth:0}]},{cutout:"58%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})},
-  {id:"a3",t:"Time-to-Hire so mục tiêu",h:"ngày · 12 kỳ",span:"g2",
-   f:()=>mk("a3","line",{labels:M12,datasets:[
-     {label:"Thực tế",data:[41,38,36,35,33,31,30,29,28,27,26,26],borderColor:C.navy,backgroundColor:"rgba(99,102,241,.14)",fill:true,tension:.3,borderWidth:2,pointRadius:2},
-     {label:"Mục tiêu 30 ngày",data:M12.map(()=>30),borderColor:C.red,borderDash:[5,4],borderWidth:1.2,pointRadius:0}]},
-     {plugins:{legend:{display:true,position:"bottom"}}})},
-  {id:"a4",t:"Kế hoạch so thực tuyển theo phòng ban",h:"người",
-   f:()=>mk("a4","bar",{labels:DEPTS,datasets:[
-     {label:"Kế hoạch",data:[5,4,3,2,1,1,1],backgroundColor:C.light,borderRadius:1},
-     {label:"Thực tuyển",data:[4,4,2,1,1,0,0],backgroundColor:C.navy,borderRadius:1}]},{plugins:{legend:{display:true,position:"bottom"}}})}],
- tables:[{id:"t1",t:"Chi tiết pipeline theo vị trí đang mở và đã đóng",
-   cols:[{t:"Mã JD"},{t:"Vị trí"},{t:"Phòng ban"},{t:"BU"},{t:"Grade",a:"c"},{t:"Ngày mở",a:"c"},{t:"Số ngày mở",a:"n"},{t:"CV",a:"n"},{t:"PV1",a:"n"},{t:"PV2",a:"n"},{t:"Offer",a:"n"},{t:"Vòng hiện tại",a:"c"},{t:"Trạng thái",a:"c"},{t:"Phụ trách"}],
-   groups:[{t:"Định danh vị trí",s:7},{t:"Số liệu phễu",s:5},{t:"Theo dõi",s:3}],
-   rows:[
-    ["JD-26-041","Chuyên viên Vận hành đơn","Vận hành","Ritokey","G3","12/06","52","24","6","3","1","PV2",'<span class="pill p-w">Đang tuyển</span>',"QuangLM"],
-    ["JD-26-042","Nhân viên CSKH quốc tế","Chăm sóc KH","WGG","G2","18/06","46","41","11","5","2","Offer",'<span class="pill p-w">Đang tuyển</span>',"QuangLM"],
-    ["JD-26-043","Backend Developer","Công nghệ","Khối BO","G4","02/06","62","19","4","0","0","PV1",'<span class="pill p-b">Trượt tiến độ</span>',"TuấnNA"],
-    ["JD-26-044","Kế toán thanh toán","Kế toán","Khối BO","G3","20/06","44","16","5","2","0","PV2",'<span class="pill p-w">Đang tuyển</span>',"DungNT"],
-    ["JD-26-045","Chuyên viên C&B","Nhân sự","Khối BO","G4","25/06","39","11","3","1","0","Sàng lọc",'<span class="pill p-w">Đang tuyển</span>',"TrangLTK"],
-    ["JD-26-038","Trưởng nhóm Kinh doanh","Kinh doanh","A10GG","G5","05/05","28","33","9","4","2","—",'<span class="pill p-ok">Đã đóng</span>',"QuânHM"],
-    ["JD-26-039","Content Marketing","Marketing","VX Team","G2","10/05","24","28","8","3","1","—",'<span class="pill p-ok">Đã đóng</span>',"QuangLM"],
-    ["JD-26-040","Nhân viên kho số","Vận hành","Maverick","G2","15/05","22","22","7","4","2","—",'<span class="pill p-ok">Đã đóng</span>',"HàDT"]],
-   total:["TỔNG CỘNG","8 vị trí","—","—","—","—","40","194","53","22","8","—","5 đang mở · 3 đã đóng","—"]}],
- defs:[["Time-to-Hire","Số ngày từ khi JD được BOD duyệt tới ngày ứng viên chính thức nhận việc. Không tính ngày chờ ứng viên bàn giao ở công ty cũ."],
-   ["Tỷ lệ nhận offer","Số offer được chấp nhận chia cho tổng số offer đã gửi trong kỳ."],
-   ["Tỷ lệ nghỉ trong thử việc","Số nhân sự nghỉ trong 90 ngày đầu chia cho số nhân sự onboard cùng kỳ, tính theo cohort tháng vào."],
-   ["Chi phí cho một tuyển dụng thành công","Gồm phí headhunt, quảng cáo tuyển dụng, thưởng referral và chi phí sự kiện tuyển dụng, chia cho số người nhận việc."],
-   ["Trượt tiến độ","Vị trí mở quá 45 ngày mà chưa có ứng viên ở vòng cuối."]],
- note:"Số liệu chốt tại 23h59 ngày 31/07/2026 từ tab RAW_TuyenDung. Ứng viên rút hồ sơ sau ngày chốt được ghi nhận vào kỳ kế tiếp."
+  {id:"a1",t:"Phễu tuyển dụng 8 bậc",h:"số ứng viên · L0 → L9",cls:"tall",span:"g21",
+   f:()=>{const p=TDon()?TDx().pheu():TD_MAU.pheu;
+     mk("a1","bar",{labels:p.map(x=>`${x.lv} · ${x.ten}`),
+       datasets:[{data:p.map(x=>x.n),backgroundColor:p.map((_,i)=>PAL[i%PAL.length]),borderRadius:2}]},
+       {indexAxis:"y",scales:AXH})}},
+  {id:"a2",t:"Cơ cấu nguồn ứng viên",h:"số CV theo nguồn",cls:"tall",
+   f:()=>{const e=TDon()?TDx().nhom(c=>c.nguon,6):TD_MAU.nguon;
+     mk("a2","doughnut",{labels:e.map(x=>x.ten),
+       datasets:[{data:e.map(x=>x.total),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"a3",t:"CV · pass lọc HR · nhận việc theo tháng",h:"số ứng viên · 12 tháng",span:"g2",
+   f:()=>{const m=(TDon()?TDx().theoThang():TD_MAU.thang).filter(x=>x.total||x.nhanViec);
+     mk("a3","bar",{labels:m.map(x=>x.nhan),datasets:[
+       {label:"Tổng CV",data:m.map(x=>x.total),backgroundColor:C.navy,borderRadius:2,maxBarThickness:24},
+       {label:"Pass lọc HR",data:m.map(x=>x.hrPass),backgroundColor:C.amber,borderRadius:2,maxBarThickness:24},
+       {label:"Nhận việc",data:m.map(x=>x.nhanViec),backgroundColor:C.green,borderRadius:2,maxBarThickness:24}]},
+       {plugins:{legend:{display:true,position:"bottom"}}})}},
+  {id:"a4",t:"Tỷ lệ chuyển đổi theo tháng",h:"% trên tổng CV của tháng",
+   f:()=>{const m=(TDon()?TDx().theoThang():TD_MAU.thang).filter(x=>x.total>0);
+     const ty=(a,b)=>b?r1(a/b*100,1):0;
+     mk("a4","line",{labels:m.map(x=>x.nhan),datasets:[
+       {label:"Pass lọc HR",data:m.map(x=>ty(x.hrPass,x.total)),borderColor:C.navy,backgroundColor:"rgba(24,155,216,.12)",fill:true,pointRadius:2},
+       {label:"Tới phỏng vấn",data:m.map(x=>ty(x.thamGiaPV,x.total)),borderColor:C.navy2,pointRadius:2},
+       {label:"Nhận việc",data:m.map(x=>ty(x.nhanViec,x.total)),borderColor:C.green,pointRadius:2}]},
+       {plugins:{legend:{display:true,position:"bottom"}}})}},
+  {id:"a5",t:"Top vị trí theo số CV nhận về",h:"CV · so với số nhận việc",span:"g2",
+   f:()=>{const e=TDon()?TDx().nhom(c=>c.viTri,10)
+       :[{ten:"E-Commerce BD Intern",total:126,nhanViec:9},{ten:"Nhân viên Xử lý đơn hàng",total:64,nhanViec:5},
+         {ten:"Kế toán Công nợ",total:38,nhanViec:2},{ten:"Nhân viên Phát triển KD",total:31,nhanViec:2},
+         {ten:"TTS Thiết kế đồ hoạ",total:24,nhanViec:1}];
+     mk("a5","bar",{labels:e.map(x=>x.ten),datasets:[
+       {label:"Tổng CV",data:e.map(x=>x.total),backgroundColor:C.navy,borderRadius:2,maxBarThickness:16},
+       {label:"Nhận việc",data:e.map(x=>x.nhanViec),backgroundColor:C.green,borderRadius:2,maxBarThickness:16}]},
+       {indexAxis:"y",scales:AXH,plugins:{legend:{display:true,position:"bottom"}}})}},
+  {id:"a6",t:"Hiệu suất chuyên viên tuyển dụng",h:"CV phụ trách · ứng viên nhận việc",
+   f:()=>{const e=TDon()?TDx().nhom(c=>c.nv,8)
+       :[{ten:"QuangLM",total:186,nhanViec:11},{ten:"HuongNT",total:132,nhanViec:8}];
+     mk("a6","bar",{labels:e.map(x=>x.ten),datasets:[
+       {label:"CV phụ trách",data:e.map(x=>x.total),backgroundColor:C.navy2,borderRadius:2,maxBarThickness:30},
+       {label:"Nhận việc",data:e.map(x=>x.nhanViec),backgroundColor:C.green,borderRadius:2,maxBarThickness:30}]},
+       {plugins:{legend:{display:true,position:"bottom"}}})}},
+  {id:"a7",t:"Chỉ tiêu và kết quả tuyển theo team",h:"người · theo đề xuất đã duyệt",span:"g2",
+   f:()=>{const e=DXon()?TDx().dxNhom(o=>o.team,10)
+       :[{ten:"HQS200",can:11,nhan:11},{ten:"BD10F",can:4,nhan:5},{ten:"TCKT",can:5,nhan:4},
+         {ten:"Cung ứng",can:5,nhan:5},{ten:"HQS400",can:7,nhan:6}];
+     mk("a7","bar",{labels:e.map(x=>x.ten),datasets:[
+       {label:"Chỉ tiêu cần tuyển",data:e.map(x=>x.can),backgroundColor:C.navy,borderRadius:2,maxBarThickness:16},
+       {label:"Đã nhận việc",data:e.map(x=>x.nhan),backgroundColor:C.green,borderRadius:2,maxBarThickness:16}]},
+       {indexAxis:"y",scales:AXH,plugins:{legend:{display:true,position:"bottom"}}})}},
+  {id:"a8",t:"Tình trạng đề xuất tuyển dụng",h:"số vị trí",
+   f:()=>{const d=DXon()?TDx().dxStats():{dangTuyen:4,hoanThanh:14,tamDung:3};
+     mk("a8","doughnut",{labels:["Đang tuyển","Hoàn thành","Tạm dừng"],
+       datasets:[{data:[d.dangTuyen,d.hoanThanh,d.tamDung],backgroundColor:[C.gold,C.green,C.red],borderWidth:0,hoverOffset:6}]},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"a9",t:"Đề xuất tuyển dụng theo tháng",h:"người · chỉ tiêu so kết quả",span:"g2",
+   f:()=>{const e=DXon()
+       ?TDx().dxNhom(o=>o.thangSo?"T"+o.thangSo:"Khác").sort((a,b)=>(+String(a.ten).replace(/\D/g,"")||99)-(+String(b.ten).replace(/\D/g,"")||99))
+       :[{ten:"T1",can:10,offer:11,nhan:11},{ten:"T2",can:18,offer:25,nhan:16},{ten:"T3",can:8,offer:7,nhan:7}];
+     mk("a9","bar",{labels:e.map(x=>x.ten),datasets:[
+       {label:"Cần tuyển",data:e.map(x=>x.can),backgroundColor:C.navy,borderRadius:2,maxBarThickness:24},
+       {label:"Đã offer",data:e.map(x=>x.offer),backgroundColor:C.gold,borderRadius:2,maxBarThickness:24},
+       {label:"Đã nhận việc",data:e.map(x=>x.nhan),backgroundColor:C.green,borderRadius:2,maxBarThickness:24}]},
+       {plugins:{legend:{display:true,position:"bottom"}}})}},
+  {id:"a10",t:"Cơ cấu cấp bậc tuyển dụng",h:"chỉ tiêu theo cấp bậc",
+   f:()=>{const e=DXon()?TDx().dxNhom(o=>o.capBac,6)
+       :[{ten:"TTS",can:24},{ten:"Nhân viên",can:9},{ten:"Trưởng nhóm",can:2},{ten:"Chuyên viên",can:1}];
+     mk("a10","doughnut",{labels:e.map(x=>x.ten),
+       datasets:[{data:e.map(x=>x.can),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"a11",t:"Lý do tuyển: tuyển mới so tuyển thay thế",h:"chỉ tiêu · người",span:"g2",
+   f:()=>{const e=DXon()?TDx().dxNhom(o=>o.lyDo,6)
+       :[{ten:"Tuyển thay thế",can:30},{ten:"Tuyển mới",can:6}];
+     mk("a11","bar",barSet(e.map(x=>x.ten),e.map(x=>x.can),C.navy2),{indexAxis:"y",scales:AXH})}},
+  {id:"a12",t:"Khung SLA cam kết theo cấp bậc",h:"ngày làm việc kể từ khi order được duyệt",
+   f:()=>mk("a12","bar",{labels:KHUNG_SLA.map(x=>x.cap),datasets:[
+     {label:"Hạn gửi CV đầu tiên",data:KHUNG_SLA.map(x=>x.cv),backgroundColor:C.navy,borderRadius:2,maxBarThickness:20},
+     {label:"Hạn có UV nhận việc",data:KHUNG_SLA.map(x=>x.n),backgroundColor:C.gold,borderRadius:2,maxBarThickness:20}]},
+     {plugins:{legend:{display:true,position:"bottom"}}})}],
+ tables:[
+  {id:"t1",t:"Phễu tuyển dụng theo tháng",
+   cols:[{t:"Tháng"},{t:"Tổng CV",a:"n"},{t:"Pass lọc HR",a:"n"},{t:"Tỷ lệ pass"},{t:"Đồng ý PV",a:"n"},{t:"Tới PV",a:"n"},{t:"Pass PV",a:"n"},{t:"Nhận việc",a:"n"},{t:"Đủ 10 ngày",a:"n"},{t:"CV → nhận việc"}],
+   groups:[{t:"Kỳ",s:2},{t:"Sàng lọc",s:3},{t:"Phỏng vấn",s:3},{t:"Kết quả",s:3}],
+   rows:()=>{const m=(TDon()?TDx().theoThang():TD_MAU.thang).filter(x=>x.total||x.nhanViec);
+     const pc=(a,b)=>b?progCell(a/b*100,a/b>=.5?"#00A651":"#189BD8"):"—";
+     return m.map(x=>[`<b>${x.nhan}</b>`,x.total,x.hrPass,pc(x.hrPass,x.total),
+       x.dongYPV,x.thamGiaPV,x.passPV,x.nhanViec,x.d10,pc(x.nhanViec,x.total)])},
+   total:()=>{const m=(TDon()?TDx().theoThang():TD_MAU.thang).filter(x=>x.total||x.nhanViec);
+     const s=k=>m.reduce((a,b)=>a+b[k],0);
+     return ["TỔNG CỘNG",s("total"),s("hrPass"),"—",s("dongYPV"),s("thamGiaPV"),s("passPV"),s("nhanViec"),s("d10"),"—"]}},
+  {id:"t1b",t:"Hiệu quả theo nguồn ứng viên",
+   cols:[{t:"Nguồn CV"},{t:"Tổng CV",a:"n"},{t:"% tổng CV"},{t:"Pass lọc HR",a:"n"},{t:"Tỷ lệ pass"},{t:"Tới PV",a:"n"},{t:"Pass PV",a:"n"},{t:"Nhận việc",a:"n"},{t:"Xếp loại",a:"c"}],
+   rows:()=>{const e=TDon()?TDx().nhom(c=>c.nguon):TD_MAU.nguon;
+     const tong=e.reduce((a,b)=>a+b.total,0);
+     return e.map(x=>{const ty=x.total?x.hrPass/x.total*100:0;
+       const xl=ty>=70?'<span class="pill p-ok">Tốt</span>':ty>=50?'<span class="pill p-w">Khá</span>':'<span class="pill p-b">Thấp</span>';
+       return [`<b>${x.ten}</b>`,x.total,progCell(tong?x.total/tong*100:0,"#189BD8"),x.hrPass,
+         progCell(ty,ty>=50?"#00A651":"#D96F00"),x.thamGiaPV,x.passPV,x.nhanViec,xl]})},
+   total:rw=>["TỔNG CỘNG",rw.length+" nguồn","—","—","—","—","—","—","—"]},
+  {id:"t1c",t:"Số liệu theo vị trí tuyển dụng",
+   cols:[{t:"Vị trí"},{t:"Tổng CV",a:"n"},{t:"Pass lọc HR",a:"n"},{t:"Tới PV",a:"n"},{t:"Pass PV",a:"n"},{t:"Nhận việc",a:"n"},{t:"CV / 1 người nhận việc",a:"n"}],
+   rows:()=>{const e=TDon()?TDx().nhom(c=>c.viTri,40)
+       :[{ten:"E-Commerce BD Intern",total:126,hrPass:58,thamGiaPV:31,passPV:18,nhanViec:9}];
+     return e.map(x=>[x.ten,x.total,x.hrPass,x.thamGiaPV,x.passPV,x.nhanViec,
+       x.nhanViec?dec(x.total/x.nhanViec,1):"—"])}},
+  {id:"t1d",t:"Đề xuất tuyển dụng và kết quả",
+   cols:[{t:"Tháng",a:"c"},{t:"Thị trường"},{t:"Team"},{t:"Người đề xuất"},{t:"Ngày đề xuất",a:"c"},{t:"Cấp bậc",a:"c"},{t:"Vị trí"},{t:"Lý do tuyển"},{t:"Tình trạng",a:"c"},{t:"Cần tuyển",a:"n"},{t:"Đã offer",a:"n"},{t:"Đã nhận việc",a:"n"},{t:"Còn lại",a:"n"},{t:"Tiến độ"}],
+   groups:[{t:"Đề xuất",s:9},{t:"Kết quả",s:5}],
+   rows:()=>{const e=DXon()?TDx().dx()
+       :[{thang:"Tháng 1",thiTruong:"Kinh doanh Quốc tế",team:"HQS200",nguoi:"LinhLM",ngay:"05/01/2026",
+          capBac:"TTS",viTri:"E-Commerce Business Development Intern",lyDo:"Tuyển thay thế",
+          trangThai:"Hoàn thành",can:2,offer:2,nhan:2,conLai:0}];
+     return e.map(x=>{const t=x.trangThai.toLowerCase();
+       const p=t.indexOf("hoàn thành")>=0?"p-ok":t.indexOf("tạm dừng")>=0?"p-b":"p-w";
+       return [x.thang,x.thiTruong,x.team,x.nguoi,x.ngay,x.capBac,`<b>${x.viTri}</b>`,x.lyDo,
+         `<span class="pill ${p}">${x.trangThai}</span>`,x.can,x.offer,x.nhan,
+         x.conLai>0?`<b style="color:var(--rose)">${x.conLai}</b>`:"0",
+         progCell(x.can?Math.min(x.nhan/x.can*100,100):0,x.can&&x.nhan>=x.can?"#00A651":"#D96F00")]})},
+   total:()=>{const e=DXon()?TDx().dx():[];const s=k=>e.reduce((a,b)=>a+b[k],0);
+     return ["TỔNG CỘNG",`${e.length} đề xuất`,"—","—","—","—","—","—","—",s("can"),s("offer"),s("nhan"),s("conLai"),"—"]}},
+  {id:"t1e",t:"Theo dõi tiến độ tuyển dụng theo SLA",
+   cols:[{t:"Ngày đề xuất",a:"c"},{t:"Bộ phận"},{t:"Người đề xuất"},{t:"Cấp bậc",a:"c"},{t:"Vị trí"},{t:"SL",a:"n"},{t:"Ngày duyệt",a:"c"},{t:"SLA có CV",a:"c"},{t:"Hạn gửi CV",a:"c"},{t:"SLA nhận việc",a:"c"},{t:"Hạn nhận việc",a:"c"},{t:"Gửi CV thực tế",a:"c"},{t:"Tình trạng CV",a:"c"},{t:"Tình trạng nhận việc",a:"c"}],
+   groups:[{t:"Thông tin vị trí",s:6},{t:"Cam kết SLA",s:5},{t:"Thực tế",s:4}],
+   rows:()=>{const e=SLAon()?TDx().sla():[];
+     if(!e.length)return [["—","—","—","—",
+       '<i>Chưa nối tab <b>Bảng theo dõi tiến độ theo SLA</b>. Mở tab đó trên Google Sheet, chép số sau chữ “gid=” trên thanh địa chỉ rồi dán link export CSV vào ô <b>RAW_SLA_TD</b> trong assets/config.js.</i>',
+       "—","—","—","—","—","—","—","—","—"]];
+     const badge=(tre,txt)=>txt?`<span class="pill ${tre?"p-b":"p-ok"}">${txt}</span>`:"—";
+     return e.map(x=>[x.ngayDeXuat,x.boPhan,x.nguoi,x.capBac,`<b>${x.viTri}</b>`,x.soLuong||"—",
+       x.ngayDuyet||"—",x.camKetCV||"—",x.hanCV||"—",x.camKetNhan||"—",x.hanNhan||"—",
+       x.thucCV||"—",badge(x.treCV,x.ketCV),badge(x.treNhan,x.ketNhan)])}},
+  {id:"t1f",t:"Khung SLA tuyển dụng theo cấp bậc",
+   cols:[{t:"Cấp bậc"},{t:"Ví dụ vị trí"},{t:"Hạn có CV đầu tiên",a:"c"},{t:"Hạn nhận việc — tuyển thay thế",a:"c"},{t:"Hạn nhận việc — tuyển mới",a:"c"},{t:"Ghi chú"}],
+   rows:()=>KHUNG_SLA.map(x=>[`<b>${x.cap}</b>`,x.vd,`${x.cv} ngày`,x.tt,x.moi,x.gc])}],
+ defs:[
+  ["Bộ level phễu tuyển dụng","L0 CV thu thập · L1 pass lọc HR · L3 đồng ý phỏng vấn · L3A tới phỏng vấn · L4A pass phỏng vấn vòng 1 · L7 có lịch đi làm · L8 đi làm ngày đầu · L9 đi làm đủ 10 ngày."],
+  ["Tỷ lệ CV thành nhận việc","Số ứng viên đi làm ngày đầu (L8) chia cho tổng CV thu thập (L0) trong cùng phạm vi lọc."],
+  ["Tỷ lệ bỏ cuộc sau nhận việc","Ứng viên đã đi làm ngày đầu nhưng không đủ 10 ngày công, chia cho số ứng viên nhận việc."],
+  ["SLA tuyển dụng","Thời gian cam kết gửi CV đầu tiên tính từ khi order được BOD phê duyệt và có đủ JD, ngân sách, số lượng, tiêu chí tuyển. SLA không tính khi order chưa duyệt."],
+  ["Chỉ tiêu còn lại","Số lượng cần tuyển trừ số đã nhận việc của từng đề xuất, lấy trực tiếp từ cột <em>Cần tuyển còn lại</em> của bảng đề xuất."],
+  ["Order bổ sung","Order gửi sau ngày 18 hằng tháng được ghi nhận cho tháng tiếp theo; nếu khẩn cấp cần BOD xác nhận mức ưu tiên."]],
+ note:"Nguồn số: <b>RAW_TuyenDung</b> (phễu ứng viên), <b>RAW_DeXuatTD</b> (đề xuất tuyển dụng và kết quả) và <b>RAW_SLA_TD</b> (theo dõi tiến độ theo SLA). SLA là cam kết gửi CV đầu tiên, không phải cam kết ứng viên đi làm ngay — timeline nhận việc phụ thuộc thị trường, tốc độ phản hồi của phòng ban và thời gian báo trước của ứng viên."
 };
 
 /* ---------------- HRM2 ---------------- */
@@ -848,19 +998,19 @@ REP.HRM8={
   {k:"Tỷ lệ quỹ lương phân bổ được về BU",u:"%",cur:89.0,prev:87.0,tgt:85.0,dir:1,p:0,sp:[81,83,85,86,87,89]},
   {k:"Chi phí quản trị chung giữ tại BO",u:"triệu",cur:214.7,prev:251.9,tgt:250.0,dir:-1,sp:[318,299,278,265,252,215]}],
  charts:[
-  {id:"h1",t:"Mức tải theo nhân sự",h:"% so mức chuẩn 176 giờ",cls:"tall",span:"g21",
+  {id:"w1",t:"Mức tải theo nhân sự",h:"% so mức chuẩn 176 giờ",cls:"tall",span:"g21",
    f:()=>{const nm=["TrangLTK","QuangLM","HạnhNTH","ĐứcTV","HươngPT","YếnVH","KhôiĐM"],ld=[118,141,111,154,99,73,122];
-     mk("h1","bar",{labels:nm,datasets:[
+     mk("w1","bar",{labels:nm,datasets:[
        {data:ld,backgroundColor:ld.map(v=>v>120?C.red:v<70?C.amber:v>100?C.navy2:C.green),borderRadius:1},
        {label:"Mức chuẩn",type:"line",data:nm.map(()=>100),borderColor:"#08182C",borderDash:[5,4],borderWidth:1.2,pointRadius:0}]},
        {indexAxis:'y',scales:{x:{max:180,grid:{color:cssv("--grid")},border:{display:false}},y:{grid:{display:false},border:{display:false}}}})}},
-  {id:"h2",t:"Cơ cấu thời gian theo nhóm việc",h:"% tổng giờ",cls:"tall",
-   f:()=>mk("h2","doughnut",{labels:["Tuyển dụng & Onboarding","Chấm công – C&B","Hồ sơ – BHXH","Đào tạo & Văn hoá","Báo cáo & Dashboard","Hành chính – Vận hành"],
+  {id:"w2",t:"Cơ cấu thời gian theo nhóm việc",h:"% tổng giờ",cls:"tall",
+   f:()=>mk("w2","doughnut",{labels:["Tuyển dụng & Onboarding","Chấm công – C&B","Hồ sơ – BHXH","Đào tạo & Văn hoá","Báo cáo & Dashboard","Hành chính – Vận hành"],
      datasets:[{data:[26,22,17,14,12,9],backgroundColor:PAL,borderWidth:0}]},{cutout:"55%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})},
-  {id:"h3",t:"Tỷ lệ phân bổ quỹ lương về BU",h:"% quỹ lương kỳ",span:"g2",
-   f:()=>mk("h3","bar",{labels:ALLOC.map(x=>x[0]),datasets:[{data:ALLOC.map(x=>x[1]),backgroundColor:C.navy,borderRadius:1}]})},
-  {id:"h4",t:"Chi phí nhân sự phân bổ theo BU",h:"triệu đồng · P1 và P2",
-   f:()=>mk("h4","bar",{labels:ALLOC.map(x=>x[0]),datasets:[
+  {id:"w3",t:"Tỷ lệ phân bổ quỹ lương về BU",h:"% quỹ lương kỳ",span:"g2",
+   f:()=>mk("w3","bar",{labels:ALLOC.map(x=>x[0]),datasets:[{data:ALLOC.map(x=>x[1]),backgroundColor:C.navy,borderRadius:1}]})},
+  {id:"w4",t:"Chi phí nhân sự phân bổ theo BU",h:"triệu đồng · P1 và P2",
+   f:()=>mk("w4","bar",{labels:ALLOC.map(x=>x[0]),datasets:[
      {label:"P1 cố định",data:ALLOC.map(x=>+(1952*x[1]/100*0.8).toFixed(0)),backgroundColor:C.navy,borderRadius:1},
      {label:"P2 biến động",data:ALLOC.map(x=>+(1952*x[1]/100*0.2).toFixed(0)),backgroundColor:C.navy2,borderRadius:1}]},
      {plugins:{legend:{display:true,position:"bottom"}},scales:{x:{stacked:true,grid:{display:false},border:{color:"rgba(148,163,184,.28)"}},y:{stacked:true,grid:{color:cssv("--grid")},border:{display:false}}}})}],
@@ -895,6 +1045,11 @@ REP.HRM8={
 /* ---- Cầu nối dữ liệu nhân sự thật ---- */
 const HRon=()=>!!(window.HQLive&&HQLive.HR&&HQLive.HR.has());
 const HRx=()=>HQLive.HR;
+/* ---- Cầu nối dữ liệu tuyển dụng thật (HRM1) ---- */
+const TDx =()=>HQLive.TD;
+const TDon=()=>!!(window.HQLive&&HQLive.TD&&HQLive.TD.has());
+const DXon=()=>!!(window.HQLive&&HQLive.TD&&HQLive.TD.coDX());
+const SLAon=()=>!!(window.HQLive&&HQLive.TD&&HQLive.TD.coSLA());
 const lab=e=>e.map(x=>x[0]), val=e=>e.map(x=>x[1]);
 const tr=v=>dec(v/1e6,1);
 function barSet(labels,data,color,extra){return{labels,datasets:[Object.assign({data,backgroundColor:color||C.navy,borderRadius:2,maxBarThickness:34},extra||{})]}}
