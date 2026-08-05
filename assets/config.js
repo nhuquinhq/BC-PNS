@@ -58,7 +58,9 @@ window.HQ_CONFIG = {
      Để trống "" thì báo cáo đó dùng dữ liệu mẫu.
      --------------------------------------------------------------- */
   sheets: {
-    DM_NhanSu:     "",
+    /* DATA NHÂN SỰ HQ 2026 — tab DATA. Nguồn chính cho HRM6 (tình hình
+       nhân sự), HRM3 (lương) và HRM7 (hợp đồng). */
+    DM_NhanSu:     "https://docs.google.com/spreadsheets/d/e/2PACX-1vRP-JhLeyIMgMhuqwoo2-YhIrPoAgezeObu-Em0zZgdzhm7oUiQ95tkS7dKQJzULiGDp_MTeb_alyHL/pub?gid=0&single=true&output=csv",
     DM_PhongBan:   "",
     DM_Grade:      "",
     RAW_TuyenDung: "",
