@@ -902,14 +902,15 @@ function barSet(labels,data,color,extra){return{labels,datasets:[Object.assign({
 /* ============================================================
    E. RENDER
    ============================================================ */
+/* Màu số theo bản chất chỉ số, đúng quy ước BC-PKT (lib/format.js · toneOf):
+   chỉ số càng thấp càng tốt = khoản "xấu" → đỏ; tỷ lệ càng cao càng tốt → xanh;
+   còn lại để trắng. Có thể ghi đè bằng trường tone của KPI. */
 function heroCard(k,i){
-  const g=rag(k.cur,k.tgt,k.dir);
-  const tone=g.c==="g"?"gain":g.c==="a"?"warn":"loss";
-  return `<div class="kpi is-${tone}">
+  const tone=k.tone||(k.dir===-1?"loss":(k.u==="%"?"gain":""));
+  return `<div class="kpi${tone?" is-"+tone:""}">
     <span class="code">${(k.u||"chỉ số").toUpperCase()}</span>
     <div class="lb">${k.k}</div>
     <div class="val">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></div>
-    <div class="foot">MT ${k.f?k.f(k.tgt):dec(k.tgt,k.p??1)} · ${g.t}${k.live?' · LIVE':''}${delta(k.cur,k.prev,k.dir)}</div>
   </div>`;
 }
 
