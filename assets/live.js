@@ -45,18 +45,41 @@ window.HQLive = (function () {
       .map(r => { const o = {}; head.forEach((h, i) => o[h] = (r[i] ?? "").trim()); return o; });
   }
 
-  /* ---------- 2. Tải một nguồn ---------- */
+  /* ---------- 2. Tải một nguồn ----------
+     Đọc thẳng Google Sheet trước; nếu trình duyệt chặn CORS, link sai
+     hay Google trả HTML thì đọc lại qua /api/csv trên Vercel.        */
+  const gio = () => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+  async function tai(url) {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    if (/^\s*<(!doctype|html)/i.test(text)) throw new Error("Tab chưa Publish dạng CSV (nhận về HTML)");
+    return text;
+  }
+
   async function fetchOne(key, url) {
+    let text = null, via = "Trực tiếp Google", loi = "";
     try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const rows = parseCSV(await res.text());
+      text = await tai(url);
+    } catch (e) {
+      loi = e.message;
+      try {
+        text = await tai("/api/csv?u=" + encodeURIComponent(url));
+        via = "/api/csv dự phòng";
+      } catch (e2) {
+        meta[key] = { ok: false, err: `${loi} · dự phòng: ${e2.message}`, at: gio() };
+        console.warn("[HQLive] Không đọc được nguồn " + key + ":", meta[key].err);
+        return false;
+      }
+    }
+    try {
+      const rows = parseCSV(text);
       store[key] = rows;
-      meta[key] = { ok: true, n: rows.length, at: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) };
+      meta[key] = { ok: true, n: rows.length, at: gio(), via };
       return true;
     } catch (e) {
-      meta[key] = { ok: false, err: e.message };
-      console.warn("[HQLive] Không đọc được nguồn " + key + ":", e.message);
+      meta[key] = { ok: false, err: "Lỗi phân tích CSV: " + e.message, at: gio() };
       return false;
     }
   }
