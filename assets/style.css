@@ -11,7 +11,7 @@ html[data-theme="light"]{
   --rail:#FFFFFF; --railtx:#546482; --railhead:#9AA8C2; --railhov:#F0F5FB;
   --sh:0 1px 2px rgba(22,35,60,.04), 0 6px 20px rgba(22,35,60,.05);
   --sh2:0 12px 30px rgba(22,35,60,.10);
-  --grid:#EAF1F9;
+  --grid:rgba(22,35,60,.08); --tick:#7C8AA8;
   --glass:#FFFFFF;
   --sheen:linear-gradient(155deg,rgba(56,189,248,.05),rgba(139,92,246,.04) 42%,transparent 70%);
   --ambient:
@@ -24,7 +24,7 @@ html[data-theme="dark"]{
   --rail:#0A1838; --railtx:#A3B8E4; --railhead:#6A83BC; --railhov:#162E60;
   --sh:0 1px 2px rgba(4,10,30,.35), 0 8px 26px rgba(4,10,30,.30);
   --sh2:0 16px 40px rgba(4,10,30,.45);
-  --grid:#223E7A;
+  --grid:rgba(255,255,255,.07); --tick:#6C7BA3;
   --glass:#101F4A;
   --sheen:linear-gradient(155deg,rgba(56,189,248,.07),rgba(139,92,246,.05) 42%,transparent 70%);
   --ambient:
@@ -201,24 +201,27 @@ body.viewer .adminonly{display:none!important}
 .t-md{background:rgba(245,158,11,.14);color:var(--amber)}
 .t-lo{background:rgba(16,185,129,.13);color:var(--green)}
 
-/* ===== KPI CARD (theo ảnh mẫu) ===== */
-.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:12px;margin-bottom:16px}
-.hcard{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--sh);padding:13px 15px;display:grid;grid-template-columns:1fr;gap:6px;align-content:start;transition:.16s}
-.hcard:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
-.hcard .hh{display:flex;align-items:center;justify-content:space-between;gap:6px}
-.hcard .utag{justify-self:start;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9px;font-weight:700;letter-spacing:.1em;padding:3px 8px;border-radius:7px;border:1px solid}
-.hcard .k{font-size:11px;color:var(--tx2);font-weight:600;line-height:1.4}
+/* ===== THẺ CHỈ SỐ (theo BC-PKT) ===== */
+.hero{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:10px;margin-bottom:16px}
+.kpi{position:relative;background:linear-gradient(180deg,rgba(13,30,64,.5),rgba(7,17,38,.42));border:1px solid var(--line);border-radius:12px;padding:11px 13px;overflow:hidden;transition:.2s}
+html[data-theme="light"] .kpi{background:linear-gradient(180deg,#fff,#F5F9FE)}
+.kpi:hover{border-color:rgba(47,217,255,.5);transform:translateY(-2px);box-shadow:0 10px 30px -16px rgba(47,217,255,.35)}
+.kpi:after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--blue);box-shadow:0 0 16px var(--blue)}
+.kpi.is-gain:after{background:#34D399;box-shadow:0 0 16px #34D399}
+.kpi.is-loss:after{background:#FB7185;box-shadow:0 0 16px #FB7185}
+.kpi.is-warn:after{background:#FBBF24;box-shadow:0 0 16px #FBBF24}
+.kpi .code{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:5px;color:#A8F6FF;background:rgba(47,217,255,.1);border:1px solid rgba(47,217,255,.32);text-transform:uppercase}
+html[data-theme="light"] .kpi .code{color:#0E7490;background:rgba(47,217,255,.13);border-color:rgba(47,217,255,.4)}
+.kpi .lb{font-size:12px;font-weight:600;color:var(--tx2);margin-top:7px;line-height:1.3;min-height:31px}
+.kpi .val{font-family:"Chakra Petch","Plus Jakarta Sans",sans-serif;font-weight:600;font-size:21px;margin-top:2px;letter-spacing:-.02em;color:#fff;font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(47,217,255,.5)}
+html[data-theme="light"] .kpi .val{color:var(--tx);text-shadow:none}
+.kpi.is-gain .val{color:#6EE7B7;text-shadow:0 0 20px rgba(52,211,153,.5)}
+.kpi.is-loss .val{color:#FDA4AF;text-shadow:0 0 20px rgba(251,113,133,.5)}
+html[data-theme="light"] .kpi.is-gain .val{color:#047857;text-shadow:none}
+html[data-theme="light"] .kpi.is-loss .val{color:#BE123C;text-shadow:none}
+.kpi .val small{font-size:11px;color:var(--tx3);font-weight:600;margin-left:4px;text-shadow:none;font-family:"Plus Jakarta Sans",sans-serif}
+.kpi .foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;color:var(--tx3);margin-top:6px}
 .kstrip{margin:16px 0 0}
-.hcard .row{display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap}
-.hcard .v{font-size:23px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1.15}
-.hcard .v small{font-size:11.5px;color:var(--tx3);font-weight:600;margin-left:4px}
-.hcard .foot{grid-column:1/-1;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--tx2);font-weight:600;padding-top:13px;margin-top:2px;border-top:1px solid var(--line)}
-.hcard .foot span{display:inline-flex;align-items:center;gap:6px}
-.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
-.dpill{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
-.dpill.up{background:rgba(16,185,129,.13);color:var(--green)}
-.dpill.dn{background:rgba(244,63,94,.13);color:var(--rose)}
-.dpill.fl{background:rgba(156,163,184,.15);color:var(--tx3)}
 
 /* ===== PANEL ===== */
 .grid{display:grid;gap:16px;margin-bottom:16px}
@@ -319,9 +322,9 @@ tbody td b{color:var(--tx);font-weight:800}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 /* ===== BỀ MẶT PHẲNG KIỂU PKT ===== */
-.panel,.hcard,.exbox,.accitem,.authcard,.defs{background-color:var(--glass);background-image:var(--sheen)}
+.panel,.kpi,.exbox,.accitem,.authcard,.defs{background-color:var(--glass);background-image:var(--sheen)}
 .panel:hover{border-color:rgba(56,189,248,.35)}
-.hcard:hover{box-shadow:var(--sh2),0 0 0 1px rgba(56,189,248,.25)}
+
 
 @page{size:A4 landscape;margin:10mm}
 @media print{
@@ -330,7 +333,7 @@ tbody td b{color:var(--tx);font-weight:800}
   .mast h1{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--tx)}
   .rail,.tools,.drawer,.scrim,.noprint,.tfoot{display:none!important}
   .shell{grid-template-columns:1fr}main{padding:0;max-width:none}
-  .mast{margin:0 0 10px;box-shadow:none}.panel,.exbox,.defs,.hcard{box-shadow:none;break-inside:avoid}
+  .mast{margin:0 0 10px;box-shadow:none}.panel,.exbox,.defs,.kpi{box-shadow:none;break-inside:avoid}
   .sec{break-inside:avoid-page}.tw{max-height:none;overflow:visible}
   thead th{position:static}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
