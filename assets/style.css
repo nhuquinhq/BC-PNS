@@ -12,6 +12,13 @@ html[data-theme="light"]{
   --sh:0 1px 2px rgba(22,35,60,.04), 0 6px 20px rgba(22,35,60,.05);
   --sh2:0 12px 30px rgba(22,35,60,.10);
   --grid:#EAF1F9;
+  --glass:rgba(255,255,255,.78);
+  --ambient:
+    linear-gradient(rgba(59,130,246,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(59,130,246,.035) 1px,transparent 1px),
+    radial-gradient(900px 520px at 88% -8%,rgba(56,189,248,.13),transparent 62%),
+    radial-gradient(760px 540px at -8% 108%,rgba(129,140,248,.12),transparent 62%),
+    radial-gradient(560px 380px at 55% 118%,rgba(34,211,238,.07),transparent 60%);
 }
 html[data-theme="dark"]{
   --bg:#0C1326; --card:#141D36; --card2:#101A30; --line:#293A5E; --line2:#1F2D4C;
@@ -20,10 +27,23 @@ html[data-theme="dark"]{
   --sh:0 1px 2px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.20);
   --sh2:0 14px 34px rgba(0,0,0,.28);
   --grid:#293A5E;
+  --glass:rgba(20,29,54,.72);
+  --ambient:
+    linear-gradient(rgba(56,189,248,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(56,189,248,.045) 1px,transparent 1px),
+    radial-gradient(1000px 600px at 88% -8%,rgba(34,211,238,.16),transparent 62%),
+    radial-gradient(820px 600px at -8% 108%,rgba(99,102,241,.18),transparent 62%),
+    radial-gradient(600px 420px at 55% 118%,rgba(245,72,127,.07),transparent 60%);
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--tx);font-family:"Plus Jakarta Sans",system-ui,sans-serif;font-size:var(--fs);line-height:1.55;-webkit-font-smoothing:antialiased}
+html{background:var(--bg)}
+body{background:transparent;color:var(--tx);font-family:"Plus Jakarta Sans",system-ui,sans-serif;font-size:var(--fs);line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:var(--ambient);
+  background-size:38px 38px,38px 38px,auto,auto,auto}
+body::after{content:"";position:fixed;top:0;left:0;right:0;height:2px;z-index:98;pointer-events:none;
+  background:linear-gradient(90deg,#22D3EE,#3B82F6 38%,#818CF8 70%,#22D3EE);opacity:.85}
 body.compact{--pad:12px;--fs:12px}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
 button{font-family:inherit;cursor:pointer}
@@ -93,7 +113,7 @@ main{padding:0 0 70px;max-width:1580px}
 .mast{margin:20px 24px 0}
 .mast .bar{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
 .mast .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--indigo);margin-bottom:7px}
-.mast h1{font-size:21px;font-weight:800;text-transform:uppercase}
+.mast h1{font-size:21px;font-weight:800;text-transform:uppercase;background:linear-gradient(92deg,var(--tx) 45%,var(--indigo));-webkit-background-clip:text;background-clip:text;color:transparent}
 .mast .bar p{margin:5px 0 0;color:var(--tx2);font-size:12.5px;max-width:660px}
 .scoperow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:11px}
 .scopepill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 14px;font-size:10.5px;font-weight:700;letter-spacing:.03em;color:var(--cyan);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.45);font-family:"IBM Plex Mono",ui-monospace,monospace}
@@ -109,7 +129,8 @@ main{padding:0 0 70px;max-width:1580px}
 .fld select{background:var(--card2);border:1px solid var(--line);border-radius:var(--r2);padding:9px 11px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--tx);outline:none;min-width:110px}
 html[data-theme="dark"] .fld select{color-scheme:dark}
 .livestat{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:var(--tx2)}
-.ldot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
+.ldot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green);animation:lpulse 2.4s ease-in-out infinite}
+@keyframes lpulse{50%{box-shadow:0 0 16px var(--green)}}
 .ldot.off{background:var(--tx3);box-shadow:none}
 
 /* ===== ĐĂNG NHẬP ===== */
@@ -307,11 +328,18 @@ tbody td b{color:var(--tx);font-weight:800}
   .wrap{padding-left:14px;padding-right:14px}.mast{margin:14px}
   .mside{align-items:flex-start}.mrow{justify-content:flex-start}
 }
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== CHẤT LIỆU KÍNH MỜ (glassmorphism) ===== */
+.panel,.hcard,.exbox,.accitem,.authcard,.defs,.sign{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.panel:hover{border-color:rgba(56,189,248,.35)}
+.hcard:hover{box-shadow:var(--sh2),0 0 0 1px rgba(56,189,248,.25)}
 
 @page{size:A4 landscape;margin:10mm}
 @media print{
-  html{--bg:#fff;--card:#fff;--card2:#F8F9FE;--line:#E3E6F0;--tx:#1E2436;--tx2:#4E5670;--tx3:#818AA3}
+  html{--bg:#fff;--card:#fff;--card2:#F8F9FE;--line:#E3E6F0;--tx:#1E2436;--tx2:#4E5670;--tx3:#818AA3;--glass:#fff}
+  body::before,body::after{display:none!important}
+  .mast h1{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--tx)}
   .rail,.tools,.drawer,.scrim,.noprint,.tfoot{display:none!important}
   .shell{grid-template-columns:1fr}main{padding:0;max-width:none}
   .mast{margin:0 0 10px;box-shadow:none}.panel,.exbox,.defs,.sign,.hcard{box-shadow:none;break-inside:avoid}
