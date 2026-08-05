@@ -1104,8 +1104,10 @@ function renderSys(){
   const srcRows=Object.entries(SOURCES).map(([k,s],i)=>{
     const m=window.HQLive?HQLive.meta[k]:null;
     const gid=(s.url.match(/[?&]gid=(\d+)/)||[])[1]||"—";
-    const stt=!s.url?'<span class="pill p-n">Chưa khai</span>':(m?(m.ok?'<span class="pill p-ok">Trực tiếp Google</span>':'<span class="pill p-b">Trực tiếp lỗi</span>'):'<span class="pill p-w">Chưa đọc</span>');
-    const note=!s.url?'—':(m?(m.ok?'OK':`<span style="color:var(--rose)">${(m.err||'').slice(0,90)}</span>`):'chưa tải trong phiên này');
+    const stt=!s.url?'<span class="pill p-n">Chưa khai</span>'
+      :(m?(m.ok?`<span class="pill p-ok">${m.via||'Trực tiếp Google'}</span>`:'<span class="pill p-b">Đọc lỗi</span>')
+         :'<span class="pill p-w">Chưa đọc</span>');
+    const note=!s.url?'—':(m?(m.ok?`đọc lúc ${m.at}`:`<span style="color:var(--rose)">${(m.err||'').slice(0,120)}</span>`):'chưa tải trong phiên này');
     return `<tr><td class="idx">${i+1}</td><td><b>${s.n}</b><div style="font-size:10.5px;color:var(--tx3)">${s.l} · ${s.m}</div></td><td class="mono" style="font-size:10.5px">${gid}</td><td>${stt}</td><td style="text-align:right;font-weight:700">${m&&m.ok?m.n:'—'}</td><td>${note}</td></tr>`;
   }).join('');
   return `<div class="mast"><div class="bar">
@@ -1127,7 +1129,7 @@ function renderSys(){
   <div class="wrap">
     <div class="hero kstrip">
       ${card("Nguồn dữ liệu",`${st.oke}/${NSRC}`,`${NSRC} tab · ${files} file Google Sheet`)}
-      ${card("Cách đọc","Trực tiếp Google","publish CSV, đọc từ trình duyệt")}
+      ${card("Cách đọc","Trực tiếp Google","publish CSV · /api/csv là dự phòng")}
       ${card("Tài khoản",`<span id="sys-acc-v">${AUTH?AUTH.email.split('@')[0]:"—"}</span>`,`<span id="sys-acc-s">${AUTH?`${roleLabel()} · ${method}`:""}</span>`)}
       ${card("Tự làm mới",p>0?`${p} phút`:"Tắt",`lần cuối ${lastAt}`)}
     </div>
