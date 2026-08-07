@@ -273,6 +273,7 @@ REP.HRM1={
  kpis:[
   {k:"Tổng CV thu thập",d:"L0 — toàn bộ CV nhận về",u:"CV",cur:318,prev:281,tgt:300,dir:1,p:0,sp:[186,214,238,265,281,318]},
   {k:"CV pass lọc HR",d:"L1 — qua vòng lọc hồ sơ",u:"CV",cur:142,prev:126,tgt:130,dir:1,p:0,sp:[82,94,106,118,126,142]},
+  {k:"CV pass lọc Leader",d:"Leader duyệt sau bước lọc HR",u:"CV",cur:118,prev:104,tgt:110,dir:1,p:0,sp:[68,78,88,98,104,118]},
   {k:"Tỷ lệ pass lọc HR",d:"L1 trên tổng CV",u:"%",cur:44.7,prev:44.8,tgt:40,dir:1,sp:[44,44,45,45,45,45]},
   {k:"Ứng viên tới phỏng vấn",d:"L3A — có mặt phỏng vấn",u:"UV",cur:71,prev:63,tgt:70,dir:1,p:0,sp:[41,47,52,58,63,71]},
   {k:"Ứng viên pass phỏng vấn",d:"L4A — đạt vòng 1",u:"UV",cur:38,prev:34,tgt:35,dir:1,p:0,sp:[22,25,28,31,34,38]},
