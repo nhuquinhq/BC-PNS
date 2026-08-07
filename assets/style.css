@@ -474,3 +474,8 @@ html[data-theme="dark"] .mdl-box{background:#0B1630;border-color:var(--line-stro
 .mdl-foot{display:flex;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--line);background:var(--card2)}
 @media(max-width:600px){.mdl{padding:12px}.mdl-box{max-height:92vh}}
 @media print{.mdl{display:none!important}}
+
+/* Trạng thái nguồn đọc hỏng trong ngăn "Nguồn dữ liệu" */
+.p-e{background:rgba(244,63,94,.15);color:#F43F5E}
+.srcerr{margin-top:7px;padding:7px 10px;border-radius:8px;font-size:10.5px;line-height:1.5;
+  background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:#F43F5E;word-break:break-word}

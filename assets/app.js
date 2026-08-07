@@ -25,7 +25,28 @@ const SOURCES={
  RAW_Workload:{n:"RAW_Workload",l:"Khối lượng việc & phân bổ",m:"HRM8",url:"",c:"Mã NV · Nhóm việc · Số đầu việc · Giờ/tháng · BU thụ hưởng · % phân bổ · Mã hạch toán"}
 };
 const CFG=window.HQ_CONFIG||{};
-Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
+CFG.sheets=CFG.sheets||{};
+/* Link khai trong assets/config.js — coi là mặc định của hệ thống */
+const NGUON_GOC=Object.assign({},CFG.sheets);
+
+/* Link do Quản trị dán trong ngăn "Nguồn dữ liệu" được giữ lại trên máy.
+   Trước đây nút Lưu chỉ ghi vào SOURCES — nơi HQLive KHÔNG hề đọc — nên dán
+   link xong vẫn không nối được dữ liệu, và tải lại trang là mất sạch.
+   Chỉ giữ những link KHÁC mặc định, để sau này sửa config.js thì các nguồn
+   chưa ai đụng tới vẫn tự cập nhật theo. */
+const LS_NGUON="hq_bcpns_nguon";
+function docNguonLuu(){
+  try{ const o=JSON.parse(localStorage.getItem(LS_NGUON)||"{}");
+       return (o&&typeof o==="object"&&!Array.isArray(o))?o:{} }
+  catch(e){ return {} }
+}
+function luuNguon(o){
+  try{ localStorage.setItem(LS_NGUON,JSON.stringify(o)) }
+  catch(e){ /* trình duyệt chặn lưu — vẫn dùng được trong phiên này */ }
+}
+/* Áp link đã lưu đè lên mặc định, TRƯỚC khi HQLive đọc CFG.sheets */
+Object.entries(docNguonLuu()).forEach(([k,u])=>{ if(SOURCES[k]) CFG.sheets[k]=String(u||"").trim() });
+Object.entries(CFG.sheets).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
 const NSRC=Object.keys(SOURCES).length;
 let current="HOME";
 const AUTHC={
@@ -1612,12 +1633,20 @@ function go(id){
 /* ---- Drawer ---- */
 function openDrawer(){
   if(!isAdmin()){toast("Chỉ Quản trị cấp cao nhất được gắn / sửa nguồn dữ liệu");return}
-  document.getElementById('srclist').innerHTML=Object.entries(SOURCES).map(([k,s])=>`
-    <div class="srcrow"><div class="t"><b>${s.l}</b>
-      <span class="pill ${(window.HQLive&&HQLive.has(k))?'p-ok':(s.url?'p-w':'p-n')}">${(window.HQLive&&HQLive.has(k))?('Đã đọc '+HQLive.rows(k).length+' dòng'):(s.url?'Đã khai báo':'Chưa nối')}</span>
+  document.getElementById('srclist').innerHTML=Object.entries(SOURCES).map(([k,s])=>{
+    const m=(window.HQLive&&HQLive.meta[k])||null;
+    const daDoc=!!(window.HQLive&&HQLive.has(k));
+    /* Nguồn đọc hỏng thì nói thẳng lý do ở đây — trước đây chỉ báo "xem
+       Console" nên không ai biết link sai chỗ nào. */
+    const pill = daDoc ? `<span class="pill p-ok">Đã đọc ${HQLive.rows(k).length} dòng</span>`
+      : (m&&m.ok===false) ? `<span class="pill p-e">Đọc hỏng</span>`
+      : (s.url ? `<span class="pill p-w">Đã khai báo</span>` : `<span class="pill p-n">Chưa nối</span>`);
+    const loi = (m&&m.ok===false&&m.err) ? `<div class="srcerr">${escHtml(m.err)}</div>` : '';
+    return `<div class="srcrow"><div class="t"><b>${s.l}</b>${pill}
       <span class="mods">${s.n} · ${s.m}</span></div>
-      <input type="text" data-k="${k}" value="${s.url}" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
-      <div class="cols"><b>Cột bắt buộc:</b> ${s.c}</div></div>`).join('');
+      <input type="text" data-k="${k}" value="${escHtml(s.url)}" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+      ${loi}<div class="cols"><b>Cột bắt buộc:</b> ${s.c}</div></div>`;
+  }).join('');
   document.getElementById('drawer').classList.add('on');document.getElementById('scrim').classList.add('on');
 }
 function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('scrim').classList.remove('on')}
@@ -1640,9 +1669,22 @@ railBd.onclick=closeRail;
 document.getElementById('btn-close').onclick=closeDrawer;
 document.getElementById('btn-logout').onclick=logout;
 document.getElementById('scrim').onclick=closeDrawer;
-document.getElementById('btn-save').onclick=()=>{
-  document.querySelectorAll('#srclist input').forEach(i=>SOURCES[i.dataset.k].url=i.value.trim());
-  closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/${NSRC} liên kết nguồn`)};
+document.getElementById('btn-save').onclick=async()=>{
+  /* Ghi vào CFG.sheets — chính là chỗ HQLive đọc khi tải — rồi lưu lại và
+     đọc lại dữ liệu ngay, thay vì chỉ đổi SOURCES rồi vẽ lại giao diện. */
+  const luu={};
+  document.querySelectorAll('#srclist input').forEach(i=>{
+    const k=i.dataset.k, u=i.value.trim();
+    if(!SOURCES[k]) return;
+    SOURCES[k].url=u;
+    CFG.sheets[k]=u;
+    if(u!==String(NGUON_GOC[k]||"").trim()) luu[k]=u;
+  });
+  luuNguon(luu);
+  closeDrawer();
+  toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/${NSRC} liên kết · đang đọc lại…`);
+  await reloadLive();
+};
 function setThang(v){
   const y=new Date().getFullYear();
   if(!v){RANGE={from:iso(new Date(y,0,1)),to:iso(new Date()),thang:null,tuan:null}}
