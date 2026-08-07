@@ -618,17 +618,53 @@ window.HQLive = (function () {
      trên báo cáo cao hơn số "đang làm" của sheet.
      Nay khi không có ngày nghỉ thì tin theo cột Tình trạng. */
   function headcountAt(all, moc) {
-    return all.filter(r => {
-      if (!r.vao || r.vao > moc) return false;   // chưa nhận việc tính tới mốc
-      if (r.nghi) return r.nghi > moc;           // có ngày nghỉ thì so theo ngày
-      return r.ttDangLam;                        // thiếu ngày nghỉ thì theo Tình trạng
-    }).length;
+    return all.filter(r => laDangLamTai(r, moc)).length;
+  }
+  /* Tại mốc "moc" thì hồ sơ này còn đang đi làm hay không.
+     Cột "Tình trạng" (cột I của tab DATA, ví dụ "Đang làm việc") là căn cứ
+     chính; hai cột ngày chỉ dùng để xếp hồ sơ vào đúng mốc thời gian.
+     Ngày nhận việc bỏ trống thì KHÔNG loại — nếu không, người đang làm mà
+     HR quên điền ngày vào sẽ biến mất khỏi Headcount. */
+  function laDangLamTai(r, moc) {
+    if (r.vao && r.vao > moc) return false;      // chưa nhận việc tính tới mốc
+    if (r.nghi) return r.nghi > moc;             // có ngày nghỉ thì so theo ngày
+    return r.ttDangLam;                          // thiếu ngày nghỉ thì theo Tình trạng
   }
   /* Các dòng ghi đã nghỉ nhưng bỏ trống ngày nghỉ — không xếp được vào tháng
      nào nên bị loại khỏi mọi mốc headcount. Trả ra để báo cho HR đi bổ sung. */
   function thieuNgayNghi() {
     return hrRows().filter(r => r.tt && !r.ttDangLam && !r.nghi)
       .map(r => ({ ma: r.ma, ten: r.ten, tt: r.tt, phong: r.phong, vao: r.vao }));
+  }
+  /* Đang làm nhưng bỏ trống ngày nhận việc — vẫn tính vào Headcount, nhưng
+     không xếp được vào biểu đồ biến động theo tháng. */
+  function thieuNgayVao() {
+    return hrRows().filter(r => r.ttDangLam && !r.nghi && !r.vao)
+      .map(r => ({ ma: r.ma, ten: r.ten, tt: r.tt, phong: r.phong }));
+  }
+
+  /* Đối chiếu Headcount với thao tác lọc tay trên sheet.
+     Trả về số dòng theo từng giá trị cột "Tình trạng" và các khoản cộng /
+     trừ dẫn từ con số lọc tay sang con số báo cáo, để nhìn là biết lệch ở
+     đâu thay vì phải dò từng dòng. */
+  function doiChieuHeadcount(moc) {
+    const all = hrRows(), m = moc || new Date();
+    const theoTT = {};
+    all.forEach(r => {
+      const k = String(r.tt || "").trim() || "(để trống)";
+      theoTT[k] = (theoTT[k] || 0) + 1;
+    });
+    const ttDangLam = all.filter(r => r.ttDangLam);
+    return {
+      theoTT: Object.entries(theoTT).sort((a, b) => b[1] - a[1]),
+      tongDong: all.length,
+      loc: ttDangLam.length,                                             // lọc tay trên sheet
+      truDaNghi:  ttDangLam.filter(r => r.nghi && r.nghi <= m).length,   // đang làm nhưng đã có ngày nghỉ
+      truChuaVao: ttDangLam.filter(r => r.vao && r.vao > m).length,      // ngày nhận việc sau mốc chốt
+      congChuaNghi: all.filter(r => !r.ttDangLam && r.nghi && r.nghi > m
+                                    && (!r.vao || r.vao <= m)).length,   // ghi đã nghỉ nhưng ngày nghỉ ở tương lai
+      headcount: headcountAt(all, m)
+    };
   }
   /* Turnover chuẩn quản trị nhân sự:
          số nghỉ trong kỳ / headcount BÌNH QUÂN của kỳ × 100
@@ -704,7 +740,8 @@ window.HQLive = (function () {
 
   const HR = { rows: hrRows, active: dangLamHR, has: hasHR, demTheo, nhomTuoi, nhomThamNien,
     bienDong, spanQL, thieuHoSo, tyLeHoSoDu, dailuong, tangLuong, hetHanHD, dt, thang,
-    headcountAt, tyLeNghiViec, thieuNgayNghi, parseVietnameseDate, calculateTenureMonths };
+    headcountAt, laDangLamTai, tyLeNghiViec, thieuNgayNghi, thieuNgayVao, doiChieuHeadcount,
+    parseVietnameseDate, calculateTenureMonths };
 
   /* =====================================================================
      5c. BỘ DỮ LIỆU TUYỂN DỤNG (HRM1)

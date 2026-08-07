@@ -1261,14 +1261,43 @@ function mast(m,r){
    lặng bớt người khỏi số liệu thì còn khó hiểu hơn con số sai. */
 function canhBaoThieuNgayNghi(m){
   if(!m.src||!m.src.includes('DM_NhanSu')||!HRon()) return '';
-  const ds=HRx().thieuNgayNghi?HRx().thieuNgayNghi():[];
-  if(!ds.length) return '';
-  const ten=ds.slice(0,3).map(x=>escHtml(x.ten||x.ma||'(chưa có tên)')).join(', ');
-  return `<div class="dqwarn">
-    <b>${ds.length} hồ sơ ghi đã nghỉ nhưng bỏ trống ô "Ngày nghỉ việc"</b>
-    <span>Không xác định được nghỉ tháng nào nên không tính vào Headcount:
-      ${ten}${ds.length>3?` và ${ds.length-3} người nữa`:''}. Bổ sung ngày trên Google Sheet để số liệu khớp lại.</span>
-  </div>`;
+  const H=HRx(), out=[];
+  const ten=ds=>ds.slice(0,3).map(x=>escHtml(x.ten||x.ma||'(chưa có tên)')).join(', ')
+    +(ds.length>3?` và ${ds.length-3} người nữa`:'');
+  const a=H.thieuNgayNghi?H.thieuNgayNghi():[];
+  if(a.length) out.push(`<div class="dqwarn">
+    <b>${a.length} hồ sơ ghi đã nghỉ nhưng bỏ trống ô "Ngày nghỉ việc"</b>
+    <span>Không xác định được nghỉ tháng nào nên không tính vào Headcount và không vào được
+      biểu đồ biến động: ${ten(a)}. Bổ sung ngày trên Google Sheet để tỷ lệ nghỉ về đúng.</span></div>`);
+  const b=H.thieuNgayVao?H.thieuNgayVao():[];
+  if(b.length) out.push(`<div class="dqwarn">
+    <b>${b.length} hồ sơ đang làm nhưng bỏ trống ô "Ngày nhận việc"</b>
+    <span>Vẫn được tính vào Headcount theo cột Tình trạng, nhưng không xếp được vào tháng nào
+      trên biểu đồ biến động: ${ten(b)}.</span></div>`);
+  return out.join('');
+}
+/* Bảng đối chiếu: dẫn từ con số lọc tay trên sheet sang con số của báo cáo,
+   để nhìn phát ra ngay lệch ở đâu thay vì phải dò từng dòng. */
+function bangDoiChieu(m){
+  if(!m.src||!m.src.includes('DM_NhanSu')||!HRon()||!HRx().doiChieuHeadcount) return '';
+  const d=HRx().doiChieuHeadcount(RANGE&&RANGE.to?new Date(RANGE.to):null);
+  const dong=(nhan,so,cls)=>`<tr class="${cls||''}"><td>${nhan}</td><td class="n">${so}</td></tr>`;
+  const buoc=[
+    dong(`Lọc tay trên sheet — cột "Tình trạng" là đang làm việc`,d.loc,'tot'),
+    d.truDaNghi ?dong('– Trừ: đã điền Ngày nghỉ việc trước ngày chốt',`−${d.truDaNghi}`):'',
+    d.truChuaVao?dong('– Trừ: Ngày nhận việc sau ngày chốt',`−${d.truChuaVao}`):'',
+    d.congChuaNghi?dong('– Cộng: ghi đã nghỉ nhưng ngày nghỉ ở tương lai',`+${d.congChuaNghi}`):'',
+    dong('<b>Headcount cuối kỳ trên báo cáo</b>',`<b>${d.headcount}</b>`,'tot')
+  ].join('');
+  const tt=d.theoTT.map(([k,v])=>dong(escHtml(k),v)).join('');
+  return panelT('Đối chiếu Headcount với sheet',
+    `${d.tongDong} dòng dữ liệu · ngày chốt ${fmtd(RANGE.to)}`,
+    `<div class="tw"><table id="tbl-doichieu">
+       <thead><tr><th>Diễn giải</th><th class="n">Số người</th></tr></thead>
+       <tbody>${buoc}
+         <tr class="grp"><td colspan="2">Số dòng theo từng giá trị cột "Tình trạng"</td></tr>
+         ${tt}</tbody></table></div>`,
+    tools('tbl-doichieu'));
 }
 function renderReport(m){
   const r=REP[m.id];
@@ -1306,7 +1335,9 @@ function renderReport(m){
   }
   parts.push(["Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
     panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id))]);
-  parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
+  const dc=bangDoiChieu(m);
+  parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",
+    dc?dc+'<div style="height:16px"></div>'+tb:tb]);
   parts.push(["Định nghĩa chỉ số","",defsBox(r.defs)+`<div class="note">${r.note}</div>`]);
   return mast(m,r)+
   `<div class="wrap">${canhBaoThieuNgayNghi(m)}${kpiStrip(K,r.kgroups)}</div>
