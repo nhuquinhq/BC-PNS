@@ -470,6 +470,8 @@ window.HQLive = (function () {
     return Math.max(0, Math.round((soThang + le) * 10) / 10);
   }
 
+  /* Giá trị cột "Tình trạng" được coi là còn đi làm */
+  const TT_DANG_LAM = /đang làm|đang thử việc|thử việc|học việc/i;
   const dt = parseVietnameseDate;                        // tên cũ dùng khắp file
   const thang = (a, b) => (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
 
@@ -560,7 +562,10 @@ window.HQLive = (function () {
         tang: colTang.map(c => num(g(r, c))).filter(v => v > 0),
         canhBao: colCb.map(c => g(r, c)).filter(Boolean),
         ctv,
-        dangLam: /đang làm|đang thử việc|thử việc|học việc/i.test(tt) && !nghi
+        /* Tình trạng trên sheet có phải "đang đi làm" hay không — tách riêng
+           để headcount còn dùng lại khi ô Ngày nghỉ việc bỏ trống. */
+        ttDangLam: TT_DANG_LAM.test(tt),
+        dangLam: TT_DANG_LAM.test(tt) && !nghi
       };
       /* Thâm niên: tin cột có sẵn của sheet, nhưng chỉ khi nó là số DƯƠNG.
          Ô trống, ô lỗi công thức hay số âm đều rơi về mốc ngày nhận việc. */
@@ -605,9 +610,25 @@ window.HQLive = (function () {
       else if (t < 24) b["1 – 2 năm"]++; else b["Trên 2 năm"]++; });
     return Object.entries(b);
   }
-  /* Headcount tại một thời điểm: đã nhận việc và chưa nghỉ tính tới mốc đó */
+  /* Headcount tại một thời điểm: đã nhận việc và chưa nghỉ tính tới mốc đó.
+
+     Bản cũ chỉ nhìn NGÀY, bỏ qua hoàn toàn cột "Tình trạng". Sheet nhân sự
+     có những dòng ghi "Nghỉ việc" nhưng để TRỐNG ô "Ngày nghỉ việc" — với
+     bản cũ, những người này được tính là còn đi làm mãi mãi, nên Headcount
+     trên báo cáo cao hơn số "đang làm" của sheet.
+     Nay khi không có ngày nghỉ thì tin theo cột Tình trạng. */
   function headcountAt(all, moc) {
-    return all.filter(r => r.vao && r.vao <= moc && (!r.nghi || r.nghi > moc)).length;
+    return all.filter(r => {
+      if (!r.vao || r.vao > moc) return false;   // chưa nhận việc tính tới mốc
+      if (r.nghi) return r.nghi > moc;           // có ngày nghỉ thì so theo ngày
+      return r.ttDangLam;                        // thiếu ngày nghỉ thì theo Tình trạng
+    }).length;
+  }
+  /* Các dòng ghi đã nghỉ nhưng bỏ trống ngày nghỉ — không xếp được vào tháng
+     nào nên bị loại khỏi mọi mốc headcount. Trả ra để báo cho HR đi bổ sung. */
+  function thieuNgayNghi() {
+    return hrRows().filter(r => r.tt && !r.ttDangLam && !r.nghi)
+      .map(r => ({ ma: r.ma, ten: r.ten, tt: r.tt, phong: r.phong, vao: r.vao }));
   }
   /* Turnover chuẩn quản trị nhân sự:
          số nghỉ trong kỳ / headcount BÌNH QUÂN của kỳ × 100
@@ -683,7 +704,7 @@ window.HQLive = (function () {
 
   const HR = { rows: hrRows, active: dangLamHR, has: hasHR, demTheo, nhomTuoi, nhomThamNien,
     bienDong, spanQL, thieuHoSo, tyLeHoSoDu, dailuong, tangLuong, hetHanHD, dt, thang,
-    headcountAt, tyLeNghiViec, parseVietnameseDate, calculateTenureMonths };
+    headcountAt, tyLeNghiViec, thieuNgayNghi, parseVietnameseDate, calculateTenureMonths };
 
   /* =====================================================================
      5c. BỘ DỮ LIỆU TUYỂN DỤNG (HRM1)
