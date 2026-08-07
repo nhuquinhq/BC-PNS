@@ -125,8 +125,39 @@ function applyChartTheme(){
   Chart.defaults.datasets.bar.borderRadius=2;
   Chart.defaults.datasets.line.borderWidth=2;
   Chart.defaults.datasets.line.tension=.3;
+  /* Đăng ký plugin nhãn số một lần, TẮT mặc định rồi bật riêng cho biểu đồ
+     cột và tròn trong mk(). Nếu bật toàn cục thì biểu đồ đường và vùng sẽ
+     đầy chữ chồng lên nhau. Thiếu plugin (mạng chặn CDN) vẫn chạy bình thường. */
+  if(window.ChartDataLabels&&Chart.register&&!Chart.registry.plugins.get('datalabels')){
+    Chart.register(window.ChartDataLabels);
+    Chart.defaults.plugins.datalabels={display:false};
+  }
 }
 applyChartTheme();
+/* Cấu hình nhãn số theo loại biểu đồ (Task 3).
+   Trả null khi không áp dụng — mk() sẽ không đụng tới options. */
+function nhanSo(type,opts){
+  if(!window.ChartDataLabels) return null;
+  if(type!=='bar'&&type!=='doughnut'&&type!=='pie') return null;
+  if(opts&&opts.plugins&&opts.plugins.datalabels!==undefined) return null;   // nơi gọi tự lo
+  const hien=ctx=>{
+    if(ctx.dataset.type==='line') return false;          // đường trong biểu đồ hỗn hợp
+    const v=+ctx.dataset.data[ctx.dataIndex];
+    return isFinite(v)&&v!==0;                           // bỏ nhãn 0 cho đỡ rối
+  };
+  const so=v=>{const a=Math.abs(+v||0);return dec(a,Number.isInteger(a)?0:1)};
+  if(type==='bar') return {
+    display:hien,anchor:'end',align:'end',offset:2,clamp:true,
+    /* cột "Ra" vẽ bằng số âm để đổ xuống dưới trục — nhãn hiện trị tuyệt đối */
+    formatter:so,color:cssv('--tx2')||'#8FA6D8',
+    font:{family:"'IBM Plex Mono',ui-monospace,monospace",size:10,weight:'700'}
+  };
+  return {                                               // doughnut / pie
+    display:hien,formatter:so,color:'#fff',
+    textStrokeColor:'rgba(0,0,0,.55)',textStrokeWidth:3,
+    font:{family:"'IBM Plex Mono',ui-monospace,monospace",size:11,weight:'700'}
+  };
+}
 function mk(id,type,data,opts={}){
   const cv=document.getElementById(id); if(!cv)return;
   /* Canvas còn chart cũ (id trùng giữa hai báo cáo trên trang tổng hợp) thì
@@ -134,7 +165,16 @@ function mk(id,type,data,opts={}){
   const cu=Chart.getChart&&Chart.getChart(cv);
   if(cu){cu.destroy();charts=charts.filter(c=>c!==cu)}
   if(data.datasets)data.datasets.forEach(d=>{if(type==='bar'&&d.type!=='line'&&d.borderRadius===1)d.borderRadius=2});
-  charts.push(new Chart(cv,{type,data,options:Object.assign({plugins:{legend:{display:false}},scales:AX},opts)}));
+  const o=Object.assign({plugins:{legend:{display:false}},scales:AX},opts);
+  /* Gắn nhãn số cho cột và tròn. Gộp vào plugins đã có thay vì ghi đè để
+     không xoá mất cấu hình legend / tooltip mà nơi gọi đã đặt. */
+  const nh=nhanSo(type,opts);
+  if(nh){
+    o.plugins=Object.assign({},o.plugins,{datalabels:nh});
+    /* Nhãn nằm ngoài đầu cột nên cần chừa chỗ, tránh bị khung cắt cụt */
+    if(type==='bar')o.layout=Object.assign({padding:{top:14,right:26}},o.layout);
+  }
+  charts.push(new Chart(cv,{type,data,options:o}));
 }
 function spark(arr,color,w=58,h=20){
   const mn=Math.min(...arr),mx=Math.max(...arr),r=(mx-mn)||1;
@@ -744,18 +784,27 @@ REP.HRM6={
   ['Nghỉ dưới 12 tháng chiếm 27%. Cần rà lại chất lượng onboarding và mức độ rõ ràng của JD ở hai phòng Vận hành và Kinh doanh.','t-hi'],
   ['2 Exit Interview chưa thực hiện. Theo quy trình, HR phỏng vấn chứ không phải quản lý trực tiếp.','t-md']],
  kpis:[
-  {k:"Headcount cuối kỳ",d:"Nhân sự đang làm tại ngày chốt",u:"người",cur:148,prev:146,tgt:150,dir:1,p:0,sp:[141,144,146,147,148,148]},
+  {k:"Headcount cuối kỳ",d:"Nhân sự đang làm tại ngày chốt",u:"người",cur:148,prev:146,tgt:150,dir:1,p:0,sp:[141,144,146,147,148,148],showDelta:1},
   {k:"Nhân sự onboard trong kỳ",u:"người",cur:6,prev:5,tgt:8,dir:1,p:0,sp:[4,5,7,6,5,6]},
   {k:"Nhân sự nghỉ trong kỳ",u:"người",cur:2,prev:3,tgt:2,dir:-1,p:0,sp:[3,4,2,3,3,2]},
   {k:"Turnover tháng",u:"%",cur:1.4,prev:1.9,tgt:2.0,dir:-1,sp:[2.4,2.1,1.8,2.0,1.9,1.4]},
   {k:"Turnover luỹ kế năm",u:"%",cur:9.8,prev:8.4,tgt:15.0,dir:-1,sp:[2.1,4.0,5.6,7.0,8.4,9.8]},
-  {k:"Tỷ lệ nghỉ trong thử việc",d:"Nghỉ trước 3 tháng làm việc",u:"%",cur:12.0,prev:14.0,tgt:10.0,dir:-1,sp:[18,17,15,14,14,12]},
-  {k:"Tỷ lệ nghỉ dưới 12 tháng",u:"%",cur:27.3,prev:22.0,tgt:20.0,dir:-1,sp:[18,19,21,23,22,27]},
+  {k:"Tỷ lệ nghỉ trong thử việc",d:"Nghỉ trước 3 tháng làm việc",u:"%",cur:12.0,prev:14.0,tgt:10.0,dir:-1,sp:[18,17,15,14,14,12],tone:"warn"},
+  {k:"Tỷ lệ nghỉ dưới 12 tháng",u:"%",cur:27.3,prev:22.0,tgt:20.0,dir:-1,sp:[18,19,21,23,22,27],tone:"alert"},
   {k:"Thâm niên bình quân",u:"tháng",cur:18.4,prev:17.9,tgt:24,dir:1,sp:[15,16,16.8,17.4,17.9,18.4]},
   {k:"Tuổi bình quân",u:"tuổi",cur:26.4,prev:26.3,tgt:28,dir:1,sp:[26,26.1,26.2,26.2,26.3,26.4]},
   {k:"Tỷ lệ nhân sự toàn thời gian",u:"%",cur:81.8,prev:82.4,tgt:80.0,dir:1,sp:[84,83,83,82,82,82]},
   {k:"Tỷ lệ hồ sơ đầy đủ",d:"Bình quân các trường thông tin bắt buộc",u:"%",cur:92.6,prev:90.5,tgt:100,dir:1,sp:[84,86,88,89,91,93]},
-  {k:"Quản lý quá tải",d:"Trên 10 nhân sự trực tiếp",u:"người",cur:2,prev:2,tgt:0,dir:-1,p:0,sp:[3,3,2,2,2,2]}],
+  {k:"Quản lý quá tải",d:"Trên 10 nhân sự trực tiếp · bấm để xem danh sách",u:"người",cur:2,prev:2,tgt:0,dir:-1,p:0,sp:[3,3,2,2,2,2],click:"openOverloadModal()"}],
+ /* Ba nhóm thẻ chỉ số, mỗi nhóm một hàng 4 cột. Thứ tự trong "ks" là thứ tự
+    hiển thị; chỉ số nào không nằm trong nhóm nào vẫn được xếp vào hàng cuối. */
+ kgroups:[
+  {t:"Quy mô & Biến động",d:"đội ngũ vào – ra trong kỳ",
+   ks:["Headcount cuối kỳ","Nhân sự onboard trong kỳ","Nhân sự nghỉ trong kỳ","Tỷ lệ nhân sự toàn thời gian"]},
+  {t:"Tỷ lệ nghỉ việc & Cảnh báo rủi ro",d:"vượt ngưỡng thì thẻ đổi màu",
+   ks:["Turnover tháng","Turnover luỹ kế năm","Tỷ lệ nghỉ trong thử việc","Tỷ lệ nghỉ dưới 12 tháng"]},
+  {t:"Đặc điểm & Quản trị nội bộ",d:"chất lượng đội ngũ và hồ sơ",
+   ks:["Thâm niên bình quân","Tuổi bình quân","Tỷ lệ hồ sơ đầy đủ","Quản lý quá tải"]}],
  charts:[
   {id:"f1",t:"Cơ cấu theo Khối",h:"người",span:"g3",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.khoi):[["BOD",4],["BO",46],["Kinh doanh",98]];
@@ -1061,14 +1110,84 @@ function barSet(labels,data,color,extra){return{labels,datasets:[Object.assign({
 /* Màu số theo bản chất chỉ số, đúng quy ước BC-PKT (lib/format.js · toneOf):
    chỉ số càng thấp càng tốt = khoản "xấu" → đỏ; tỷ lệ càng cao càng tốt → xanh;
    còn lại để trắng. Có thể ghi đè bằng trường tone của KPI. */
-function heroCard(k,i){
+/* Chênh lệch tuyệt đối so với kỳ trước — dùng cho thẻ Headcount, nơi
+   "tăng 2 người" dễ đọc hơn "tăng 1,4%". */
+function deltaTuyetDoi(k){
+  const d=(+k.cur||0)-(+k.prev||0);
+  const cls=d===0?"fl":((k.dir===-1?d<0:d>0)?"up":"dn");
+  return `<span class="dpill ${cls}">${d>0?"↑":d<0?"↓":"–"} ${dec(Math.abs(d),k.p??1)} ${k.u||""}</span>`;
+}
+function heroCard(k){
   const tone=k.tone||(k.dir===-1?"loss":(k.u==="%"?"gain":""));
-  return `<div class="kpi${tone?" is-"+tone:""}">
+  const cls=["kpi",tone?"is-"+tone:"",k.click?"is-click":""].filter(Boolean).join(" ");
+  /* Thẻ bấm được vẫn phải dùng được bằng bàn phím */
+  const act=k.click?` role="button" tabindex="0" onclick="${k.click}"`
+    +` onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${k.click}}"`:"";
+  const dl=(k.showDelta&&k.prev!=null)?`<div class="kdelta">${deltaTuyetDoi(k)}</div>`:"";
+  return `<div class="${cls}"${act}>
     <span class="code">${(k.u||"chỉ số").toUpperCase()}</span>
     <div class="lb">${k.k}</div>
     <div class="val">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></div>
-  </div>`;
+    ${dl}</div>`;
 }
+/* Dải thẻ chỉ số. Có khai báo kgroups thì tách thành từng nhóm có tiêu đề,
+   mỗi nhóm là lưới 4 cột (2 cột ở tablet, 1 cột ở điện thoại).
+   Không khai báo thì giữ nguyên dải phẳng như các báo cáo còn lại. */
+function kpiStrip(K,groups){
+  if(!groups||!groups.length) return `<div class="hero kstrip">${K.map(k=>heroCard(k)).join('')}</div>`;
+  const daXep=new Set();
+  let html=groups.map(g=>{
+    const ds=g.ks.map(t=>K.find(x=>x.k===t)).filter(Boolean);
+    if(!ds.length) return '';
+    ds.forEach(x=>daXep.add(x.k));
+    return `<div class="kgroup">
+      <div class="kgtitle"><b>${g.t}</b>${g.d?`<span>${g.d}</span>`:''}</div>
+      <div class="kgrid">${ds.map(k=>heroCard(k)).join('')}</div></div>`;
+  }).join('');
+  /* Chỉ số mới thêm mà chưa kịp xếp nhóm vẫn phải hiện, không được rơi mất */
+  const con=K.filter(k=>!daXep.has(k.k));
+  if(con.length) html+=`<div class="kgroup"><div class="kgtitle"><b>Chỉ số khác</b></div>
+    <div class="kgrid">${con.map(k=>heroCard(k)).join('')}</div></div>`;
+  return `<div class="kstrip">${html}</div>`;
+}
+
+/* ---------------- Modal danh sách quản lý quá tải (Task 4) ----------------
+   Ngưỡng lấy đúng theo mô tả chỉ số trong HRM6: trên 10 nhân sự trực tiếp. */
+const NGUONG_QL=10;
+const escHtml=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function dsQuanLyQuaTai(){
+  if(HRon()) return HRx().spanQL().filter(([,n])=>n>NGUONG_QL).sort((a,b)=>b[1]-a[1]);
+  /* Chưa nối nguồn thì hiện số mẫu, khớp với giá trị mẫu của thẻ KPI */
+  return [["Nguyễn Thị Vân Anh · Vận hành",14],["Trần Quốc Hưng · Kinh doanh",12]];
+}
+function openOverloadModal(){
+  const m=document.getElementById('mdl-overload'); if(!m) return;
+  const ds=dsQuanLyQuaTai(), live=HRon();
+  const sub=document.getElementById('mdl-overload-sub');
+  if(sub) sub.textContent=`Trên ${NGUONG_QL} nhân sự trực tiếp${live?'':' · số mẫu, chưa nối nguồn'}`;
+  document.getElementById('mdl-overload-body').innerHTML = ds.length
+    ? `<div class="tw"><table id="tbl-overload"><thead><tr>
+         <th class="idx">#</th><th>Quản lý trực tiếp</th>
+         <th class="n">Nhân sự trực tiếp</th><th class="n">Vượt ngưỡng</th></tr></thead>
+       <tbody>${ds.map(([ten,n],i)=>`<tr><td class="idx">${i+1}</td><td>${escHtml(ten)}</td>
+         <td class="n"><b>${n}</b></td><td class="n">+${n-NGUONG_QL}</td></tr>`).join('')}</tbody></table></div>`
+    : `<p class="mdl-empty">Không có quản lý nào phụ trách quá ${NGUONG_QL} nhân sự trực tiếp.</p>`;
+  m.hidden=false;
+  document.body.classList.add('mdl-open');
+  const x=document.getElementById('mdl-overload-x'); if(x) x.focus();
+}
+function closeOverloadModal(){
+  const m=document.getElementById('mdl-overload'); if(!m||m.hidden) return;
+  m.hidden=true;
+  document.body.classList.remove('mdl-open');
+}
+/* Gắn sự kiện đóng: nút ✕, nút Đóng, nền mờ và phím Esc */
+document.addEventListener('DOMContentLoaded',()=>{
+  ['mdl-overload-x','mdl-overload-ok','mdl-overload-bd'].forEach(id=>{
+    const n=document.getElementById(id); if(n) n.addEventListener('click',closeOverloadModal);
+  });
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOverloadModal()});
 
 function filterRow(){
   return `<div class="mrow noprint">
@@ -1155,7 +1274,7 @@ function renderReport(m){
   parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
   parts.push(["Định nghĩa chỉ số","",defsBox(r.defs)+`<div class="note">${r.note}</div>`]);
   return mast(m,r)+
-  `<div class="wrap"><div class="hero kstrip">${K.map((k,i)=>heroCard(k,i)).join('')}</div></div>
+  `<div class="wrap">${kpiStrip(K,r.kgroups)}</div>
    <div class="wrap">${parts.map((p,i)=>sec(i+1,p[0],p[1],p[2])).join('')}</div>`;
 }
 

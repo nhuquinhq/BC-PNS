@@ -188,9 +188,13 @@ window.HQLive = (function () {
       setSp("Headcount cuối kỳ", ky.hc, bd.map(x => x.hc), bd.length > 1 ? bd[bd.length - 2].hc : null);
       setSp("Tổng nhân sự", act.length);
       setSp("Turnover tháng", ky.turnover, bd.map(x => x.turnover), bd.length > 1 ? bd[bd.length - 2].turnover : null);
+      /* Turnover luỹ kế năm: số nghỉ từ đầu năm tới mốc chốt, chia cho
+         headcount bình quân của cả giai đoạn đó — không chia cho số người
+         đang làm như bản cũ (mẫu số đó bỏ sót toàn bộ người đã nghỉ). */
       const nam = den.getFullYear();
       const raNam = all.filter(r => r.nghi && r.nghi.getFullYear() === nam && r.nghi <= den).length;
-      setSp("Turnover luỹ kế năm", act.length ? raNam / act.length * 100 : null);
+      const hcDauNam = headcountAt(all, new Date(nam - 1, 11, 31, 23, 59, 59));
+      setSp("Turnover luỹ kế năm", tyLeNghiViec(raNam, hcDauNam, headcountAt(all, den)));
       const daNghi = all.filter(r => r.nghi);
       const duoi12 = daNghi.filter(r => r.tn < 12).length;
       setSp("Tỷ lệ nghỉ dưới 12 tháng", daNghi.length ? duoi12 / daNghi.length * 100 : null);
@@ -395,14 +399,78 @@ window.HQLive = (function () {
   function colsLike(idx, needle) {                       // mọi cột khớp, giữ thứ tự sheet
     return Object.keys(idx).filter(h => h.includes(needle)).map(h => idx[h]);
   }
-  function dt(v) {                                       // "01/01/1994" | "2019-10-19" → Date
-    const s = String(v || "").trim(); if (!s) return null;
-    let m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
-    if (m) { let y = +m[3]; if (y < 100) y += 2000; const d = new Date(y, +m[2] - 1, +m[1]); return isNaN(d) ? null : d; }
-    m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if (m) { const d = new Date(+m[1], +m[2] - 1, +m[3]); return isNaN(d) ? null : d; }
-    return null;
+  /* ---------- 4b. NGÀY THÁNG KIỂU VIỆT NAM & THÂM NIÊN ----------
+     Sheet nhân sự ghi ngày dạng DD/MM/YYYY. Bản cũ dựng Date thẳng từ chuỗi
+     nên hai loại dữ liệu bẩn lọt lưới và kéo "Thâm niên bình quân" xuống ÂM:
+       · năm hai chữ số luôn quy về 20xx — "01/01/95" thành 2095, mốc nhận
+         việc rơi vào tương lai nên số tháng ra âm (đây là nguồn của −62,8);
+       · ngày không tồn tại (31/02) bị JS tự cuộn sang tháng sau mà không
+         báo lỗi, cho ra mốc sai lệch vài ngày.
+     parseVietnameseDate chuẩn hoá rồi KIỂM TRA NGƯỢC lại ngày; chuỗi không
+     hợp lệ trả null để bên gọi bỏ qua thay vì tính ra số vô nghĩa. */
+  function namDayDu(y, soChuSo) {
+    if (soChuSo >= 4) return y;
+    /* Cửa sổ trượt quanh năm hiện tại: "26" → 2026, "95" → 1995.
+       Cho phép sớm hơn 5 năm để còn nhận ngày hẹn làm việc ở tương lai gần. */
+    const nayNgan = new Date().getFullYear() % 100;
+    return y <= nayNgan + 5 ? 2000 + y : 1900 + y;
   }
+  function parseVietnameseDate(dateStr) {
+    if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr;
+    const s = String(dateStr == null ? "" : dateStr).trim();
+    if (!s) return null;
+
+    let ng, th, na;
+    let m = s.match(/^(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{2,4})/);   // DD/MM/YYYY
+    if (m) { ng = +m[1]; th = +m[2]; na = namDayDu(+m[3], m[3].length); }
+    else {
+      m = s.match(/^(\d{4})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/);       // YYYY-MM-DD
+      if (m) { na = +m[1]; th = +m[2]; ng = +m[3]; }
+      else {
+        /* Google Sheets đôi khi xuất ngày thành số sê-ri (số ngày kể từ 30/12/1899) */
+        const so = /^\d+(?:[.,]\d+)?$/.test(s) ? parseFloat(s.replace(",", ".")) : NaN;
+        if (isFinite(so) && so >= 1 && so <= 80000) {
+          const d = new Date(1899, 11, 30 + Math.floor(so));
+          return isNaN(d.getTime()) ? null : d;
+        }
+        return null;
+      }
+    }
+    if (th < 1 || th > 12 || ng < 1 || ng > 31) return null;
+    const d = new Date(na, th - 1, ng);
+    /* 31/02 bị JS cuộn sang 03/03 nên ba thành phần đọc ra sẽ lệch — loại bỏ */
+    if (d.getFullYear() !== na || d.getMonth() !== th - 1 || d.getDate() !== ng) return null;
+    return d;
+  }
+
+  /* Số tháng thâm niên giữa hai mốc, làm tròn 1 chữ số thập phân.
+     LUÔN >= 0: ngày nhận việc nằm sau ngày chốt (gõ nhầm năm, nhân sự ký
+     trước ngày đi làm) trả 0 chứ không trả số âm kéo tụt số bình quân của
+     cả công ty. endDate bỏ trống thì tính tới hôm nay. */
+  function calculateTenureMonths(startDate, endDate) {
+    const batDau = parseVietnameseDate(startDate);
+    if (!batDau) return 0;
+    const ketThuc = endDate == null ? new Date() : parseVietnameseDate(endDate);
+    if (!ketThuc || ketThuc <= batDau) return 0;
+
+    let soThang = (ketThuc.getFullYear() - batDau.getFullYear()) * 12
+                + (ketThuc.getMonth() - batDau.getMonth());
+    const lechNgay = ketThuc.getDate() - batDau.getDate();
+    let le;
+    if (lechNgay < 0) {
+      /* Chưa qua ngày kỷ niệm trong tháng: lùi một tháng rồi tính phần lẻ
+         theo độ dài tháng liền trước mốc kết thúc. */
+      soThang -= 1;
+      const dai = new Date(ketThuc.getFullYear(), ketThuc.getMonth(), 0).getDate();
+      le = (dai + lechNgay) / dai;
+    } else {
+      const dai = new Date(batDau.getFullYear(), batDau.getMonth() + 1, 0).getDate();
+      le = lechNgay / dai;
+    }
+    return Math.max(0, Math.round((soThang + le) * 10) / 10);
+  }
+
+  const dt = parseVietnameseDate;                        // tên cũ dùng khắp file
   const thang = (a, b) => (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
 
   function hrRows() {
@@ -469,7 +537,12 @@ window.HQLive = (function () {
       const o = {
         ma: g(r, C.ma), ten: g(r, C.ten), vp: g(r, C.vp) || "Không rõ",
         sinh, gt: g(r, C.gt) || "Không rõ",
-        tuoi: num(g(r, C.tuoi)) || (sinh ? Math.floor((now - sinh) / 31557600000) : 0),
+        /* Tuổi: cột sẵn có phải nằm trong khoảng hợp lý, nếu không thì tính
+           lại từ ngày sinh. Ngày sinh gõ nhầm sang tương lai cho ra 0 chứ
+           không cho ra tuổi âm. */
+        tuoi: (num(g(r, C.tuoi)) > 0 && num(g(r, C.tuoi)) < 100)
+          ? num(g(r, C.tuoi))
+          : (sinh ? Math.floor(calculateTenureMonths(sinh, now) / 12) : 0),
         tt, vao, nghi,
         khoi: g(r, C.khoi) || "Không rõ", phong: g(r, C.phong) || "Không rõ",
         cv: cv || "Không rõ", cn: g(r, C.cn) || "Không rõ", vt,
@@ -489,7 +562,10 @@ window.HQLive = (function () {
         ctv,
         dangLam: /đang làm|đang thử việc|thử việc|học việc/i.test(tt) && !nghi
       };
-      o.tn = C.tn && num(g(r, C.tn)) ? num(g(r, C.tn)) : (vao ? thang(vao, nghi || now) : 0);
+      /* Thâm niên: tin cột có sẵn của sheet, nhưng chỉ khi nó là số DƯƠNG.
+         Ô trống, ô lỗi công thức hay số âm đều rơi về mốc ngày nhận việc. */
+      const tnSheet = C.tn ? num(g(r, C.tn)) : 0;
+      o.tn = tnSheet > 0 ? tnSheet : calculateTenureMonths(vao, nghi);
       /* Hạn hợp đồng: ưu tiên mốc gần nhất CÒN hiệu lực; nếu mọi mốc đã
          qua thì lấy mốc muộn nhất — nghĩa là hợp đồng đã quá hạn. */
       let tuong = null, quaKhu = null;
@@ -529,16 +605,33 @@ window.HQLive = (function () {
       else if (t < 24) b["1 – 2 năm"]++; else b["Trên 2 năm"]++; });
     return Object.entries(b);
   }
+  /* Headcount tại một thời điểm: đã nhận việc và chưa nghỉ tính tới mốc đó */
+  function headcountAt(all, moc) {
+    return all.filter(r => r.vao && r.vao <= moc && (!r.nghi || r.nghi > moc)).length;
+  }
+  /* Turnover chuẩn quản trị nhân sự:
+         số nghỉ trong kỳ / headcount BÌNH QUÂN của kỳ × 100
+     với headcount bình quân = (đầu kỳ + cuối kỳ) / 2.
+     Bản cũ chia cho headcount CUỐI kỳ, nên kỳ nào tuyển nhiều thì mẫu số
+     phình ra và tỷ lệ nghỉ bị báo thấp hơn thực tế.
+     Mẫu số bằng 0 (kỳ chưa có ai) trả 0 thay vì Infinity / NaN. */
+  function tyLeNghiViec(soNghi, hcDau, hcCuoi) {
+    const bq = (hcDau + hcCuoi) / 2;
+    return bq > 0 ? soNghi / bq * 100 : 0;
+  }
   /* Biến động n tháng gần nhất tính tới mốc "den" */
   function bienDong(n, den) {
     const all = hrRows(), moc = den || new Date(), out = [];
     for (let i = n - 1; i >= 0; i--) {
       const d = new Date(moc.getFullYear(), moc.getMonth() - i, 1);
-      const cuoi = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59);
+      const cuoi = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+      const truoc = new Date(d.getTime() - 1);           // 23:59:59 ngày cuối tháng trước
       const vao = all.filter(r => r.vao && r.vao >= d && r.vao <= cuoi).length;
       const ra  = all.filter(r => r.nghi && r.nghi >= d && r.nghi <= cuoi).length;
-      const hc  = all.filter(r => r.vao && r.vao <= cuoi && (!r.nghi || r.nghi > cuoi)).length;
-      out.push({ nhan: `T${d.getMonth() + 1}`, thang: d.getMonth() + 1, nam: d.getFullYear(), vao, ra, hc, turnover: hc ? ra / hc * 100 : 0 });
+      const hcDau = headcountAt(all, truoc);
+      const hc    = headcountAt(all, cuoi);
+      out.push({ nhan: `T${d.getMonth() + 1}`, thang: d.getMonth() + 1, nam: d.getFullYear(),
+                 vao, ra, hcDau, hc, turnover: tyLeNghiViec(ra, hcDau, hc) });
     }
     return out;
   }
@@ -589,7 +682,8 @@ window.HQLive = (function () {
   }
 
   const HR = { rows: hrRows, active: dangLamHR, has: hasHR, demTheo, nhomTuoi, nhomThamNien,
-    bienDong, spanQL, thieuHoSo, tyLeHoSoDu, dailuong, tangLuong, hetHanHD, dt, thang };
+    bienDong, spanQL, thieuHoSo, tyLeHoSoDu, dailuong, tangLuong, hetHanHD, dt, thang,
+    headcountAt, tyLeNghiViec, parseVietnameseDate, calculateTenureMonths };
 
   /* =====================================================================
      5c. BỘ DỮ LIỆU TUYỂN DỤNG (HRM1)
@@ -934,5 +1028,6 @@ window.HQLive = (function () {
     return { khai, oke, loi, meta, dangTai };
   }
 
-  return { loadAll, apply, rows, has, num, nhanSu, dem, tuoi, sheetTable, status, store, meta, parseCSV, HR, TD };
+  return { loadAll, apply, rows, has, num, nhanSu, dem, tuoi, sheetTable, status, store, meta, parseCSV,
+           parseVietnameseDate, calculateTenureMonths, HR, TD };
 })();
