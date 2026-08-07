@@ -25,7 +25,28 @@ const SOURCES={
  RAW_Workload:{n:"RAW_Workload",l:"Khối lượng việc & phân bổ",m:"HRM8",url:"",c:"Mã NV · Nhóm việc · Số đầu việc · Giờ/tháng · BU thụ hưởng · % phân bổ · Mã hạch toán"}
 };
 const CFG=window.HQ_CONFIG||{};
-Object.entries(CFG.sheets||{}).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
+CFG.sheets=CFG.sheets||{};
+/* Link khai trong assets/config.js — coi là mặc định của hệ thống */
+const NGUON_GOC=Object.assign({},CFG.sheets);
+
+/* Link do Quản trị dán trong ngăn "Nguồn dữ liệu" được giữ lại trên máy.
+   Trước đây nút Lưu chỉ ghi vào SOURCES — nơi HQLive KHÔNG hề đọc — nên dán
+   link xong vẫn không nối được dữ liệu, và tải lại trang là mất sạch.
+   Chỉ giữ những link KHÁC mặc định, để sau này sửa config.js thì các nguồn
+   chưa ai đụng tới vẫn tự cập nhật theo. */
+const LS_NGUON="hq_bcpns_nguon";
+function docNguonLuu(){
+  try{ const o=JSON.parse(localStorage.getItem(LS_NGUON)||"{}");
+       return (o&&typeof o==="object"&&!Array.isArray(o))?o:{} }
+  catch(e){ return {} }
+}
+function luuNguon(o){
+  try{ localStorage.setItem(LS_NGUON,JSON.stringify(o)) }
+  catch(e){ /* trình duyệt chặn lưu — vẫn dùng được trong phiên này */ }
+}
+/* Áp link đã lưu đè lên mặc định, TRƯỚC khi HQLive đọc CFG.sheets */
+Object.entries(docNguonLuu()).forEach(([k,u])=>{ if(SOURCES[k]) CFG.sheets[k]=String(u||"").trim() });
+Object.entries(CFG.sheets).forEach(([k,u])=>{ if(SOURCES[k]) SOURCES[k].url=(u||"").trim(); });
 const NSRC=Object.keys(SOURCES).length;
 let current="HOME";
 const AUTHC={
@@ -125,8 +146,39 @@ function applyChartTheme(){
   Chart.defaults.datasets.bar.borderRadius=2;
   Chart.defaults.datasets.line.borderWidth=2;
   Chart.defaults.datasets.line.tension=.3;
+  /* Đăng ký plugin nhãn số một lần, TẮT mặc định rồi bật riêng cho biểu đồ
+     cột và tròn trong mk(). Nếu bật toàn cục thì biểu đồ đường và vùng sẽ
+     đầy chữ chồng lên nhau. Thiếu plugin (mạng chặn CDN) vẫn chạy bình thường. */
+  if(window.ChartDataLabels&&Chart.register&&!Chart.registry.plugins.get('datalabels')){
+    Chart.register(window.ChartDataLabels);
+    Chart.defaults.plugins.datalabels={display:false};
+  }
 }
 applyChartTheme();
+/* Cấu hình nhãn số theo loại biểu đồ (Task 3).
+   Trả null khi không áp dụng — mk() sẽ không đụng tới options. */
+function nhanSo(type,opts){
+  if(!window.ChartDataLabels) return null;
+  if(type!=='bar'&&type!=='doughnut'&&type!=='pie') return null;
+  if(opts&&opts.plugins&&opts.plugins.datalabels!==undefined) return null;   // nơi gọi tự lo
+  const hien=ctx=>{
+    if(ctx.dataset.type==='line') return false;          // đường trong biểu đồ hỗn hợp
+    const v=+ctx.dataset.data[ctx.dataIndex];
+    return isFinite(v)&&v!==0;                           // bỏ nhãn 0 cho đỡ rối
+  };
+  const so=v=>{const a=Math.abs(+v||0);return dec(a,Number.isInteger(a)?0:1)};
+  if(type==='bar') return {
+    display:hien,anchor:'end',align:'end',offset:2,clamp:true,
+    /* cột "Ra" vẽ bằng số âm để đổ xuống dưới trục — nhãn hiện trị tuyệt đối */
+    formatter:so,color:cssv('--tx2')||'#8FA6D8',
+    font:{family:"'IBM Plex Mono',ui-monospace,monospace",size:10,weight:'700'}
+  };
+  return {                                               // doughnut / pie
+    display:hien,formatter:so,color:'#fff',
+    textStrokeColor:'rgba(0,0,0,.55)',textStrokeWidth:3,
+    font:{family:"'IBM Plex Mono',ui-monospace,monospace",size:11,weight:'700'}
+  };
+}
 function mk(id,type,data,opts={}){
   const cv=document.getElementById(id); if(!cv)return;
   /* Canvas còn chart cũ (id trùng giữa hai báo cáo trên trang tổng hợp) thì
@@ -134,7 +186,16 @@ function mk(id,type,data,opts={}){
   const cu=Chart.getChart&&Chart.getChart(cv);
   if(cu){cu.destroy();charts=charts.filter(c=>c!==cu)}
   if(data.datasets)data.datasets.forEach(d=>{if(type==='bar'&&d.type!=='line'&&d.borderRadius===1)d.borderRadius=2});
-  charts.push(new Chart(cv,{type,data,options:Object.assign({plugins:{legend:{display:false}},scales:AX},opts)}));
+  const o=Object.assign({plugins:{legend:{display:false}},scales:AX},opts);
+  /* Gắn nhãn số cho cột và tròn. Gộp vào plugins đã có thay vì ghi đè để
+     không xoá mất cấu hình legend / tooltip mà nơi gọi đã đặt. */
+  const nh=nhanSo(type,opts);
+  if(nh){
+    o.plugins=Object.assign({},o.plugins,{datalabels:nh});
+    /* Nhãn nằm ngoài đầu cột nên cần chừa chỗ, tránh bị khung cắt cụt */
+    if(type==='bar')o.layout=Object.assign({padding:{top:14,right:26}},o.layout);
+  }
+  charts.push(new Chart(cv,{type,data,options:o}));
 }
 function spark(arr,color,w=58,h=20){
   const mn=Math.min(...arr),mx=Math.max(...arr),r=(mx-mn)||1;
@@ -744,18 +805,27 @@ REP.HRM6={
   ['Nghỉ dưới 12 tháng chiếm 27%. Cần rà lại chất lượng onboarding và mức độ rõ ràng của JD ở hai phòng Vận hành và Kinh doanh.','t-hi'],
   ['2 Exit Interview chưa thực hiện. Theo quy trình, HR phỏng vấn chứ không phải quản lý trực tiếp.','t-md']],
  kpis:[
-  {k:"Headcount cuối kỳ",d:"Nhân sự đang làm tại ngày chốt",u:"người",cur:148,prev:146,tgt:150,dir:1,p:0,sp:[141,144,146,147,148,148]},
+  {k:"Headcount cuối kỳ",d:"Nhân sự đang làm tại ngày chốt",u:"người",cur:148,prev:146,tgt:150,dir:1,p:0,sp:[141,144,146,147,148,148],showDelta:1},
   {k:"Nhân sự onboard trong kỳ",u:"người",cur:6,prev:5,tgt:8,dir:1,p:0,sp:[4,5,7,6,5,6]},
   {k:"Nhân sự nghỉ trong kỳ",u:"người",cur:2,prev:3,tgt:2,dir:-1,p:0,sp:[3,4,2,3,3,2]},
   {k:"Turnover tháng",u:"%",cur:1.4,prev:1.9,tgt:2.0,dir:-1,sp:[2.4,2.1,1.8,2.0,1.9,1.4]},
   {k:"Turnover luỹ kế năm",u:"%",cur:9.8,prev:8.4,tgt:15.0,dir:-1,sp:[2.1,4.0,5.6,7.0,8.4,9.8]},
-  {k:"Tỷ lệ nghỉ trong thử việc",d:"Nghỉ trước 3 tháng làm việc",u:"%",cur:12.0,prev:14.0,tgt:10.0,dir:-1,sp:[18,17,15,14,14,12]},
-  {k:"Tỷ lệ nghỉ dưới 12 tháng",u:"%",cur:27.3,prev:22.0,tgt:20.0,dir:-1,sp:[18,19,21,23,22,27]},
+  {k:"Tỷ lệ nghỉ trong thử việc",d:"Nghỉ trước 3 tháng làm việc",u:"%",cur:12.0,prev:14.0,tgt:10.0,dir:-1,sp:[18,17,15,14,14,12],tone:"warn"},
+  {k:"Tỷ lệ nghỉ dưới 12 tháng",u:"%",cur:27.3,prev:22.0,tgt:20.0,dir:-1,sp:[18,19,21,23,22,27],tone:"alert"},
   {k:"Thâm niên bình quân",u:"tháng",cur:18.4,prev:17.9,tgt:24,dir:1,sp:[15,16,16.8,17.4,17.9,18.4]},
   {k:"Tuổi bình quân",u:"tuổi",cur:26.4,prev:26.3,tgt:28,dir:1,sp:[26,26.1,26.2,26.2,26.3,26.4]},
   {k:"Tỷ lệ nhân sự toàn thời gian",u:"%",cur:81.8,prev:82.4,tgt:80.0,dir:1,sp:[84,83,83,82,82,82]},
   {k:"Tỷ lệ hồ sơ đầy đủ",d:"Bình quân các trường thông tin bắt buộc",u:"%",cur:92.6,prev:90.5,tgt:100,dir:1,sp:[84,86,88,89,91,93]},
-  {k:"Quản lý quá tải",d:"Trên 10 nhân sự trực tiếp",u:"người",cur:2,prev:2,tgt:0,dir:-1,p:0,sp:[3,3,2,2,2,2]}],
+  {k:"Quản lý quá tải",d:"Trên 10 nhân sự trực tiếp · bấm để xem danh sách",u:"người",cur:2,prev:2,tgt:0,dir:-1,p:0,sp:[3,3,2,2,2,2],click:"openOverloadModal()"}],
+ /* Ba nhóm thẻ chỉ số, mỗi nhóm một hàng 4 cột. Thứ tự trong "ks" là thứ tự
+    hiển thị; chỉ số nào không nằm trong nhóm nào vẫn được xếp vào hàng cuối. */
+ kgroups:[
+  {t:"Quy mô & Biến động",d:"đội ngũ vào – ra trong kỳ",
+   ks:["Headcount cuối kỳ","Nhân sự onboard trong kỳ","Nhân sự nghỉ trong kỳ","Tỷ lệ nhân sự toàn thời gian"]},
+  {t:"Tỷ lệ nghỉ việc & Cảnh báo rủi ro",d:"vượt ngưỡng thì thẻ đổi màu",
+   ks:["Turnover tháng","Turnover luỹ kế năm","Tỷ lệ nghỉ trong thử việc","Tỷ lệ nghỉ dưới 12 tháng"]},
+  {t:"Đặc điểm & Quản trị nội bộ",d:"chất lượng đội ngũ và hồ sơ",
+   ks:["Thâm niên bình quân","Tuổi bình quân","Tỷ lệ hồ sơ đầy đủ","Quản lý quá tải"]}],
  charts:[
   {id:"f1",t:"Cơ cấu theo Khối",h:"người",span:"g3",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.khoi):[["BOD",4],["BO",46],["Kinh doanh",98]];
@@ -1061,14 +1131,84 @@ function barSet(labels,data,color,extra){return{labels,datasets:[Object.assign({
 /* Màu số theo bản chất chỉ số, đúng quy ước BC-PKT (lib/format.js · toneOf):
    chỉ số càng thấp càng tốt = khoản "xấu" → đỏ; tỷ lệ càng cao càng tốt → xanh;
    còn lại để trắng. Có thể ghi đè bằng trường tone của KPI. */
-function heroCard(k,i){
+/* Chênh lệch tuyệt đối so với kỳ trước — dùng cho thẻ Headcount, nơi
+   "tăng 2 người" dễ đọc hơn "tăng 1,4%". */
+function deltaTuyetDoi(k){
+  const d=(+k.cur||0)-(+k.prev||0);
+  const cls=d===0?"fl":((k.dir===-1?d<0:d>0)?"up":"dn");
+  return `<span class="dpill ${cls}">${d>0?"↑":d<0?"↓":"–"} ${dec(Math.abs(d),k.p??1)} ${k.u||""}</span>`;
+}
+function heroCard(k){
   const tone=k.tone||(k.dir===-1?"loss":(k.u==="%"?"gain":""));
-  return `<div class="kpi${tone?" is-"+tone:""}">
+  const cls=["kpi",tone?"is-"+tone:"",k.click?"is-click":""].filter(Boolean).join(" ");
+  /* Thẻ bấm được vẫn phải dùng được bằng bàn phím */
+  const act=k.click?` role="button" tabindex="0" onclick="${k.click}"`
+    +` onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${k.click}}"`:"";
+  const dl=(k.showDelta&&k.prev!=null)?`<div class="kdelta">${deltaTuyetDoi(k)}</div>`:"";
+  return `<div class="${cls}"${act}>
     <span class="code">${(k.u||"chỉ số").toUpperCase()}</span>
     <div class="lb">${k.k}</div>
     <div class="val">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></div>
-  </div>`;
+    ${dl}</div>`;
 }
+/* Dải thẻ chỉ số. Có khai báo kgroups thì tách thành từng nhóm có tiêu đề,
+   mỗi nhóm là lưới 4 cột (2 cột ở tablet, 1 cột ở điện thoại).
+   Không khai báo thì giữ nguyên dải phẳng như các báo cáo còn lại. */
+function kpiStrip(K,groups){
+  if(!groups||!groups.length) return `<div class="hero kstrip">${K.map(k=>heroCard(k)).join('')}</div>`;
+  const daXep=new Set();
+  let html=groups.map(g=>{
+    const ds=g.ks.map(t=>K.find(x=>x.k===t)).filter(Boolean);
+    if(!ds.length) return '';
+    ds.forEach(x=>daXep.add(x.k));
+    return `<div class="kgroup">
+      <div class="kgtitle"><b>${g.t}</b>${g.d?`<span>${g.d}</span>`:''}</div>
+      <div class="kgrid">${ds.map(k=>heroCard(k)).join('')}</div></div>`;
+  }).join('');
+  /* Chỉ số mới thêm mà chưa kịp xếp nhóm vẫn phải hiện, không được rơi mất */
+  const con=K.filter(k=>!daXep.has(k.k));
+  if(con.length) html+=`<div class="kgroup"><div class="kgtitle"><b>Chỉ số khác</b></div>
+    <div class="kgrid">${con.map(k=>heroCard(k)).join('')}</div></div>`;
+  return `<div class="kstrip">${html}</div>`;
+}
+
+/* ---------------- Modal danh sách quản lý quá tải (Task 4) ----------------
+   Ngưỡng lấy đúng theo mô tả chỉ số trong HRM6: trên 10 nhân sự trực tiếp. */
+const NGUONG_QL=10;
+const escHtml=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function dsQuanLyQuaTai(){
+  if(HRon()) return HRx().spanQL().filter(([,n])=>n>NGUONG_QL).sort((a,b)=>b[1]-a[1]);
+  /* Chưa nối nguồn thì hiện số mẫu, khớp với giá trị mẫu của thẻ KPI */
+  return [["Nguyễn Thị Vân Anh · Vận hành",14],["Trần Quốc Hưng · Kinh doanh",12]];
+}
+function openOverloadModal(){
+  const m=document.getElementById('mdl-overload'); if(!m) return;
+  const ds=dsQuanLyQuaTai(), live=HRon();
+  const sub=document.getElementById('mdl-overload-sub');
+  if(sub) sub.textContent=`Trên ${NGUONG_QL} nhân sự trực tiếp${live?'':' · số mẫu, chưa nối nguồn'}`;
+  document.getElementById('mdl-overload-body').innerHTML = ds.length
+    ? `<div class="tw"><table id="tbl-overload"><thead><tr>
+         <th class="idx">#</th><th>Quản lý trực tiếp</th>
+         <th class="n">Nhân sự trực tiếp</th><th class="n">Vượt ngưỡng</th></tr></thead>
+       <tbody>${ds.map(([ten,n],i)=>`<tr><td class="idx">${i+1}</td><td>${escHtml(ten)}</td>
+         <td class="n"><b>${n}</b></td><td class="n">+${n-NGUONG_QL}</td></tr>`).join('')}</tbody></table></div>`
+    : `<p class="mdl-empty">Không có quản lý nào phụ trách quá ${NGUONG_QL} nhân sự trực tiếp.</p>`;
+  m.hidden=false;
+  document.body.classList.add('mdl-open');
+  const x=document.getElementById('mdl-overload-x'); if(x) x.focus();
+}
+function closeOverloadModal(){
+  const m=document.getElementById('mdl-overload'); if(!m||m.hidden) return;
+  m.hidden=true;
+  document.body.classList.remove('mdl-open');
+}
+/* Gắn sự kiện đóng: nút ✕, nút Đóng, nền mờ và phím Esc */
+document.addEventListener('DOMContentLoaded',()=>{
+  ['mdl-overload-x','mdl-overload-ok','mdl-overload-bd'].forEach(id=>{
+    const n=document.getElementById(id); if(n) n.addEventListener('click',closeOverloadModal);
+  });
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOverloadModal()});
 
 function filterRow(){
   return `<div class="mrow noprint">
@@ -1116,6 +1256,49 @@ function mast(m,r){
     </div>`;
 }
 
+/* Dòng ghi đã nghỉ nhưng bỏ trống Ngày nghỉ việc thì không xếp được vào
+   tháng nào, nên bị loại khỏi Headcount. Nói rõ ra để HR bổ sung, chứ im
+   lặng bớt người khỏi số liệu thì còn khó hiểu hơn con số sai. */
+function canhBaoThieuNgayNghi(m){
+  if(!m.src||!m.src.includes('DM_NhanSu')||!HRon()) return '';
+  const H=HRx(), out=[];
+  const ten=ds=>ds.slice(0,3).map(x=>escHtml(x.ten||x.ma||'(chưa có tên)')).join(', ')
+    +(ds.length>3?` và ${ds.length-3} người nữa`:'');
+  const a=H.thieuNgayNghi?H.thieuNgayNghi():[];
+  if(a.length) out.push(`<div class="dqwarn">
+    <b>${a.length} hồ sơ ghi đã nghỉ nhưng bỏ trống ô "Ngày nghỉ việc"</b>
+    <span>Không xác định được nghỉ tháng nào nên không tính vào Headcount và không vào được
+      biểu đồ biến động: ${ten(a)}. Bổ sung ngày trên Google Sheet để tỷ lệ nghỉ về đúng.</span></div>`);
+  const b=H.thieuNgayVao?H.thieuNgayVao():[];
+  if(b.length) out.push(`<div class="dqwarn">
+    <b>${b.length} hồ sơ đang làm nhưng bỏ trống ô "Ngày nhận việc"</b>
+    <span>Vẫn được tính vào Headcount theo cột Tình trạng, nhưng không xếp được vào tháng nào
+      trên biểu đồ biến động: ${ten(b)}.</span></div>`);
+  return out.join('');
+}
+/* Bảng đối chiếu: dẫn từ con số lọc tay trên sheet sang con số của báo cáo,
+   để nhìn phát ra ngay lệch ở đâu thay vì phải dò từng dòng. */
+function bangDoiChieu(m){
+  if(!m.src||!m.src.includes('DM_NhanSu')||!HRon()||!HRx().doiChieuHeadcount) return '';
+  const d=HRx().doiChieuHeadcount(RANGE&&RANGE.to?new Date(RANGE.to):null);
+  const dong=(nhan,so,cls)=>`<tr class="${cls||''}"><td>${nhan}</td><td class="n">${so}</td></tr>`;
+  const buoc=[
+    dong(`Lọc tay trên sheet — cột "Tình trạng" là đang làm việc`,d.loc,'tot'),
+    d.truDaNghi ?dong('– Trừ: đã điền Ngày nghỉ việc trước ngày chốt',`−${d.truDaNghi}`):'',
+    d.truChuaVao?dong('– Trừ: Ngày nhận việc sau ngày chốt',`−${d.truChuaVao}`):'',
+    d.congChuaNghi?dong('– Cộng: ghi đã nghỉ nhưng ngày nghỉ ở tương lai',`+${d.congChuaNghi}`):'',
+    dong('<b>Headcount cuối kỳ trên báo cáo</b>',`<b>${d.headcount}</b>`,'tot')
+  ].join('');
+  const tt=d.theoTT.map(([k,v])=>dong(escHtml(k),v)).join('');
+  return panelT('Đối chiếu Headcount với sheet',
+    `${d.tongDong} dòng dữ liệu · ngày chốt ${fmtd(RANGE.to)}`,
+    `<div class="tw"><table id="tbl-doichieu">
+       <thead><tr><th>Diễn giải</th><th class="n">Số người</th></tr></thead>
+       <tbody>${buoc}
+         <tr class="grp"><td colspan="2">Số dòng theo từng giá trị cột "Tình trạng"</td></tr>
+         ${tt}</tbody></table></div>`,
+    tools('tbl-doichieu'));
+}
 function renderReport(m){
   const r=REP[m.id];
   const K=(window.HQLive?HQLive.apply(m.id,r.kpis):r.kpis);
@@ -1152,10 +1335,12 @@ function renderReport(m){
   }
   parts.push(["Bảng chỉ số chính","So sánh kỳ trước · mục tiêu · xu hướng 6 kỳ",
     panelT("Toàn bộ chỉ số theo dõi","đánh giá theo mục tiêu kỳ",scorecard("sc-"+m.id,K),tools("sc-"+m.id))]);
-  parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",tb]);
+  const dc=bangDoiChieu(m);
+  parts.push(["Dữ liệu chi tiết","Bảng gốc phục vụ đối chiếu",
+    dc?dc+'<div style="height:16px"></div>'+tb:tb]);
   parts.push(["Định nghĩa chỉ số","",defsBox(r.defs)+`<div class="note">${r.note}</div>`]);
   return mast(m,r)+
-  `<div class="wrap"><div class="hero kstrip">${K.map((k,i)=>heroCard(k,i)).join('')}</div></div>
+  `<div class="wrap">${canhBaoThieuNgayNghi(m)}${kpiStrip(K,r.kgroups)}</div>
    <div class="wrap">${parts.map((p,i)=>sec(i+1,p[0],p[1],p[2])).join('')}</div>`;
 }
 
@@ -1493,12 +1678,20 @@ function go(id){
 /* ---- Drawer ---- */
 function openDrawer(){
   if(!isAdmin()){toast("Chỉ Quản trị cấp cao nhất được gắn / sửa nguồn dữ liệu");return}
-  document.getElementById('srclist').innerHTML=Object.entries(SOURCES).map(([k,s])=>`
-    <div class="srcrow"><div class="t"><b>${s.l}</b>
-      <span class="pill ${(window.HQLive&&HQLive.has(k))?'p-ok':(s.url?'p-w':'p-n')}">${(window.HQLive&&HQLive.has(k))?('Đã đọc '+HQLive.rows(k).length+' dòng'):(s.url?'Đã khai báo':'Chưa nối')}</span>
+  document.getElementById('srclist').innerHTML=Object.entries(SOURCES).map(([k,s])=>{
+    const m=(window.HQLive&&HQLive.meta[k])||null;
+    const daDoc=!!(window.HQLive&&HQLive.has(k));
+    /* Nguồn đọc hỏng thì nói thẳng lý do ở đây — trước đây chỉ báo "xem
+       Console" nên không ai biết link sai chỗ nào. */
+    const pill = daDoc ? `<span class="pill p-ok">Đã đọc ${HQLive.rows(k).length} dòng</span>`
+      : (m&&m.ok===false) ? `<span class="pill p-e">Đọc hỏng</span>`
+      : (s.url ? `<span class="pill p-w">Đã khai báo</span>` : `<span class="pill p-n">Chưa nối</span>`);
+    const loi = (m&&m.ok===false&&m.err) ? `<div class="srcerr">${escHtml(m.err)}</div>` : '';
+    return `<div class="srcrow"><div class="t"><b>${s.l}</b>${pill}
       <span class="mods">${s.n} · ${s.m}</span></div>
-      <input type="text" data-k="${k}" value="${s.url}" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
-      <div class="cols"><b>Cột bắt buộc:</b> ${s.c}</div></div>`).join('');
+      <input type="text" data-k="${k}" value="${escHtml(s.url)}" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+      ${loi}<div class="cols"><b>Cột bắt buộc:</b> ${s.c}</div></div>`;
+  }).join('');
   document.getElementById('drawer').classList.add('on');document.getElementById('scrim').classList.add('on');
 }
 function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('scrim').classList.remove('on')}
@@ -1521,9 +1714,22 @@ railBd.onclick=closeRail;
 document.getElementById('btn-close').onclick=closeDrawer;
 document.getElementById('btn-logout').onclick=logout;
 document.getElementById('scrim').onclick=closeDrawer;
-document.getElementById('btn-save').onclick=()=>{
-  document.querySelectorAll('#srclist input').forEach(i=>SOURCES[i.dataset.k].url=i.value.trim());
-  closeDrawer();go(current);toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/${NSRC} liên kết nguồn`)};
+document.getElementById('btn-save').onclick=async()=>{
+  /* Ghi vào CFG.sheets — chính là chỗ HQLive đọc khi tải — rồi lưu lại và
+     đọc lại dữ liệu ngay, thay vì chỉ đổi SOURCES rồi vẽ lại giao diện. */
+  const luu={};
+  document.querySelectorAll('#srclist input').forEach(i=>{
+    const k=i.dataset.k, u=i.value.trim();
+    if(!SOURCES[k]) return;
+    SOURCES[k].url=u;
+    CFG.sheets[k]=u;
+    if(u!==String(NGUON_GOC[k]||"").trim()) luu[k]=u;
+  });
+  luuNguon(luu);
+  closeDrawer();
+  toast(`Đã lưu ${Object.values(SOURCES).filter(s=>s.url).length}/${NSRC} liên kết · đang đọc lại…`);
+  await reloadLive();
+};
 function setThang(v){
   const y=new Date().getFullYear();
   if(!v){RANGE={from:iso(new Date(y,0,1)),to:iso(new Date()),thang:null,tuan:null}}

@@ -12,6 +12,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+<!-- Nhãn số vẽ thẳng lên biểu đồ. Cùng "defer" nên chạy sau chart.js theo
+     đúng thứ tự khai báo — plugin cần biến Chart đã tồn tại. -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -50,6 +53,19 @@
   <div class="dbody" id="srclist"></div>
   <div class="dfoot"><button class="btn" id="btn-save">Lưu liên kết</button><button class="btn g" id="btn-close">Đóng</button></div>
 </aside>
+<!-- Modal danh sách quản lý quá tải — mở từ thẻ KPI "Quản lý quá tải" -->
+<div class="mdl" id="mdl-overload" hidden>
+  <div class="mdl-bd" id="mdl-overload-bd"></div>
+  <div class="mdl-box" role="dialog" aria-modal="true" aria-labelledby="mdl-overload-t">
+    <div class="mdl-head">
+      <div><h2 id="mdl-overload-t">Quản lý đang quá tải</h2>
+        <p id="mdl-overload-sub">Số nhân sự báo cáo trực tiếp vượt ngưỡng</p></div>
+      <button class="mdl-x" id="mdl-overload-x" aria-label="Đóng">✕</button>
+    </div>
+    <div class="mdl-body" id="mdl-overload-body"></div>
+    <div class="mdl-foot"><button class="btn g" id="mdl-overload-ok">Đóng</button></div>
+  </div>
+</div>
 <script src="/assets/config.js"></script>
 <script src="/assets/live.js" defer></script>
 <script src="/assets/app.js" defer></script>
