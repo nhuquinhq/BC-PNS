@@ -491,3 +491,5 @@ html[data-theme="dark"] .mdl-box{background:#0B1630;border-color:var(--line-stro
 #tbl-doichieu tr.tot td{background:rgba(47,217,255,.07);font-weight:700}
 #tbl-doichieu tr.grp td{padding-top:14px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--tx3);font-weight:800;background:transparent}
+.dqwarn.err{background:rgba(244,63,94,.11);border-color:rgba(244,63,94,.42)}
+.dqwarn.err b{color:var(--rose)}

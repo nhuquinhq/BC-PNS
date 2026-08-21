@@ -153,7 +153,32 @@ window.HQLive = (function () {
   /* ---------- 4. Tiện ích ---------- */
   const rows   = k => store[k] || [];
   const has    = k => Array.isArray(store[k]) && store[k].length > 0;
-  const num    = v => { const n = parseFloat(String(v).replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".")); return isNaN(n) ? 0 : n; };
+  /* Đọc số từ ô sheet. Bản cũ bỏ MỌI dấu chấm rồi coi phẩy là thập phân —
+     đúng với kiểu Việt Nam "15.000.000" nhưng gặp ô ghi thập phân bằng dấu
+     chấm thì sai hẳn một bậc: num("80.0") ra 800, num("0.85") ra 85.
+     Nay tự nhận dạng: dấu đứng SAU cùng là thập phân khi có cả hai loại;
+     chỉ có dấu chấm thì đúng 3 chữ số phía sau (hoặc nhiều dấu chấm) mới là
+     dấu nghìn, còn lại là thập phân. */
+  const num = v => {
+    const goc = String(v == null ? "" : v).trim();
+    if (!goc) return 0;
+    const m = goc.match(/-?\d[\d.,]*/);          // cụm số đầu tiên, không băm vụn chuỗi chữ
+    if (!m) return 0;
+    let s = m[0].replace(/[.,]+$/, "");
+    const am = s.startsWith("-"); s = s.replace(/^-/, "");
+    const cham = s.lastIndexOf("."), phay = s.lastIndexOf(",");
+    let vt = -1;                                  // vị trí dấu thập phân
+    if (cham >= 0 && phay >= 0) vt = Math.max(cham, phay);
+    else if (phay >= 0) vt = (s.match(/,/g) || []).length > 1 ? -1 : phay;
+    else if (cham >= 0) {
+      const soCham = (s.match(/\./g) || []).length;
+      vt = (soCham > 1 || s.length - cham - 1 === 3) ? -1 : cham;
+    }
+    const nguyen = (vt < 0 ? s : s.slice(0, vt)).replace(/[.,]/g, "");
+    const le     = vt < 0 ? "" : s.slice(vt + 1).replace(/[.,]/g, "");
+    const n = parseFloat(nguyen + (le ? "." + le : ""));
+    return isNaN(n) ? 0 : (am ? -n : n);
+  };
   const dangLam = r => !F.trangThaiDangLam || (r[COL.trangThai] || "").trim() === F.trangThaiDangLam;
   const nhanSu  = () => rows("DM_NhanSu").filter(dangLam);
   const dem     = (arr, f) => arr.reduce((m, r) => { const k = (f(r) || "Không rõ").trim(); m[k] = (m[k] || 0) + 1; return m; }, {});
@@ -636,6 +661,14 @@ window.HQLive = (function () {
     return hrRows().filter(r => r.tt && !r.ttDangLam && !r.nghi)
       .map(r => ({ ma: r.ma, ten: r.ten, tt: r.tt, phong: r.phong, vao: r.vao }));
   }
+  /* Đang làm nhưng Ngày nhận việc rơi vào TƯƠNG LAI so với ngày chốt — gần
+     như luôn là gõ nhầm năm (đã gặp ô "31/3/3036"). Hồ sơ này bị loại khỏi
+     Headcount và trước đây còn kéo thâm niên bình quân xuống số âm. */
+  function ngayVaoTuongLai(moc) {
+    const m = moc || new Date();
+    return hrRows().filter(r => r.ttDangLam && !r.nghi && r.vao && r.vao > m)
+      .map(r => ({ ma: r.ma, ten: r.ten, phong: r.phong, vao: r.vao }));
+  }
   /* Đang làm nhưng bỏ trống ngày nhận việc — vẫn tính vào Headcount, nhưng
      không xếp được vào biểu đồ biến động theo tháng. */
   function thieuNgayVao() {
@@ -740,7 +773,7 @@ window.HQLive = (function () {
 
   const HR = { rows: hrRows, active: dangLamHR, has: hasHR, demTheo, nhomTuoi, nhomThamNien,
     bienDong, spanQL, thieuHoSo, tyLeHoSoDu, dailuong, tangLuong, hetHanHD, dt, thang,
-    headcountAt, laDangLamTai, tyLeNghiViec, thieuNgayNghi, thieuNgayVao, doiChieuHeadcount,
+    headcountAt, laDangLamTai, tyLeNghiViec, thieuNgayNghi, thieuNgayVao, ngayVaoTuongLai, doiChieuHeadcount,
     parseVietnameseDate, calculateTenureMonths };
 
   /* =====================================================================

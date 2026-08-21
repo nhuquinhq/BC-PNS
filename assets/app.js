@@ -1269,6 +1269,11 @@ function canhBaoThieuNgayNghi(m){
     <b>${a.length} hồ sơ ghi đã nghỉ nhưng bỏ trống ô "Ngày nghỉ việc"</b>
     <span>Không xác định được nghỉ tháng nào nên không tính vào Headcount và không vào được
       biểu đồ biến động: ${ten(a)}. Bổ sung ngày trên Google Sheet để tỷ lệ nghỉ về đúng.</span></div>`);
+  const c=H.ngayVaoTuongLai?H.ngayVaoTuongLai(RANGE&&RANGE.to?new Date(RANGE.to):null):[];
+  if(c.length) out.push(`<div class="dqwarn err">
+    <b>${c.length} hồ sơ có "Ngày nhận việc" nằm ở tương lai — nhiều khả năng gõ nhầm năm</b>
+    <span>Không tính vào Headcount cho tới ngày đó: ${c.map(x=>escHtml(x.ten||x.ma)
+      +' ('+(x.vao?x.vao.toLocaleDateString('vi-VN'):'')+')').slice(0,3).join(', ')}${c.length>3?` và ${c.length-3} hồ sơ nữa`:''}.</span></div>`);
   const b=H.thieuNgayVao?H.thieuNgayVao():[];
   if(b.length) out.push(`<div class="dqwarn">
     <b>${b.length} hồ sơ đang làm nhưng bỏ trống ô "Ngày nhận việc"</b>
