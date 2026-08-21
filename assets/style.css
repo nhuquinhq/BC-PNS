@@ -416,15 +416,21 @@ html[data-theme="light"] .fld select option{background:#fff;color:var(--tx)}
    12 thẻ tách thành 3 hàng, mỗi hàng lưới 4 cột. Điểm ngắt lấy đúng theo
    Tailwind — lg 1024px xuống 2 cột, md 768px xuống 1 cột — để bố cục
    1 / 2 / 4 cột khớp với yêu cầu báo cáo. */
-.kgroup{margin-bottom:20px}
-.kgroup:last-child{margin-bottom:0}
-.kgtitle{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}
-.kgtitle b{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--tx2);font-weight:800;white-space:nowrap}
-.kgtitle span{font-size:11px;color:var(--tx3);white-space:nowrap}
-.kgtitle:after{content:"";flex:1;height:1px;background:var(--line)}
-.kgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-@media(max-width:1023px){.kgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
-@media(max-width:767px){.kgrid{grid-template-columns:minmax(0,1fr);gap:10px}}
+/* ===== DẢI THẺ CHỈ SỐ — MỘT HÀNG =====
+   12 thẻ nằm gọn trên một hàng ở màn hình rộng. Thẻ thu nhỏ và bỏ con chip
+   đơn vị ở góc (đã có đơn vị ngay cạnh con số) để hàng không bị cao lêu nghêu.
+   Màn hình hẹp thì tự xuống dòng chứ không đẩy tràn ngang. */
+.kline{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0 0}
+/* Màn hình đủ rộng thì xếp đúng --kcot cột, cả dải gọn trong một hàng */
+@media(min-width:1650px){.kline{grid-template-columns:repeat(var(--kcot,6),minmax(0,1fr));gap:8px}}
+.kline .kpi{padding:9px 11px;border-radius:10px}
+.kline .kpi .code{display:none}
+.kline .kpi .lb{font-size:11px;margin-top:0;min-height:0;line-height:1.3}
+.kline .kpi .val{font-size:16.5px;margin-top:5px}
+.kline .kpi .val small{font-size:9.5px;margin-left:3px}
+.kline .kpi .kdelta{margin-top:5px}
+.kline .dpill{font-size:9.5px;padding:1px 6px}
+@media(max-width:560px){.kline{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* Thẻ cảnh báo rủi ro: viền và nền nhuộm màu để nổi hẳn khỏi nhóm còn lại.
    Đặt sau khối "BỀ MẶT PHẲNG KIỂU PKT" nên ghi đè được background-image. */
@@ -480,11 +486,19 @@ html[data-theme="dark"] .mdl-box{background:#0B1630;border-color:var(--line-stro
 .srcerr{margin-top:7px;padding:7px 10px;border-radius:8px;font-size:10.5px;line-height:1.5;
   background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:#F43F5E;word-break:break-word}
 
-/* Cảnh báo dữ liệu thiếu (ô Ngày nghỉ việc bỏ trống) */
-.dqwarn{display:flex;flex-direction:column;gap:3px;margin:14px 0 4px;padding:11px 14px;border-radius:10px;
-  background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.4)}
-.dqwarn b{font-size:12.5px;color:var(--amber)}
-.dqwarn span{font-size:11.5px;color:var(--tx2);line-height:1.55}
+/* Cảnh báo dữ liệu thiếu — một khối gọn, mỗi lỗi một dòng */
+.dqwarn{margin:14px 0 0;padding:9px 13px;border-radius:9px;
+  background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.36)}
+.dqwarn .dqh{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--amber);font-weight:800;margin-bottom:4px}
+.dqwarn ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px}
+.dqwarn li{font-size:11.5px;line-height:1.45;color:var(--tx2)}
+.dqwarn li:before{content:"·";margin-right:6px;color:var(--amber);font-weight:800}
+.dqwarn li.x:before{color:var(--rose)}
+.dqwarn li b{color:var(--tx);font-weight:800}
+.dqwarn li i{font-style:normal;color:var(--tx);font-weight:600}
+.dqwarn li em{font-style:normal;color:var(--tx3);font-size:10.5px}
+.dqwarn li em:before{content:"— "}
 @media print{.dqwarn{break-inside:avoid}}
 
 /* Bảng đối chiếu Headcount */

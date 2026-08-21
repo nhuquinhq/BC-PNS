@@ -817,15 +817,12 @@ REP.HRM6={
   {k:"Tỷ lệ nhân sự toàn thời gian",u:"%",cur:81.8,prev:82.4,tgt:80.0,dir:1,sp:[84,83,83,82,82,82]},
   {k:"Tỷ lệ hồ sơ đầy đủ",d:"Bình quân các trường thông tin bắt buộc",u:"%",cur:92.6,prev:90.5,tgt:100,dir:1,sp:[84,86,88,89,91,93]},
   {k:"Quản lý quá tải",d:"Trên 10 nhân sự trực tiếp · bấm để xem danh sách",u:"người",cur:2,prev:2,tgt:0,dir:-1,p:0,sp:[3,3,2,2,2,2],click:"openOverloadModal()"}],
- /* Ba nhóm thẻ chỉ số, mỗi nhóm một hàng 4 cột. Thứ tự trong "ks" là thứ tự
-    hiển thị; chỉ số nào không nằm trong nhóm nào vẫn được xếp vào hàng cuối. */
+ /* Thứ tự xếp thẻ trên dải chỉ số — cùng chủ đề đứng cạnh nhau */
  kgroups:[
-  {t:"Quy mô & Biến động",d:"đội ngũ vào – ra trong kỳ",
-   ks:["Headcount cuối kỳ","Nhân sự onboard trong kỳ","Nhân sự nghỉ trong kỳ","Tỷ lệ nhân sự toàn thời gian"]},
-  {t:"Tỷ lệ nghỉ việc & Cảnh báo rủi ro",d:"vượt ngưỡng thì thẻ đổi màu",
-   ks:["Turnover tháng","Turnover luỹ kế năm","Tỷ lệ nghỉ trong thử việc","Tỷ lệ nghỉ dưới 12 tháng"]},
-  {t:"Đặc điểm & Quản trị nội bộ",d:"chất lượng đội ngũ và hồ sơ",
-   ks:["Thâm niên bình quân","Tuổi bình quân","Tỷ lệ hồ sơ đầy đủ","Quản lý quá tải"]}],
+  {ks:["Headcount cuối kỳ","Nhân sự onboard trong kỳ","Nhân sự nghỉ trong kỳ","Tỷ lệ nhân sự toàn thời gian"]},
+  {ks:["Turnover tháng","Turnover luỹ kế năm","Tỷ lệ nghỉ trong thử việc","Tỷ lệ nghỉ dưới 12 tháng"]},
+  {ks:["Thâm niên bình quân","Tuổi bình quân","Tỷ lệ hồ sơ đầy đủ","Quản lý quá tải"]}],
+
  charts:[
   {id:"f1",t:"Cơ cấu theo Khối",h:"người",span:"g3",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.khoi):[["BOD",4],["BO",46],["Kinh doanh",98]];
@@ -1151,25 +1148,25 @@ function heroCard(k){
     <div class="val">${k.f?k.f(k.cur):dec(k.cur,k.p??1)}<small>${k.u}</small></div>
     ${dl}</div>`;
 }
-/* Dải thẻ chỉ số. Có khai báo kgroups thì tách thành từng nhóm có tiêu đề,
-   mỗi nhóm là lưới 4 cột (2 cột ở tablet, 1 cột ở điện thoại).
-   Không khai báo thì giữ nguyên dải phẳng như các báo cáo còn lại. */
+/* Dải thẻ chỉ số: gom hết vào MỘT hàng gọn, không tách khối theo nhóm.
+   Thứ tự trong kgroups (nếu báo cáo có khai) quyết định thứ tự xếp thẻ, để
+   các chỉ số cùng chủ đề vẫn đứng cạnh nhau trên hàng. */
 function kpiStrip(K,groups){
-  if(!groups||!groups.length) return `<div class="hero kstrip">${K.map(k=>heroCard(k)).join('')}</div>`;
-  const daXep=new Set();
-  let html=groups.map(g=>{
-    const ds=g.ks.map(t=>K.find(x=>x.k===t)).filter(Boolean);
-    if(!ds.length) return '';
-    ds.forEach(x=>daXep.add(x.k));
-    return `<div class="kgroup">
-      <div class="kgtitle"><b>${g.t}</b>${g.d?`<span>${g.d}</span>`:''}</div>
-      <div class="kgrid">${ds.map(k=>heroCard(k)).join('')}</div></div>`;
-  }).join('');
-  /* Chỉ số mới thêm mà chưa kịp xếp nhóm vẫn phải hiện, không được rơi mất */
-  const con=K.filter(k=>!daXep.has(k.k));
-  if(con.length) html+=`<div class="kgroup"><div class="kgtitle"><b>Chỉ số khác</b></div>
-    <div class="kgrid">${con.map(k=>heroCard(k)).join('')}</div></div>`;
-  return `<div class="kstrip">${html}</div>`;
+  let ds=K;
+  if(groups&&groups.length){
+    const xep=[],daXep=new Set();
+    groups.forEach(g=>g.ks.forEach(t=>{
+      const k=K.find(x=>x.k===t&&!daXep.has(x.k));
+      if(k){xep.push(k);daXep.add(k.k)}
+    }));
+    /* Chỉ số chưa kịp xếp nhóm vẫn phải hiện, không được rơi mất */
+    ds=xep.concat(K.filter(k=>!daXep.has(k.k)));
+  }
+  /* Ép đúng số cột theo số thẻ để cả dải nằm gọn MỘT hàng, thay vì để
+     auto-fit tự chia rồi dư ra vài thẻ rơi xuống hàng thứ hai.
+     Nhiều hơn 12 thẻ thì chia đều thành 2 hàng cho khỏi bé quá. */
+  const n=ds.length, cot=n<=12?n:Math.ceil(n/Math.ceil(n/12));
+  return `<div class="kline" style="--kcot:${cot||1}">${ds.map(k=>heroCard(k)).join('')}</div>`;
 }
 
 /* ---------------- Modal danh sách quản lý quá tải (Task 4) ----------------
@@ -1259,27 +1256,25 @@ function mast(m,r){
 /* Dòng ghi đã nghỉ nhưng bỏ trống Ngày nghỉ việc thì không xếp được vào
    tháng nào, nên bị loại khỏi Headcount. Nói rõ ra để HR bổ sung, chứ im
    lặng bớt người khỏi số liệu thì còn khó hiểu hơn con số sai. */
+/* Một khối cảnh báo gọn cho mọi lỗi dữ liệu của sheet — trước đây mỗi loại
+   một dải riêng, ba dải chiếm gần 300px trước khi tới thẻ chỉ số. */
 function canhBaoThieuNgayNghi(m){
   if(!m.src||!m.src.includes('DM_NhanSu')||!HRon()) return '';
-  const H=HRx(), out=[];
-  const ten=ds=>ds.slice(0,3).map(x=>escHtml(x.ten||x.ma||'(chưa có tên)')).join(', ')
-    +(ds.length>3?` và ${ds.length-3} người nữa`:'');
+  const H=HRx(), y=[];
+  const ten=(ds,n)=>ds.slice(0,n).map(x=>escHtml(x.ten||x.ma||'(chưa có tên)')).join(', ')
+    +(ds.length>n?` +${ds.length-n}`:'');
   const a=H.thieuNgayNghi?H.thieuNgayNghi():[];
-  if(a.length) out.push(`<div class="dqwarn">
-    <b>${a.length} hồ sơ ghi đã nghỉ nhưng bỏ trống ô "Ngày nghỉ việc"</b>
-    <span>Không xác định được nghỉ tháng nào nên không tính vào Headcount và không vào được
-      biểu đồ biến động: ${ten(a)}. Bổ sung ngày trên Google Sheet để tỷ lệ nghỉ về đúng.</span></div>`);
+  if(a.length) y.push(`<li><b>${a.length}</b> hồ sơ ghi đã nghỉ nhưng trống ô <i>Ngày nghỉ việc</i>
+    — không vào được tháng nghỉ nào, tỷ lệ nghỉ đang thấp hơn thực tế <em>${ten(a,2)}</em></li>`);
   const c=H.ngayVaoTuongLai?H.ngayVaoTuongLai(RANGE&&RANGE.to?new Date(RANGE.to):null):[];
-  if(c.length) out.push(`<div class="dqwarn err">
-    <b>${c.length} hồ sơ có "Ngày nhận việc" nằm ở tương lai — nhiều khả năng gõ nhầm năm</b>
-    <span>Không tính vào Headcount cho tới ngày đó: ${c.map(x=>escHtml(x.ten||x.ma)
-      +' ('+(x.vao?x.vao.toLocaleDateString('vi-VN'):'')+')').slice(0,3).join(', ')}${c.length>3?` và ${c.length-3} hồ sơ nữa`:''}.</span></div>`);
+  if(c.length) y.push(`<li class="x"><b>${c.length}</b> hồ sơ có <i>Ngày nhận việc</i> ở tương lai,
+    nhiều khả năng gõ nhầm năm — không tính vào Headcount
+    <em>${c.slice(0,2).map(x=>escHtml(x.ten||x.ma)+' · '+(x.vao?x.vao.toLocaleDateString('vi-VN'):'')).join(', ')}${c.length>2?` +${c.length-2}`:''}</em></li>`);
   const b=H.thieuNgayVao?H.thieuNgayVao():[];
-  if(b.length) out.push(`<div class="dqwarn">
-    <b>${b.length} hồ sơ đang làm nhưng bỏ trống ô "Ngày nhận việc"</b>
-    <span>Vẫn được tính vào Headcount theo cột Tình trạng, nhưng không xếp được vào tháng nào
-      trên biểu đồ biến động: ${ten(b)}.</span></div>`);
-  return out.join('');
+  if(b.length) y.push(`<li><b>${b.length}</b> hồ sơ đang làm nhưng trống ô <i>Ngày nhận việc</i>
+    — vẫn tính vào Headcount, nhưng không lên được biểu đồ biến động <em>${ten(b,2)}</em></li>`);
+  if(!y.length) return '';
+  return `<div class="dqwarn"><b class="dqh">Dữ liệu sheet cần bổ sung</b><ul>${y.join('')}</ul></div>`;
 }
 /* Bảng đối chiếu: dẫn từ con số lọc tay trên sheet sang con số của báo cáo,
    để nhìn phát ra ngay lệch ở đâu thay vì phải dò từng dòng. */
