@@ -495,6 +495,8 @@ window.HQLive = (function () {
     return Math.max(0, Math.round((soThang + le) * 10) / 10);
   }
 
+  /* Trần thâm niên hợp lý: 50 năm. Trên mức này chắc chắn là lỗi công thức */
+  const TN_TOI_DA = 600;
   /* Giá trị cột "Tình trạng" được coi là còn đi làm */
   const TT_DANG_LAM = /đang làm|đang thử việc|thử việc|học việc/i;
   const dt = parseVietnameseDate;                        // tên cũ dùng khắp file
@@ -592,10 +594,13 @@ window.HQLive = (function () {
         ttDangLam: TT_DANG_LAM.test(tt),
         dangLam: TT_DANG_LAM.test(tt) && !nghi
       };
-      /* Thâm niên: tin cột có sẵn của sheet, nhưng chỉ khi nó là số DƯƠNG.
-         Ô trống, ô lỗi công thức hay số âm đều rơi về mốc ngày nhận việc. */
+      /* Thâm niên: cột "Thâm niên (Tháng)" của sheet là công thức, hồ sơ nào
+         bỏ trống Ngày nhận việc thì công thức cho ra giá trị vô lý (đã gặp
+         1519 tháng ≈ 126 năm, đủ để kéo lệch bình quân của cả công ty).
+         Chỉ tin khi là số dương và nằm trong khoảng người thật đi làm được;
+         ngoài khoảng đó thì tính lại từ ngày nhận việc. */
       const tnSheet = C.tn ? num(g(r, C.tn)) : 0;
-      o.tn = tnSheet > 0 ? tnSheet : calculateTenureMonths(vao, nghi);
+      o.tn = (tnSheet > 0 && tnSheet <= TN_TOI_DA) ? tnSheet : calculateTenureMonths(vao, nghi);
       /* Hạn hợp đồng: ưu tiên mốc gần nhất CÒN hiệu lực; nếu mọi mốc đã
          qua thì lấy mốc muộn nhất — nghĩa là hợp đồng đã quá hạn. */
       let tuong = null, quaKhu = null;
@@ -635,6 +640,107 @@ window.HQLive = (function () {
       else if (t < 24) b["1 – 2 năm"]++; else b["Trên 2 năm"]++; });
     return Object.entries(b);
   }
+  /* ---------- Phân loại nhân sự ----------
+     Cột "Level" của sheet đang để trống toàn bộ, nên cấp bậc lấy theo cột
+     "Chức vụ" — nơi thật sự chứa BOD / Manager / … / Thực tập sinh. */
+  const THU_TU_CAP = ["BOD", "Manager", "Trưởng phòng", "Deputy Manager",
+                      "Market Leader", "Nhân viên", "Cộng tác viên", "Thực tập sinh"];
+  const laTTS = r => /thực tập|intern/i.test(`${r.cv} ${r.vt}`);
+  const laQL  = r => /bod|manager|trưởng|leader|giám đốc|head|quản lý/i.test(r.cv);
+  const khoiFOBO = r => /kinh doanh|sale|business/i.test(r.khoi) ? "Kinh doanh · FO"
+                      : /bod/i.test(r.khoi) ? "BOD" : "Vận hành – hỗ trợ · BO";
+
+  /* Tháp tổ chức: xếp theo đúng thứ tự cấp bậc từ cao xuống thấp, cấp nào
+     không nằm trong danh sách chuẩn thì dồn xuống cuối. */
+  function thapCapBac(arr) {
+    const m = {};
+    arr.forEach(r => { const k = (r.cv || "Chưa rõ").trim() || "Chưa rõ"; m[k] = (m[k] || 0) + 1; });
+    const co = Object.entries(m);
+    const hang = t => { const i = THU_TU_CAP.findIndex(x => kd(x) === kd(t)); return i < 0 ? 99 : i; };
+    return co.sort((a, b) => hang(a[0]) - hang(b[0]) || b[1] - a[1]);
+  }
+  const nhomFOBO = arr => demTheo(arr, khoiFOBO);
+  const nhomQLNV = arr => {
+    const ql = arr.filter(laQL).length;
+    return [["Quản lý", ql], ["Nhân sự thừa hành", arr.length - ql]];
+  };
+
+  /* Cohort theo năm gia nhập: mỗi năm tuyển bao nhiêu và tới nay còn lại bao
+     nhiêu — nhìn ra năm nào giữ người tốt, năm nào rơi rụng hết. */
+  function cohortNam(soNam) {
+    const all = hrRows().filter(r => r.vao);
+    const nay = new Date().getFullYear();
+    const tu = nay - (soNam || 6) + 1;
+    const m = {};
+    all.forEach(r => {
+      const n = r.vao.getFullYear(); if (n < tu || n > nay) return;
+      m[n] = m[n] || { nam: n, tuyen: 0, conLai: 0 };
+      m[n].tuyen++;
+      if (r.ttDangLam && !r.nghi) m[n].conLai++;
+    });
+    return Object.values(m).sort((a, b) => a.nam - b.nam)
+      .map(x => Object.assign(x, { giu: x.tuyen ? x.conLai / x.tuyen * 100 : 0 }));
+  }
+
+  /* Thâm niên bình quân theo một tiêu chí bất kỳ (Khối, Cấp bậc, Phòng ban) */
+  function thamNienTheo(arr, f, top) {
+    const m = {};
+    arr.forEach(r => {
+      const k = (f(r) || "Không rõ").trim() || "Không rõ";
+      (m[k] = m[k] || []).push(r.tn || 0);
+    });
+    let e = Object.entries(m).map(([ten, v]) => ({
+      ten, n: v.length, bq: v.reduce((s, x) => s + x, 0) / v.length
+    })).sort((a, b) => b.bq - a.bq);
+    if (top) e = e.slice(0, top);
+    return e;
+  }
+
+  /* Nhận việc – nghỉ việc theo NĂM, kèm headcount cuối mỗi năm */
+  function vaoRaTheoNam(soNam, den) {
+    const all = hrRows(), moc = den || new Date(), out = [];
+    for (let i = (soNam || 6) - 1; i >= 0; i--) {
+      const nam = moc.getFullYear() - i;
+      const dau = new Date(nam, 0, 1), cuoi = new Date(nam, 11, 31, 23, 59, 59);
+      const het = cuoi > moc ? moc : cuoi;
+      out.push({
+        nam,
+        vao: all.filter(r => r.vao && r.vao >= dau && r.vao <= het).length,
+        ra:  all.filter(r => r.nghi && r.nghi >= dau && r.nghi <= het).length,
+        hc:  headcountAt(all, het)
+      });
+    }
+    return out;
+  }
+
+  /* Turnover theo nhóm (Khối / Phòng ban).
+     boTTS = true thì loại thực tập sinh khỏi cả tử số lẫn mẫu số, vì TTS
+     hết kỳ là nghỉ nên để chung sẽ thổi phồng tỷ lệ của cả phòng. */
+  function turnoverTheo(f, tu, den, boTTS) {
+    const all = hrRows().filter(r => !boTTS || !laTTS(r));
+    const m = {};
+    all.forEach(r => { const k = (f(r) || "Không rõ").trim() || "Không rõ"; (m[k] = m[k] || []).push(r); });
+    return Object.entries(m).map(([ten, rs]) => {
+      const dau  = rs.filter(r => laDangLamTai(r, tu)).length;
+      const cuoi = rs.filter(r => laDangLamTai(r, den)).length;
+      const ra   = rs.filter(r => r.nghi && r.nghi >= tu && r.nghi <= den).length;
+      return { ten, dau, cuoi, ra, ty: tyLeNghiViec(ra, dau, cuoi) };
+    }).filter(x => x.dau || x.cuoi || x.ra).sort((a, b) => b.ty - a.ty);
+  }
+
+  /* Số nhân sự trực tiếp trên mỗi quản lý */
+  function spanStat() {
+    const sp = spanQL();
+    if (!sp.length) return { soQL: 0, bq: 0, max: 0, quaTai: 0 };
+    const n = sp.map(([, v]) => v);
+    return {
+      soQL: sp.length,
+      bq: n.reduce((s, x) => s + x, 0) / n.length,
+      max: Math.max(...n),
+      quaTai: n.filter(x => x > 10).length
+    };
+  }
+
   /* Headcount tại một thời điểm: đã nhận việc và chưa nghỉ tính tới mốc đó.
 
      Bản cũ chỉ nhìn NGÀY, bỏ qua hoàn toàn cột "Tình trạng". Sheet nhân sự
@@ -774,7 +880,8 @@ window.HQLive = (function () {
   const HR = { rows: hrRows, active: dangLamHR, has: hasHR, demTheo, nhomTuoi, nhomThamNien,
     bienDong, spanQL, thieuHoSo, tyLeHoSoDu, dailuong, tangLuong, hetHanHD, dt, thang,
     headcountAt, laDangLamTai, tyLeNghiViec, thieuNgayNghi, thieuNgayVao, ngayVaoTuongLai, doiChieuHeadcount,
-    parseVietnameseDate, calculateTenureMonths };
+    thapCapBac, nhomFOBO, nhomQLNV, cohortNam, thamNienTheo, vaoRaTheoNam, turnoverTheo, spanStat,
+    laTTS, laQL, khoiFOBO, parseVietnameseDate, calculateTenureMonths };
 
   /* =====================================================================
      5c. BỘ DỮ LIỆU TUYỂN DỤNG (HRM1)
