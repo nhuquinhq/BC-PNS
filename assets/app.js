@@ -880,8 +880,90 @@ REP.HRM6={
        {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
   {id:"f14",t:"Top ngành học",h:"người",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active().filter(r=>r.nganh),r=>r.nganh,8):[["Kinh tế",34],["CNTT",21],["Marketing",18]];
-     mk("f14","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}}],
+     mk("f14","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}},
+
+  /* ---- Cơ cấu tổ chức ---- */
+  {id:"f15",t:"Tháp tổ chức theo Cấp bậc",h:"người · BOD xuống Thực tập sinh",cls:"tall",span:"g21",
+   f:()=>{const e=HRon()?HRx().thapCapBac(HRx().active())
+       :[["BOD",5],["Manager",4],["Deputy Manager",3],["Market Leader",4],["Nhân viên",53],["Cộng tác viên",14],["Thực tập sinh",32]];
+     mk("f15","bar",barSet(lab(e),val(e),C.navy),{indexAxis:"y",scales:AXH})}},
+  {id:"f16",t:"Top vị trí công việc",h:"người · 10 vị trí đông nhất",cls:"tall",
+   f:()=>{const e=HRon()?HRx().demTheo(HRx().active().filter(r=>r.vt),r=>r.vt,10)
+       :[["Thực tập sinh Kinh doanh",30],["Nhân viên phát triển kinh doanh",18]];
+     mk("f16","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}},
+  {id:"f17",t:"Tỷ lệ Kinh doanh / Hỗ trợ",h:"người · FO – BO",span:"g3",
+   f:()=>{const e=HRon()?HRx().nhomFOBO(HRx().active())
+       :[["Kinh doanh · FO",77],["Vận hành – hỗ trợ · BO",35],["BOD",4]];
+     mk("f17","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.navy,C.green,C.gold],borderWidth:0,hoverOffset:6}]},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"f18",t:"Tỷ lệ Quản lý / Nhân sự",h:"người",
+   f:()=>{const e=HRon()?HRx().nhomQLNV(HRx().active()):[["Quản lý",17],["Nhân sự thừa hành",99]];
+     mk("f18","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.gold,C.navy],borderWidth:0,hoverOffset:6}]},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"f19",t:"Span of control",h:"nhân sự trực tiếp / quản lý",
+   f:()=>{const sp=HRon()?HRx().spanQL():[["Quản lý A",15],["Quản lý B",12]];
+     const b={"1 – 3":0,"4 – 6":0,"7 – 10":0,"Trên 10":0};
+     sp.forEach(([,n])=>{if(n<=3)b["1 – 3"]++;else if(n<=6)b["4 – 6"]++;else if(n<=10)b["7 – 10"]++;else b["Trên 10"]++});
+     const e=Object.entries(b);
+     mk("f19","bar",barSet(lab(e),val(e),C.light),{})}},
+
+  /* ---- Thâm niên và cohort ---- */
+  {id:"f20",t:"Cohort theo năm gia nhập",h:"tuyển trong năm và số còn ở lại",cls:"tall",span:"g21",
+   f:()=>{const c=HRon()?HRx().cohortNam(6):[{nam:2024,tuyen:140,conLai:9},{nam:2025,tuyen:334,conLai:39},{nam:2026,tuyen:94,conLai:53}];
+     mk("f20","bar",{labels:c.map(x=>x.nam),datasets:[
+       {label:"Tuyển trong năm",data:c.map(x=>x.tuyen),backgroundColor:C.steel,borderRadius:2,maxBarThickness:34},
+       {label:"Còn đang làm",data:c.map(x=>x.conLai),backgroundColor:C.green,borderRadius:2,maxBarThickness:34}]},
+       {plugins:{legend:{display:true,position:"bottom"}}})}},
+  {id:"f21",t:"Thâm niên bình quân theo Khối",h:"tháng",
+   f:()=>{const e=HRon()?HRx().thamNienTheo(HRx().active(),r=>r.khoi):[["BO",61.7],["BOD",51],["Kinh doanh Việt Nam",18.8]].map(x=>({ten:x[0],bq:x[1]}));
+     mk("f21","bar",barSet(e.map(x=>x.ten),e.map(x=>+x.bq.toFixed(1)),C.navy),{})}},
+  {id:"f22",t:"Thâm niên bình quân theo Cấp bậc",h:"tháng",cls:"tall",
+   f:()=>{const e=HRon()?HRx().thamNienTheo(HRx().active(),r=>r.cv):[["Manager",68],["Nhân viên",15.6],["Thực tập sinh",2.4]].map(x=>({ten:x[0],bq:x[1]}));
+     mk("f22","bar",barSet(e.map(x=>x.ten),e.map(x=>+x.bq.toFixed(1)),C.navy2),{indexAxis:"y",scales:AXH})}},
+
+  /* ---- Vào ra và turnover ---- */
+  {id:"f23",t:"Nhận việc – nghỉ việc theo năm",h:"người · kèm tổng đội ngũ cuối năm",cls:"tall",span:"g21",
+   f:()=>{const b=HRon()?HRx().vaoRaTheoNam(6,RANGE&&RANGE.to?new Date(RANGE.to):null)
+       :[{nam:2024,vao:140,ra:95,hc:107},{nam:2025,vao:334,ra:286,hc:139},{nam:2026,vao:94,ra:114,hc:117}];
+     mk("f23","bar",{labels:b.map(x=>x.nam),datasets:[
+       {label:"Nhận việc",data:b.map(x=>x.vao),backgroundColor:C.green,borderRadius:2,maxBarThickness:30},
+       {label:"Nghỉ việc",data:b.map(x=>-x.ra),backgroundColor:C.red,borderRadius:2,maxBarThickness:30},
+       {label:"Đội ngũ cuối năm",type:"line",data:b.map(x=>x.hc),borderColor:C.gold,borderWidth:2.6,pointRadius:3,
+        pointBackgroundColor:C.gold,tension:.35,yAxisID:"y1"}]},
+       {plugins:{legend:{display:true,position:"bottom"}},
+        scales:{x:AX.x,y:AX.y,y1:{position:"right",grid:{display:false},border:{display:false}}}})}},
+  {id:"f24",t:"Turnover theo Khối",h:"% · đã loại thực tập sinh",
+   f:()=>{const e=HRon()?HRx().turnoverTheo(r=>r.khoi,new Date(RANGE.from),new Date(RANGE.to),true).filter(x=>x.ten!=="Không rõ")
+       :[{ten:"Kinh doanh Quốc tế",ty:79.3},{ten:"Kinh doanh Việt Nam",ty:65.5},{ten:"BO",ty:36.4}];
+     mk("f24","bar",barSet(e.map(x=>x.ten),e.map(x=>+x.ty.toFixed(1)),C.red),{})}}],
  tables:[
+  {id:"t6h",t:"Cơ cấu Headcount theo Khối và Phòng ban",
+   cols:[{t:"Khối"},{t:"Phòng ban"},{t:"Số người",a:"n"},{t:"% trên tổng",a:"n"},{t:"Quản lý",a:"n"},{t:"Thực tập sinh",a:"n"}],
+   rows:()=>{if(!HRon())return [["BO","Công nghệ","9","7,8%","1","0"]];
+     const a=HRx().active(), t=a.length||1, m={};
+     a.forEach(r=>{const k=(r.khoi||"Không rõ")+"§"+(r.phong||"Không rõ");
+       (m[k]=m[k]||[]).push(r)});
+     return Object.entries(m).sort((x,y)=>y[1].length-x[1].length).map(([k,rs])=>{
+       const [kh,ph]=k.split("§");
+       return [kh,`<b>${ph}</b>`,dec(rs.length,0),dec(rs.length/t*100,1)+"%",
+         dec(rs.filter(HRx().laQL).length,0),dec(rs.filter(HRx().laTTS).length,0)]})},
+   total:()=>{const a=HRon()?HRx().active():[];
+     return ["","<b>Tổng</b>",`<b>${dec(a.length,0)}</b>`,"<b>100,0%</b>",
+       `<b>${dec(a.filter(HRx&&HRon()?HRx().laQL:()=>0).length,0)}</b>`,
+       `<b>${dec(a.filter(HRon()?HRx().laTTS:()=>0).length,0)}</b>`]}},
+  {id:"t6i",t:"Turnover theo Phòng ban trong kỳ",
+   cols:[{t:"Phòng ban"},{t:"Đầu kỳ",a:"n"},{t:"Cuối kỳ",a:"n"},{t:"Nghỉ trong kỳ",a:"n"},{t:"Turnover",a:"n"}],
+   rows:()=>{if(!HRon())return [["HQS200","30","26","8","28,6%"]];
+     return HRx().turnoverTheo(r=>r.phong,new Date(RANGE.from),new Date(RANGE.to),true)
+       .map(x=>[`<b>${x.ten}</b>`,dec(x.dau,0),dec(x.cuoi,0),dec(x.ra,0),
+         `<span class="pill ${x.ty>=60?'p-e':x.ty>=30?'p-w':'p-ok'}">${dec(x.ty,1)}%</span>`])}},
+  {id:"t6j",t:"Thâm niên bình quân theo Khối và Cấp bậc",
+   cols:[{t:"Nhóm"},{t:"Phân loại"},{t:"Số người",a:"n"},{t:"Thâm niên BQ (tháng)",a:"n"}],
+   rows:()=>{if(!HRon())return [["Khối","BO","35","61,7"]];
+     const a=HRx().active(), out=[];
+     HRx().thamNienTheo(a,r=>r.khoi).forEach(x=>out.push(["Khối",`<b>${x.ten}</b>`,dec(x.n,0),dec(x.bq,1)]));
+     HRx().thamNienTheo(a,r=>r.cv).forEach(x=>out.push(["Cấp bậc",`<b>${x.ten}</b>`,dec(x.n,0),dec(x.bq,1)]));
+     return out}},
   {id:"t6a",t:"Nhân sự onboard trong phạm vi lọc",
    cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Vị trí"},{t:"Quản lý"},{t:"Ngày vào",a:"c"}],
    rows:()=>{if(!HRon())return [["00892","Nguyễn Văn A","HQS200","Nhân viên phát triển kinh doanh","Trần Việt Trí","01/07/2026"]];
@@ -1303,12 +1385,20 @@ function renderReport(m){
   const r=REP[m.id];
   const K=(window.HQLive?HQLive.apply(m.id,r.kpis):r.kpis);
   let ch="",group=[],span="g3";
+  /* Hàng không đủ ô thì cho các panel còn lại giãn kín bề ngang, thay vì bỏ
+     trống nửa hàng như trước. */
+  const xaHang=()=>{
+    if(!group.length) return;
+    const day=group.length===(span==="g3"?3:2);
+    ch+=`<div class="grid ${day?span:"g"+group.length}">${group.join('')}</div>`;
+    group=[];
+  };
   r.charts.forEach(c=>{
-    if(c.span){ if(group.length){ch+=`<div class="grid ${span}">${group.join('')}</div>`;group=[]} span=c.span }
+    if(c.span){ xaHang(); span=c.span }
     group.push(panel(c.t,c.h,`<div class="chartbox ${c.cls||''}"><canvas id="${c.id}"></canvas></div>`));
-    if(group.length===(span==="g3"?3:2)){ch+=`<div class="grid ${span}">${group.join('')}</div>`;group=[]}
+    if(group.length===(span==="g3"?3:2)) xaHang();
   });
-  if(group.length)ch+=`<div class="grid ${span}">${group.join('')}</div>`;
+  xaHang();
   let tb=r.tables.map(t=>{
     const rw=typeof t.rows==='function'?(t.rows()||[]):t.rows;
     const tt=typeof t.total==='function'?t.total(rw):t.total;
