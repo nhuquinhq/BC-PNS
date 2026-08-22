@@ -840,9 +840,10 @@ REP.HRM6={
   {id:"f4",t:"Cơ cấu theo Phòng ban",h:"người · 12 phòng lớn nhất",cls:"tall",span:"g21",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active(),r=>r.phong,12):[["Maverick Team",22],["HQS200",19],["VX101 Team",17],["WGG100 Team",15]];
      mk("f4","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}},
-  {id:"f5",t:"Nhóm tuổi",h:"người",
-   f:()=>{const e=HRon()?HRx().nhomTuoi(HRx().active()):[["Dưới 22",18],["22 – 25",57],["26 – 30",44],["31 – 35",21],["Trên 35",8]];
-     mk("f5","bar",barSet(lab(e),val(e),C.green),{})}},
+  {id:"f15",t:"Tháp tổ chức theo Cấp bậc",h:"người · BOD xuống Thực tập sinh",cls:"tall",
+   f:()=>{const e=HRon()?HRx().thapCapBac(HRx().active())
+       :[["BOD",5],["Manager",4],["Deputy Manager",3],["Market Leader",4],["Nhân viên",53],["Cộng tác viên",14],["Thực tập sinh",32]];
+     mk("f15","bar",barSet(lab(e),val(e),C.navy),{indexAxis:"y",scales:AXH})}},
   {id:"f6",t:"Biến động nhân sự 12 tháng",h:"vào – ra – tổng đội ngũ",cls:"tall",span:"g21",
    f:()=>{const b=HRon()?HRx().bienDong(12,RANGE&&RANGE.to?new Date(RANGE.to):null)
        :M12.map((m,i)=>({nhan:m,vao:3+i%4,ra:1+i%3,hc:130+i*2}));
@@ -883,10 +884,9 @@ REP.HRM6={
      mk("f14","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}},
 
   /* ---- Cơ cấu tổ chức ---- */
-  {id:"f15",t:"Tháp tổ chức theo Cấp bậc",h:"người · BOD xuống Thực tập sinh",cls:"tall",span:"g21",
-   f:()=>{const e=HRon()?HRx().thapCapBac(HRx().active())
-       :[["BOD",5],["Manager",4],["Deputy Manager",3],["Market Leader",4],["Nhân viên",53],["Cộng tác viên",14],["Thực tập sinh",32]];
-     mk("f15","bar",barSet(lab(e),val(e),C.navy),{indexAxis:"y",scales:AXH})}},
+  {id:"f5",t:"Nhóm tuổi",h:"người",cls:"tall",span:"g21",
+   f:()=>{const e=HRon()?HRx().nhomTuoi(HRx().active()):[["Dưới 22",18],["22 – 25",57],["26 – 30",44],["31 – 35",21],["Trên 35",8]];
+     mk("f5","bar",barSet(lab(e),val(e),C.green),{})}},
   {id:"f16",t:"Top vị trí công việc",h:"người · 10 vị trí đông nhất",cls:"tall",
    f:()=>{const e=HRon()?HRx().demTheo(HRx().active().filter(r=>r.vt),r=>r.vt,10)
        :[["Thực tập sinh Kinh doanh",30],["Nhân viên phát triển kinh doanh",18]];
