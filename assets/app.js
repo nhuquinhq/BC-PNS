@@ -1339,6 +1339,18 @@ function mast(m,r){
     </div>`;
 }
 
+/* Nguồn đã khai link nhưng chưa đọc được thì nói thẳng ngay trên báo cáo.
+   Trước đây biểu đồ lặng lẽ hiện số mẫu, nhìn vào không phân biệt được là
+   nguồn hỏng hay là đang xem bản cũ chưa deploy. */
+function canhBaoNguon(m){
+  if(!window.HQLive||!m.src) return '';
+  const xau=m.src.filter(k=>SOURCES[k]&&SOURCES[k].url&&!HQLive.has(k));
+  if(!xau.length) return '';
+  return `<div class="dqwarn err"><b class="dqh">Chưa đọc được nguồn dữ liệu — số đang hiển thị là số mẫu</b><ul>${
+    xau.map(k=>{const e=(HQLive.meta[k]||{}).err;
+      return `<li class="x"><b>${escHtml(SOURCES[k].l)}</b> <em>${e?escHtml(e):'chưa tải trong phiên này'}</em></li>`;
+    }).join('')}</ul></div>`;
+}
 /* Dòng ghi đã nghỉ nhưng bỏ trống Ngày nghỉ việc thì không xếp được vào
    tháng nào, nên bị loại khỏi Headcount. Nói rõ ra để HR bổ sung, chứ im
    lặng bớt người khỏi số liệu thì còn khó hiểu hơn con số sai. */
@@ -1435,7 +1447,7 @@ function renderReport(m){
     dc?dc+'<div style="height:16px"></div>'+tb:tb]);
   parts.push(["Định nghĩa chỉ số","",defsBox(r.defs)+`<div class="note">${r.note}</div>`]);
   return mast(m,r)+
-  `<div class="wrap">${canhBaoThieuNgayNghi(m)}${kpiStrip(K,r.kgroups)}</div>
+  `<div class="wrap">${canhBaoNguon(m)}${canhBaoThieuNgayNghi(m)}${kpiStrip(K,r.kgroups)}</div>
    <div class="wrap">${parts.map((p,i)=>sec(i+1,p[0],p[1],p[2])).join('')}</div>`;
 }
 
