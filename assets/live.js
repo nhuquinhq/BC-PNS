@@ -238,6 +238,42 @@ window.HQLive = (function () {
       setSp("Nhân sự nghỉ trong kỳ", all.filter(r => r.nghi && r.nghi >= tu && r.nghi <= den).length, bd.map(x => x.ra));
     }
 
+    /* ---- HRM3 · Quỹ lương 12 tháng (tab DATA 2026) ---- */
+    if (reportId === "HRM3" && coLuong()) {
+      const q = quyLuongThang(), tn = tongLuongNam(), ct = tn.thangChot;
+      const nay = q[ct - 1], truoc = ct > 1 ? q[ct - 2] : null, dau = q[0];
+      const setQ = (ten, v, sp, prev) => {
+        const k = kpis.find(x => x.k === ten); if (!k || v == null || !isFinite(v)) return;
+        k.cur = v; k.live = true;
+        if (prev != null && isFinite(prev)) k.prev = prev;
+        if (sp && sp.length >= 2) k.sp = sp;
+      };
+      const tr = x => x / 1e6;                       // đồng → triệu đồng
+      if (nay) {
+        setQ("Quỹ lương tháng gần nhất", tr(nay.tong), q.filter(x => !x.duTru).map(x => tr(x.tong)),
+             truoc ? tr(truoc.tong) : null);
+        setQ("Lương bình quân đầu người", tr(nay.bq), q.filter(x => !x.duTru).map(x => tr(x.bq)),
+             truoc ? tr(truoc.bq) : null);
+        setQ("Nhân sự hưởng lương", nay.soNguoi, q.filter(x => !x.duTru).map(x => x.soNguoi),
+             truoc ? truoc.soNguoi : null);
+        if (truoc && truoc.tong) setQ("Biến động quỹ lương", (nay.tong - truoc.tong) / truoc.tong * 100);
+        if (dau && dau.tong) setQ("Giảm quỹ lương so tháng 1", (dau.tong - nay.tong) / dau.tong * 100);
+        const tongThang = nay.tong || 1;
+        const bod = luongTheo(r => /bod/i.test(r.cap) ? "BOD" : "Khác", ct).find(x => x[0] === "BOD");
+        setQ("Tỷ trọng quỹ lương BOD", bod ? bod[1] / tongThang * 100 : 0);
+        const top = luongTheo(r => r.phong, ct, 1)[0];
+        setQ("Phòng chi lương cao nhất", top ? tr(top[1]) : null);
+      }
+      setQ("Quỹ lương luỹ kế đã chốt", tr(tn.chot));
+      setQ("Quỹ lương dự trù còn lại", tr(tn.duTru));
+      setQ("Tổng quỹ lương cả năm", tr(tn.ca));
+      setQ("Quỹ lương bình quân tháng", ct ? tr(tn.chot / ct) : null);
+      /* Có lương tháng 1 nhưng tới tháng chốt thì không còn trên bảng lương */
+      const ds = luongDS();
+      setQ("Rời bảng lương từ đầu năm",
+        ds.filter(r => r.thang[1] > 0 && !(r.thang[ct] > 0)).length);
+    }
+
     /* ---- HRM3 · Payroll & C&B (lương từ cùng nguồn) ---- */
     if (reportId === "HRM3" && hasHR()) {
       const act = dangLamHR().filter(r => r.luong > 0);
@@ -248,7 +284,9 @@ window.HQLive = (function () {
         const pc = act.reduce((s, r) => s + (r.pc || 0), 0);
         setL("Tổng quỹ lương kỳ", tong / 1e6);
         setL("Quỹ lương kỳ", tong / 1e6);
-        setL("Lương bình quân đầu người", tong / act.length / 1e6);
+        /* "Lương bình quân đầu người" nay lấy từ tab DATA 2026 ở khối phía
+           trên — cột lương của sheet nhân sự chỉ là mức hiện hành, không
+           phải tiền thực chi từng tháng nên hai con số lệch nhau. */
         setL("Tỷ trọng P1 cố định", (p1 + p2) ? p1 / (p1 + p2) * 100 : null);
         setL("Tổng phụ cấp và thưởng", pc / 1e6);
         setL("Tỷ lệ nhân sự đạt đủ P2", act.length ? act.filter(r => r.p2 > 0).length / act.length * 100 : null);
@@ -890,6 +928,122 @@ window.HQLive = (function () {
        RAW_DeXuatTD   — đề xuất tuyển dụng và kết quả (mỗi dòng một order)
        RAW_SLA_TD     — bảng theo dõi tiến độ theo SLA
      ===================================================================== */
+  /* =====================================================================
+     5b-bis. QUỸ LƯƠNG THEO THÁNG (HRM3)
+     Nguồn: tab "DATA 2026" — mỗi dòng một nhân sự, 12 cột Tháng 1…Tháng 12.
+     Đặc thù của tab này:
+       · tiêu đề thật nằm ở dòng 6, phía trên là mấy dòng tổng cộng;
+       · ô tháng có thể là số tiền, để trống, hoặc chữ "Nghỉ";
+       · dòng ngay trên tiêu đề có nhãn "Dự kiến" đặt đúng cột tháng đầu
+         tiên chưa chốt — nhờ đó biết tháng nào là số thật, tháng nào dự trù
+         mà không phải gõ cứng trong mã.
+     ===================================================================== */
+  const LGSRC = "RAW_LuongThang";
+  const THANG_CHOT_MD = 7;                     // dự phòng khi sheet không có nhãn
+
+  let _lg = null, _lgLen = -1;
+  function luongParse() {
+    const src = raws(LGSRC);
+    if (!src.length) return { ds: [], chot: 0 };
+    if (_lg && _lgLen === src.length) return _lg;
+
+    /* Dò dòng tiêu đề: phải có cả "họ tên" lẫn "tháng 1" */
+    let hi = -1;
+    for (let i = 0; i < Math.min(src.length, 20); i++) {
+      const o = src[i].map(kd);
+      if (o.some(c => c.includes("ho ten")) && o.some(c => c === "thang 1")) { hi = i; break; }
+    }
+    if (hi < 0) return { ds: [], chot: 0 };
+    const H = src[hi].map(kd);
+    const tim = (...t) => {
+      for (const x of t) { const i = H.indexOf(x); if (i >= 0) return i; }
+      for (const x of t) { const i = H.findIndex(h => h.includes(x)); if (i >= 0) return i; }
+      return -1;
+    };
+    const C = {
+      ma:    tim("ma nhan vien", "ma nv"),
+      ten:   tim("ho ten", "ho va ten"),
+      tt:    tim("tinh trang"),
+      vao:   tim("ngay vao lam", "ngay vao"),
+      nghi:  tim("ngay nghi"),
+      ql:    tim("quan ly bo phan", "quan ly"),
+      vt:    tim("vi tri"),
+      cap:   tim("cap bac"),
+      phong: tim("phong ban")
+    };
+    /* Cột của từng tháng */
+    const cotThang = {};
+    for (let t = 1; t <= 12; t++) { const i = H.indexOf("thang " + t); if (i >= 0) cotThang[t] = i; }
+
+    /* Tháng chốt cuối cùng = tháng ngay trước cột mang nhãn "Dự kiến" */
+    let chot = THANG_CHOT_MD;
+    for (let i = 0; i < hi; i++) {
+      const j = src[i].findIndex(v => /dự\s*kiến|dự\s*trù|forecast/i.test(String(v || "")));
+      if (j < 0) continue;
+      const t = Object.keys(cotThang).map(Number).find(t => cotThang[t] === j);
+      if (t) { chot = t - 1; break; }
+    }
+
+    const g = (r, c) => c >= 0 ? String(r[c] || "").trim() : "";
+    const ds = [];
+    for (let i = hi + 1; i < src.length; i++) {
+      const r = src[i];
+      if (!r) continue;
+      const ten = g(r, C.ten); if (!ten) continue;
+      const thang = {};
+      for (const t in cotThang) {
+        const o = String(r[cotThang[t]] || "").trim();
+        /* "Nghỉ" nghĩa là không còn trên bảng lương — khác hẳn với 0 đồng */
+        thang[t] = (!o || /^nghỉ$/i.test(o)) ? null : num(o);
+      }
+      ds.push({
+        ma: g(r, C.ma), ten,
+        tt: g(r, C.tt), vao: dt(g(r, C.vao)), nghi: dt(g(r, C.nghi)),
+        ql: g(r, C.ql), vt: g(r, C.vt) || "Chưa rõ",
+        cap: g(r, C.cap) || "Chưa rõ", phong: g(r, C.phong) || "Chưa rõ",
+        thang
+      });
+    }
+    _lg = { ds, chot: Math.max(0, Math.min(12, chot)) };
+    _lgLen = src.length;
+    return _lg;
+  }
+  const coLuong  = () => raws(LGSRC).length > 0;
+  const luongDS  = () => luongParse().ds;
+  const thangChot = () => luongParse().chot;
+
+  /* Quỹ lương từng tháng: tổng tiền, số người hưởng lương, bình quân đầu người */
+  function quyLuongThang() {
+    const { ds, chot } = luongParse(), out = [];
+    for (let t = 1; t <= 12; t++) {
+      const co = ds.filter(r => r.thang[t] != null && r.thang[t] > 0);
+      const tong = co.reduce((s, r) => s + r.thang[t], 0);
+      out.push({ thang: t, nhan: "T" + t, tong, soNguoi: co.length,
+                 bq: co.length ? tong / co.length : 0, duTru: t > chot });
+    }
+    return out;
+  }
+  /* Quỹ lương của một tháng, gộp theo tiêu chí bất kỳ (phòng ban, cấp bậc…) */
+  function luongTheo(f, t, top) {
+    const ds = luongDS(), m = {};
+    ds.forEach(r => {
+      const v = r.thang[t]; if (v == null || !v) return;
+      const k = (f(r) || "Chưa rõ").trim() || "Chưa rõ";
+      m[k] = (m[k] || 0) + v;
+    });
+    let e = Object.entries(m).sort((a, b) => b[1] - a[1]);
+    if (top) e = e.slice(0, top);
+    return e;
+  }
+  /* Tổng đã chốt và tổng dự trù còn lại trong năm */
+  function tongLuongNam() {
+    const q = quyLuongThang();
+    const chot = q.filter(x => !x.duTru).reduce((s, x) => s + x.tong, 0);
+    const duTru = q.filter(x => x.duTru).reduce((s, x) => s + x.tong, 0);
+    return { chot, duTru, ca: chot + duTru, thangChot: thangChot() };
+  }
+  const LG = { has: coLuong, rows: luongDS, thangChot, quyLuongThang, luongTheo, tongLuongNam };
+
   const TDSRC = "RAW_TuyenDung", DXSRC = "RAW_DeXuatTD", SLASRC = "RAW_SLA_TD";
   const raws = k => thoRaw[k] || [];
 
@@ -1227,5 +1381,5 @@ window.HQLive = (function () {
   }
 
   return { loadAll, apply, rows, has, num, nhanSu, dem, tuoi, sheetTable, status, store, meta, parseCSV,
-           parseVietnameseDate, calculateTenureMonths, HR, TD };
+           parseVietnameseDate, calculateTenureMonths, HR, TD, LG };
 })();

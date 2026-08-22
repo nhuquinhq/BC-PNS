@@ -86,6 +86,10 @@ window.HQ_CONFIG = {
     RAW_ChamCong_T6: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMceZLPQjKYpfJmtW2Dqp68kzr9JmXC895dMmQt8n7Tvw9w6XPp9FMrJKMIKNGdVLNExjvwFUy70oP/pub?gid=1699892467&single=true&output=csv",
     RAW_Phep:      "",
     RAW_Luong:     "",
+    /* "Báo cáo lương BOD 2026" — tab DATA 2026. Mỗi dòng một nhân sự, 12 cột
+       Tháng 1…Tháng 12. Nhãn "Dự kiến" đặt trên cột tháng đầu tiên chưa chốt,
+       hệ thống tự đọc nhãn đó để biết tháng nào là số thật, tháng nào dự trù. */
+    RAW_LuongThang: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOfLpeHFszb8Ta2bTrMTSV3jl9wX031OZ_qLWmxZkMCN2jeQM_DAgPqAl-3k7VzYClqQCUAFlLIsOJ/pub?gid=1518197678&single=true&output=csv",
     RAW_ChiPhiVP:  "",
     RAW_ChiPhiTT:  "",
     RAW_Onboard:   "",

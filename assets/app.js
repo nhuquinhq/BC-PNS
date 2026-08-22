@@ -16,6 +16,7 @@ const SOURCES={
  RAW_ChamCong_T6:{n:"RAW_ChamCong_T6",l:"Chấm công T6/2026",m:"HRM2",url:"",c:"Mã NV · Kỳ · Công chuẩn · Công thực tế · Lần muộn · Phút muộn · Về sớm · Thiếu chấm công · Xác nhận Lead"},
  RAW_Phep:{n:"RAW_Phep",l:"Phép năm",m:"HRM2",url:"",c:"Mã NV · Phép đầu kỳ · Phát sinh · Đã dùng · Nghỉ không lương · Tồn"},
  RAW_Luong:{n:"RAW_Luong",l:"Bảng lương (P1/P2)",m:"HRM3,8",url:"",c:"Mã NV · Kỳ · P1 · P2 vận hành · P2 báo cáo · Phụ cấp · Thưởng · Khấu trừ BH · Thực nhận"},
+ RAW_LuongThang:{n:"RAW_LuongThang",l:"Quỹ lương 12 tháng (DATA 2026)",m:"HRM3",url:"",c:"Mã nhân viên · Họ tên · Tình trạng · Ngày vào làm · Quản lý bộ phận · Vị trí · Cấp bậc · Phòng ban · Tháng 1 … Tháng 12"},
  RAW_ChiPhiVP:{n:"RAW_ChiPhiVP",l:"Chi phí vận hành VP",m:"HRM4",url:"",c:"Kỳ · Khoản mục · Mã MISA · Phòng thụ hưởng · Ngân sách · Thực chi · Ghi chú"},
  RAW_ChiPhiTT:{n:"RAW_ChiPhiTT",l:"Chi phí truyền thông NB",m:"HRM5",url:"",c:"Kỳ · Sự kiện · Loại · Tham gia · Được mời · Ngân sách · Thực chi · Phụ trách"},
  RAW_Onboard:{n:"RAW_Onboard",l:"Danh sách onboard",m:"HRM6",url:"",c:"Mã NV · Họ tên · Vị trí · Phòng ban · Ngày vào · Nguồn · Culture Buddy · D30 · D60 · D90 · Kết quả"},
@@ -275,7 +276,7 @@ const MODULES=[
  {id:"HOME",code:"—",title:"Tổng quan (HRM1 → HRM8)",src:[]},
  {id:"HRM1",code:"HRM1",title:"Báo cáo tuyển dụng",src:["RAW_TuyenDung","RAW_DeXuatTD","RAW_SLA_TD"]},
  {id:"HRM2",code:"HRM2",title:"Chấm công & Phép",src:["RAW_ChamCong_T1","RAW_ChamCong_T2","RAW_ChamCong_T3","RAW_ChamCong_T4","RAW_ChamCong_T5","RAW_ChamCong_T6","RAW_Phep","DM_NhanSu"]},
- {id:"HRM3",code:"HRM3",title:"Payroll & C&B",src:["RAW_Luong","DM_NhanSu","DM_Grade"]},
+ {id:"HRM3",code:"HRM3",title:"Payroll & C&B",src:["RAW_LuongThang","DM_NhanSu","RAW_Luong","DM_Grade"]},
  {id:"HRM4",code:"HRM4",title:"Chi phí vận hành VP",src:["RAW_ChiPhiVP"]},
  {id:"HRM5",code:"HRM5",title:"Chi phí truyền thông NB",src:["RAW_ChiPhiTT"]},
  {id:"HRM6",code:"HRM6",title:"Tình hình nhân sự",src:["DM_NhanSu","RAW_Onboard","RAW_Offboard","RAW_HoSo"]},
@@ -558,112 +559,113 @@ REP.HRM2={
 /* ---------------- HRM3 ---------------- */
 REP.HRM3={
  title:"Báo cáo Payroll & C&B",
- sub:"Quỹ lương kỳ, cơ cấu lương 2P, mức độ đạt P2 và chi phí nhân sự trên doanh thu.",
- meta:{cycle:"Tháng",close:"31/07/2026",issue:"08/08/2026",ver:"1.4",
+ sub:"Quỹ lương 12 tháng — số đã chốt tới tháng gần nhất và phần dự trù cho các tháng còn lại.",
+ meta:{cycle:"Tháng",close:"31/07/2026",issue:"08/08/2026",ver:"2.0",
    by:"Lã Thị Kiều Trang",byRole:"Chuyên viên C&B · PNS",
    chk:"Nguyễn Thị Hạnh",chkRole:"Kế toán thanh toán · PKT",
    apv:"Hoàng Thị Như Quỳnh",apvRole:"Quản trị Khối BO"},
  summary:[
-  "Quỹ lương kỳ đạt <b>1.952 triệu đồng</b>, tăng 0,7% so kỳ trước, chủ yếu do 12 nhân sự onboard mới.",
-  "Cơ cấu 2P giữ đúng thiết kế: P1 chiếm 80%, P2 chiếm 20% chia đều cho hiệu quả vận hành và chất lượng báo cáo.",
-  "Chỉ <b>71% nhân sự đạt đủ P2</b>, thấp hơn mục tiêu 85%. Phần bị trừ tập trung ở cấu phần báo cáo chứ không phải vận hành.",
-  "Chi phí nhân sự trên doanh thu ở mức 18,4%, vẫn trong ngưỡng kiểm soát 20% của BOD."],
+  "Số liệu đọc thẳng từ tab <b>DATA 2026</b>. Các tháng đã chốt hiện cột đậm, các tháng dự trù hiện cột nhạt — mốc phân chia lấy theo nhãn \"Dự kiến\" đặt ngay trên cột tháng trong sheet, không gõ cứng trong hệ thống.",
+  "Quỹ lương tháng chốt gần nhất <b>1.198 triệu đồng</b>, giảm 9,9% so tháng liền trước và thấp hơn tháng 1 tới <b>22,4%</b>. Mức giảm đi cùng số nhân sự hưởng lương rút từ 159 xuống 126 người.",
+  "Luỹ kế đã chốt <b>9.555 triệu</b>, phần dự trù còn lại 5.308 triệu, cả năm dự kiến <b>14.863 triệu đồng</b>.",
+  "Lương bình quân đầu người dao động hẹp quanh 9,2 – 9,9 triệu suốt các tháng đã chốt, cho thấy quỹ lương giảm là do giảm quân số chứ không phải cắt mức chi trả."],
  actions:[
-  ['6 hồ sơ bị chặn chi do chưa xác nhận công tại HRM2. Cần xử lý trước ngày 10/08 để kịp kỳ chi lương ngày 12.','t-hi'],
-  ['Tỷ lệ đạt P2 báo cáo chỉ 71%. Đề nghị rà lại deadline nộp báo cáo của từng vị trí — có khả năng deadline hiện tại không khả thi chứ không phải nhân sự chây ì.','t-hi'],
-  ['Compa-ratio bình quân 0,97 cho thấy mặt bằng lương đang thấp hơn điểm giữa dải. Cần đưa vào kỳ rà soát thang bảng lương Q3.','t-md']],
+  ['Quỹ lương dự trù T8–T12 đang giữ gần như phẳng ở mức 1.018 – 1.117 triệu. Cần rà lại theo kế hoạch tuyển và kế hoạch nghỉ để con số dự trù bám sát thực tế hơn.','t-hi'],
+  ['91 nhân sự có lương tháng 1 nhưng không còn trên bảng lương ở tháng chốt. Đề nghị đối chiếu với danh sách nghỉ việc của HRM6 để chắc không sót trường hợp nào chưa chốt thủ tục.','t-hi'],
+  ['Quỹ lương BOD chiếm 16,8% toàn bộ chi phí lương tháng. Nên đưa vào kỳ soát xét cơ cấu chi phí quản lý cùng BOD.','t-md']],
  kpis:[
-  {k:"Tổng quỹ lương kỳ",u:"triệu",cur:1952,prev:1938,tgt:2000,dir:-1,p:0,f:v=>vnd(v),sp:[1861,1890,1904,1921,1938,1952]},
-  {k:"Lương bình quân đầu người",u:"triệu",cur:13.19,prev:13.10,tgt:13.0,dir:1,p:2,sp:[12.8,12.9,13.0,13.0,13.1,13.2]},
-  {k:"Tỷ trọng P1 cố định",d:"Theo thiết kế lương 2P",u:"%",cur:80.0,prev:80.0,tgt:80,dir:1,p:0,sp:[80,80,80,80,80,80]},
-  {k:"Tổng phụ cấp và thưởng",u:"triệu",cur:148,prev:145,tgt:150,dir:-1,p:0,f:v=>vnd(v),sp:[132,136,139,142,145,148]},
-  {k:"Tỷ lệ nhân sự đạt đủ P2",u:"%",cur:71.0,prev:68.0,tgt:85,dir:1,p:0,sp:[59,62,65,66,68,71]},
-  {k:"Tỷ lệ nhân sự đã tăng lương",u:"%",cur:58.1,prev:55.4,tgt:60,dir:1,sp:[46,49,52,54,55,58]},
-  {k:"Mức tăng lương bình quân",d:"So lương khởi điểm",u:"%",cur:18.6,prev:17.9,tgt:15,dir:1,sp:[14,15,16,17,18,19]},
-  {k:"Chưa tăng lương trên 12 tháng",u:"người",cur:14,prev:17,tgt:0,dir:-1,p:0,sp:[24,22,20,19,17,14]},
-  {k:"Nhân sự lệch dải lương",d:"Ngoài dải Level đang xếp",u:"người",cur:5,prev:7,tgt:0,dir:-1,p:0,sp:[11,10,9,8,7,5]},
-  {k:"Chi phí nhân sự trên doanh thu",u:"%",cur:18.4,prev:18.9,tgt:20.0,dir:-1,sp:[20.1,19.7,19.4,19.1,18.9,18.4]}],
+  {k:"Quỹ lương tháng gần nhất",d:"Tháng chốt số gần nhất",u:"triệu",cur:1198,prev:1331,tgt:1250,dir:-1,p:0,sp:[1544,1491,1387,1299,1305,1331,1198]},
+  {k:"Lương bình quân đầu người",u:"triệu",cur:9.51,prev:9.24,tgt:10,dir:1,p:2,sp:[9.71,9.68,9.43,9.48,9.89,9.24,9.51]},
+  {k:"Nhân sự hưởng lương",u:"người",cur:126,prev:144,tgt:130,dir:1,p:0,sp:[159,154,147,137,132,144,126]},
+  {k:"Biến động quỹ lương",d:"So với tháng chốt liền trước",u:"%",cur:-9.9,prev:1.9,tgt:0,dir:-1,sp:[-3.5,-7,-6.3,0.5,1.9,-9.9]},
+  {k:"Quỹ lương luỹ kế đã chốt",d:"Cộng dồn các tháng đã chốt số",u:"triệu",cur:9555,prev:8357,tgt:9600,dir:-1,p:0,sp:[1544,3035,4422,5721,7026,8357,9555]},
+  {k:"Quỹ lương dự trù còn lại",d:"Các tháng chưa chốt số",u:"triệu",cur:5308,prev:5308,tgt:5000,dir:-1,p:0,sp:[5308,5308,5308,5308,5308,5308]},
+  {k:"Tổng quỹ lương cả năm",d:"Đã chốt cộng dự trù",u:"triệu",cur:14863,prev:14863,tgt:15000,dir:-1,p:0,sp:[14863,14863,14863,14863,14863,14863]},
+  {k:"Quỹ lương bình quân tháng",d:"Bình quân các tháng đã chốt",u:"triệu",cur:1365,prev:1392,tgt:1300,dir:-1,p:0,sp:[1544,1518,1474,1430,1406,1392,1365]},
+  {k:"Tỷ trọng quỹ lương BOD",u:"%",cur:16.8,prev:16.2,tgt:15,dir:-1,sp:[15,15.4,15.9,16,16.1,16.2,16.8]},
+  {k:"Phòng chi lương cao nhất",u:"triệu",cur:201,prev:198,tgt:200,dir:-1,p:0,sp:[190,193,195,196,197,198,201]},
+  {k:"Giảm quỹ lương so tháng 1",u:"%",cur:22.4,prev:13.8,tgt:10,dir:1,sp:[0,3.5,10.2,15.9,15.5,13.8,22.4]},
+  {k:"Rời bảng lương từ đầu năm",d:"Có lương T1 nhưng không còn ở tháng chốt",u:"người",cur:58,prev:52,tgt:40,dir:-1,p:0,sp:[12,21,30,38,45,52,58]}],
  charts:[
-  {id:"c1",t:"Quỹ lương P1 – P2 theo phòng ban",h:"triệu đồng",cls:"tall",span:"g21",
-   f:()=>{let ph=[["Maverick",180,42],["HQS200",165,38],["VX101",150,35]];
-     if(HRon()){const m={};HRx().active().forEach(r=>{const k=r.phong;m[k]=m[k]||[0,0];m[k][0]+=r.p1||0;m[k][1]+=r.p2||0});
-       ph=Object.entries(m).map(([k,v])=>[k,v[0]/1e6,v[1]/1e6]).sort((a,b)=>(b[1]+b[2])-(a[1]+a[2])).slice(0,12)}
-     mk("c1","bar",{labels:ph.map(x=>x[0]),datasets:[
-       {label:"P1 cố định",data:ph.map(x=>r1(x[1],1)),backgroundColor:C.navy,borderRadius:2,maxBarThickness:26},
-       {label:"P2 hiệu suất",data:ph.map(x=>r1(x[2],1)),backgroundColor:C.green,borderRadius:2,maxBarThickness:26}]},
-       {plugins:{legend:{display:true,position:"bottom"}},scales:{x:Object.assign({stacked:true},AX.x),y:Object.assign({stacked:true},AX.y)}})}},
-  {id:"c2",t:"Cơ cấu chi phí lương",h:"triệu đồng",
-   f:()=>{let e=[["P1 cố định",1560],["P2 hiệu suất",392],["Phụ cấp và thưởng",148]];
-     if(HRon()){const a=HRx().active();
-       e=[["P1 cố định",a.reduce((s,r)=>s+(r.p1||0),0)/1e6],["P2 hiệu suất",a.reduce((s,r)=>s+(r.p2||0),0)/1e6],
-          ["Phụ cấp và thưởng",a.reduce((s,r)=>s+(r.pc||0),0)/1e6]]}
-     mk("c2","doughnut",{labels:lab(e),datasets:[{data:e.map(x=>r1(x[1],1)),backgroundColor:[C.navy,C.green,C.gold],borderWidth:0,hoverOffset:6}]},
+  {id:"c1",t:"Quỹ lương 12 tháng",h:"triệu đồng · cột nhạt là tháng dự trù",cls:"tall",span:"g21",
+   f:()=>{const q=LGon()?LGx().quyLuongThang()
+       :[1544,1491,1387,1299,1305,1331,1198,1117,1095,1018,1039,1039].map((v,i)=>({nhan:"T"+(i+1),tong:v*1e6,soNguoi:150-i*3,duTru:i>=7}));
+     mk("c1","bar",{labels:q.map(x=>x.nhan),datasets:[
+       {label:"Đã chốt",data:q.map(x=>x.duTru?null:+(x.tong/1e6).toFixed(0)),backgroundColor:C.navy,borderRadius:2,maxBarThickness:34},
+       {label:"Dự trù",data:q.map(x=>x.duTru?+(x.tong/1e6).toFixed(0):null),backgroundColor:C.steel,borderRadius:2,maxBarThickness:34},
+       {label:"Nhân sự hưởng lương",type:"line",data:q.map(x=>x.soNguoi),borderColor:C.gold,borderWidth:2.6,
+        pointRadius:3,pointBackgroundColor:C.gold,tension:.35,yAxisID:"y1"}]},
+       {plugins:{legend:{display:true,position:"bottom"}},
+        scales:{x:AX.x,y:AX.y,y1:{position:"right",grid:{display:false},border:{display:false}}}})}},
+  {id:"c2",t:"Quỹ lương theo Phòng ban",h:"triệu đồng · tháng chốt gần nhất",cls:"tall",
+   f:()=>{const e=LGon()?LGx().luongTheo(r=>r.phong,LGx().thangChot(),12).map(([k,v])=>[k,+(v/1e6).toFixed(1)])
+       :[["BOD",201],["Phòng Công nghệ",170],["HQS200",166]];
+     mk("c2","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}},
+  {id:"c3",t:"Quỹ lương theo Cấp bậc",h:"triệu đồng",span:"g3",
+   f:()=>{const e=LGon()?LGx().luongTheo(r=>r.cap,LGx().thangChot(),7).map(([k,v])=>[k,+(v/1e6).toFixed(1)])
+       :[["Nhân viên",608],["BOD",201],["Thực tập sinh",95]];
+     mk("c3","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
        {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
-  {id:"c3",t:"Dải lương theo Level",h:"triệu đồng · thấp nhất – trung vị – cao nhất",cls:"tall",span:"g21",
-   f:()=>{let d=[{level:"G1",min:8,mid:9.5,max:11},{level:"G2",min:10,mid:12,max:14}];
-     if(HRon())d=HRx().dailuong();
-     mk("c3","bar",{labels:d.map(x=>x.level),datasets:[
-       {label:"Thấp nhất",data:d.map(x=>r1(x.min/1e6||x.min,1)),backgroundColor:C.light,borderRadius:2,maxBarThickness:20},
-       {label:"Trung vị",data:d.map(x=>r1(x.mid/1e6||x.mid,1)),backgroundColor:C.navy,borderRadius:2,maxBarThickness:20},
-       {label:"Cao nhất",data:d.map(x=>r1(x.max/1e6||x.max,1)),backgroundColor:C.navy2,borderRadius:2,maxBarThickness:20}]},
-       {plugins:{legend:{display:true,position:"bottom"}}})}},
-  {id:"c4",t:"Lương bình quân theo phòng ban",h:"triệu đồng",
-   f:()=>{let e=[["BOD",38],["Công nghệ",19],["Kinh doanh",13]];
-     if(HRon()){const m={};HRx().active().filter(r=>r.luong>0).forEach(r=>{(m[r.phong]=m[r.phong]||[]).push(r.luong)});
-       e=Object.entries(m).map(([k,v])=>[k,v.reduce((a,b)=>a+b,0)/v.length/1e6]).sort((a,b)=>b[1]-a[1]).slice(0,12)}
-     mk("c4","bar",barSet(lab(e),e.map(x=>r1(x[1],1)),C.navy2),{indexAxis:"y",scales:AXH})}},
-  {id:"c5",t:"Phân bố mức lương",h:"người",span:"g3",
-   f:()=>{let e=[["Dưới 8tr",22],["8 – 12tr",54],["12 – 18tr",41],["18 – 25tr",19],["Trên 25tr",12]];
-     if(HRon()){const b={"Dưới 8tr":0,"8 – 12tr":0,"12 – 18tr":0,"18 – 25tr":0,"Trên 25tr":0};
-       HRx().active().filter(r=>r.luong>0).forEach(r=>{const v=r.luong/1e6;
-         if(v<8)b["Dưới 8tr"]++;else if(v<12)b["8 – 12tr"]++;else if(v<18)b["12 – 18tr"]++;else if(v<25)b["18 – 25tr"]++;else b["Trên 25tr"]++});
-       e=Object.entries(b)}
-     mk("c5","bar",barSet(lab(e),val(e),C.navy),{})}},
-  {id:"c6",t:"Cơ cấu phụ cấp và thưởng",h:"triệu đồng",
-   f:()=>{let e=[["Chuyên cần",42],["Trách nhiệm",38],["Tiền ăn",44],["Thiết bị",12],["Thưởng chuyên cần",12]];
-     if(HRon()){const a=HRx().active();
-       e=[["Lương chuyên cần",a.reduce((s,r)=>s+r.lcc,0)/1e6],["Phụ cấp trách nhiệm",a.reduce((s,r)=>s+r.pctn,0)/1e6],
-          ["Tiền ăn",a.reduce((s,r)=>s+r.an,0)/1e6],["Phụ cấp thiết bị",a.reduce((s,r)=>s+r.pctb,0)/1e6],
-          ["Thưởng chuyên cần",a.reduce((s,r)=>s+r.tcc,0)/1e6]].filter(x=>x[1]>0)}
-     mk("c6","doughnut",{labels:lab(e),datasets:[{data:e.map(x=>r1(x[1],1)),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
-       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
-  {id:"c7",t:"Số lần tăng lương của đội ngũ",h:"người",
-   f:()=>{let e=[["Chưa tăng",62],["1 lần",44],["2 lần",25],["3 lần trở lên",17]];
-     if(HRon()){const b={"Chưa tăng":0,"1 lần":0,"2 lần":0,"3 lần trở lên":0};
-       HRx().active().forEach(r=>{const n=r.tang.length;b[n===0?"Chưa tăng":n===1?"1 lần":n===2?"2 lần":"3 lần trở lên"]++});
-       e=Object.entries(b)}
-     mk("c7","bar",barSet(lab(e),val(e),C.amber),{})}}],
+  {id:"c4",t:"Lương bình quân theo tháng",h:"triệu đồng / người",
+   f:()=>{const q=LGon()?LGx().quyLuongThang():[9.7,9.7,9.4,9.5,9.9,9.2,9.5,9.7,9.6,8.9,9,9].map((v,i)=>({nhan:"T"+(i+1),bq:v*1e6}));
+     mk("c4","bar",barSet(q.map(x=>x.nhan),q.map(x=>+(x.bq/1e6).toFixed(2)),C.green),{})}},
+  {id:"c5",t:"Phân bố mức lương",h:"người · tháng chốt gần nhất",
+   f:()=>{const t=LGon()?LGx().thangChot():7;
+     const ds=LGon()?LGx().rows().map(r=>r.thang[t]).filter(v=>v>0):[];
+     const b={"Dưới 5 tr":0,"5 – 10 tr":0,"10 – 20 tr":0,"20 – 40 tr":0,"Trên 40 tr":0};
+     (ds.length?ds:[4e6,8e6,8e6,15e6,25e6,50e6]).forEach(v=>{const m=v/1e6;
+       if(m<5)b["Dưới 5 tr"]++;else if(m<10)b["5 – 10 tr"]++;else if(m<20)b["10 – 20 tr"]++;
+       else if(m<40)b["20 – 40 tr"]++;else b["Trên 40 tr"]++});
+     const e=Object.entries(b); mk("c5","bar",barSet(lab(e),val(e),C.light),{})}},
+  {id:"c6",t:"Chi phí lương theo Vị trí",h:"triệu đồng · 10 vị trí tốn nhất",cls:"tall",span:"g21",
+   f:()=>{const e=LGon()?LGx().luongTheo(r=>r.vt,LGx().thangChot(),10).map(([k,v])=>[k,+(v/1e6).toFixed(1)])
+       :[["Nhân viên phát triển kinh doanh",120],["Thực tập sinh Kinh doanh",95]];
+     mk("c6","bar",barSet(lab(e),val(e),C.navy),{indexAxis:"y",scales:AXH})}},
+  {id:"c7",t:"Đã chốt và dự trù",h:"triệu đồng · cả năm",
+   f:()=>{const t=LGon()?LGx().tongLuongNam():{chot:9555e6,duTru:5308e6};
+     const e=[["Đã chốt",+(t.chot/1e6).toFixed(0)],["Dự trù",+(t.duTru/1e6).toFixed(0)]];
+     mk("c7","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.navy,C.steel],borderWidth:0,hoverOffset:6}]},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}}],
  tables:[
-  {id:"t3",t:"Bảng lương chi tiết theo nhân sự",
-   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Level",a:"c"},{t:"P1",a:"n"},{t:"P2",a:"n"},{t:"Phụ cấp",a:"n"},{t:"Tổng",a:"n"}],
-   groups:[{t:"Định danh",s:4},{t:"Cơ cấu lương (đồng)",s:4}],
-   rows:()=>{if(!HRon())return [["00083","Hoàng Thị Như Quỳnh","BOD","G7","32.000.000","8.000.000","2.000.000","42.000.000"]];
-     return HRx().active().filter(r=>r.luong>0).sort((a,b)=>b.luong-a.luong).slice(0,300)
-       .map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,r.level,vnd(r.p1),vnd(r.p2),vnd(r.pc),`<b>${vnd(r.luong)}</b>`])},
-   total:rw=>["TỔNG","—","—","—","—","—","—",`${rw.length} nhân sự`]},
-  {id:"t3b",t:"Dải lương theo Level",
-   cols:[{t:"Level"},{t:"Số người",a:"n"},{t:"Thấp nhất",a:"n"},{t:"Trung vị",a:"n"},{t:"Cao nhất",a:"n"},{t:"Bình quân",a:"n"}],
-   rows:()=>{const d=HRon()?HRx().dailuong():[{level:"G3",n:24,min:9e6,mid:12e6,max:16e6,bq:12.4e6}];
-     return d.map(x=>[`<b>${x.level}</b>`,x.n,vnd(x.min),vnd(x.mid),vnd(x.max),vnd(x.bq)])}},
-  {id:"t3c",t:"Nhân sự lệch dải lương của Level",
-   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Level",a:"c"},{t:"Lương",a:"n"},{t:"Trạng thái",a:"c"}],
-   rows:()=>{if(!HRon())return [];
-     const b=HRx().dailuong();
-     return HRx().active().filter(r=>r.luong>0).map(r=>{const x=b.find(y=>y.level===r.level);
-       if(!x||x.n<3)return null;
-       if(r.luong<x.min*1.0001&&r.luong<x.mid*0.7)return [r.ma,`<b>${r.ten}</b>`,r.phong,r.level,vnd(r.luong),'<span class="pill p-b">Dưới dải</span>'];
-       if(r.luong>x.mid*1.6)return [r.ma,`<b>${r.ten}</b>`,r.phong,r.level,vnd(r.luong),'<span class="pill p-w">Trên dải</span>'];
-       return null}).filter(Boolean).slice(0,200)}},
-  {id:"t3d",t:"Nhân sự trên 12 tháng chưa tăng lương",
-   cols:[{t:"Mã NV"},{t:"Họ và tên"},{t:"Phòng ban"},{t:"Ngày vào",a:"c"},{t:"Thâm niên (tháng)",a:"n"},{t:"Lương hiện tại",a:"n"}],
-   rows:()=>{if(!HRon())return [];
-     return HRx().tangLuong().chuaTang.sort((a,b)=>b.tn-a.tn).slice(0,200)
-       .map(r=>[r.ma,`<b>${r.ten}</b>`,r.phong,dmy(r.vao),`<span class="pill ${r.tn>=24?'p-b':'p-w'}">${r.tn}</span>`,vnd(r.luong)])}}],
- defs:[["Lương 2P","P1 là phần cố định theo vị trí, chiếm 80%. P2 là phần biến động 20%, gồm 10% hiệu quả vận hành và 10% chất lượng báo cáo, chi trả theo tháng."],
-   ["Compa-ratio","Lương thực tế chia cho điểm giữa dải lương của Grade tương ứng. Bằng 1,00 nghĩa là đúng điểm giữa."],
-   ["Đạt đủ P2","Nhân sự nhận trọn 20% phần biến động, không bị trừ ở cả hai cấu phần."],
-   ["Chặn chi","Hồ sơ chưa đủ điều kiện chi lương do vướng bước xác nhận công tại HRM2."]],
- note:"Điểm KETRAPHA đánh giá năm không được tính vào P2 tháng. P2 trả cho mức độ tuân thủ và đều đặn; KETRAPHA trả cho mức xuất sắc và đà tăng trưởng. Hai lớp không chồng lấn."
+  {id:"t3",t:"Quỹ lương theo tháng",
+   cols:[{t:"Tháng"},{t:"Trạng thái",a:"c"},{t:"Quỹ lương (triệu)",a:"n"},{t:"Nhân sự",a:"n"},
+         {t:"Bình quân (triệu)",a:"n"},{t:"So tháng trước",a:"n"}],
+   rows:()=>{if(!LGon())return [["Tháng 7",'<span class="pill p-ok">Đã chốt</span>',"1.198","126","9,51","−9,9%"]];
+     const q=LGx().quyLuongThang();
+     return q.map((x,k)=>{const tr=k>0?q[k-1]:null;
+       const d=tr&&tr.tong?(x.tong-tr.tong)/tr.tong*100:null;
+       return [`Tháng ${x.thang}`,
+         x.duTru?'<span class="pill p-w">Dự trù</span>':'<span class="pill p-ok">Đã chốt</span>',
+         `<b>${dec(x.tong/1e6,0)}</b>`,dec(x.soNguoi,0),dec(x.bq/1e6,2),
+         d==null?"—":`<span class="dpill ${d>0?'dn':d<0?'up':'fl'}">${d>0?'↑':d<0?'↓':'–'} ${dec(Math.abs(d),1)}%</span>`]})},
+   total:()=>{if(!LGon())return null;const t=LGx().tongLuongNam();
+     return ["<b>Cả năm</b>","",`<b>${dec(t.ca/1e6,0)}</b>`,"","",""]}},
+  {id:"t3b",t:"Quỹ lương theo Phòng ban qua các tháng",
+   cols:[{t:"Phòng ban"},{t:"Tháng chốt (triệu)",a:"n"},{t:"Luỹ kế đã chốt (triệu)",a:"n"},
+         {t:"Dự trù còn lại (triệu)",a:"n"},{t:"Cả năm (triệu)",a:"n"}],
+   rows:()=>{if(!LGon())return [["BOD","201","1.407","1.005","2.412"]];
+     const G=LGx(),ct=G.thangChot(),ds=G.rows(),m={};
+     ds.forEach(r=>{const k=r.phong||"Chưa rõ";m[k]=m[k]||{chot:0,duTru:0,nay:0};
+       for(let t=1;t<=12;t++){const v=r.thang[t];if(!(v>0))continue;
+         if(t<=ct)m[k].chot+=v;else m[k].duTru+=v; if(t===ct)m[k].nay+=v}});
+     return Object.entries(m).sort((a,b)=>b[1].chot-a[1].chot)
+       .map(([k,v])=>[`<b>${escHtml(k)}</b>`,dec(v.nay/1e6,0),dec(v.chot/1e6,0),dec(v.duTru/1e6,0),dec((v.chot+v.duTru)/1e6,0)])}},
+  {id:"t3c",t:"Bảng lương chi tiết theo nhân sự",
+   cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Phòng ban"},{t:"Cấp bậc"},{t:"Vị trí"},
+         {t:"Tháng chốt (triệu)",a:"n"},{t:"Luỹ kế đã chốt (triệu)",a:"n"}],
+   rows:()=>{if(!LGon())return [["00053","Đặng Văn Trường","Phòng Công nghệ","Deputy Manager","Phó phòng","30,96","224"]];
+     const G=LGx(),ct=G.thangChot();
+     return G.rows().map(r=>{let lk=0;for(let t=1;t<=ct;t++)if(r.thang[t]>0)lk+=r.thang[t];
+       return {r,nay:r.thang[ct]||0,lk}})
+       .sort((a,b)=>b.lk-a.lk).slice(0,300)
+       .map(x=>[x.r.ma,`<b>${escHtml(x.r.ten)}</b>`,escHtml(x.r.phong),escHtml(x.r.cap),escHtml(x.r.vt),
+         x.nay?dec(x.nay/1e6,2):'<span class="pill p-n">Nghỉ</span>',dec(x.lk/1e6,0)])}}],
+ defs:[["Tháng đã chốt","Tháng đã khoá số chi lương thực tế. Hệ thống nhận ra bằng nhãn \"Dự kiến\" trong sheet: mọi tháng đứng trước cột mang nhãn đó đều là số đã chốt."],
+   ["Tháng dự trù","Tháng chưa chi, số trên sheet là dự kiến phục vụ lập kế hoạch ngân sách. Trên biểu đồ hiện bằng cột màu nhạt."],
+   ["Nhân sự hưởng lương","Số người có phát sinh tiền lương trong tháng đó. Ô ghi \"Nghỉ\" hoặc để trống đều không tính."],
+   ["Luỹ kế đã chốt","Cộng dồn quỹ lương của toàn bộ các tháng đã chốt tính từ tháng 1."],
+   ["Rời bảng lương","Nhân sự có lương ở tháng 1 nhưng tới tháng chốt gần nhất thì không còn phát sinh lương."]],
+ note:"Quỹ lương ở báo cáo này là tiền thực chi từng tháng theo tab DATA 2026, khác với cột \"Lương hiện tại\" của sheet nhân sự — cột đó chỉ ghi mức lương đang áp dụng nên không dùng để cộng ra chi phí kỳ."
 };
 
 /* ---------------- HRM4 ---------------- */
@@ -1194,6 +1196,8 @@ REP.HRM8={
 
 /* ---- Cầu nối dữ liệu nhân sự thật ---- */
 const HRon=()=>!!(window.HQLive&&HQLive.HR&&HQLive.HR.has());
+const LGon=()=>!!(window.HQLive&&HQLive.LG&&HQLive.LG.has());
+const LGx=()=>HQLive.LG;
 const HRx=()=>HQLive.HR;
 /* ---- Cầu nối dữ liệu tuyển dụng thật (HRM1) ---- */
 const TDx =()=>HQLive.TD;
@@ -1341,7 +1345,8 @@ function mast(m,r){
 /* Một khối cảnh báo gọn cho mọi lỗi dữ liệu của sheet — trước đây mỗi loại
    một dải riêng, ba dải chiếm gần 300px trước khi tới thẻ chỉ số. */
 function canhBaoThieuNgayNghi(m){
-  if(!m.src||!m.src.includes('DM_NhanSu')||!HRon()) return '';
+  /* Chỉ hiện ở HRM6 — đây là cảnh báo về Headcount, không liên quan báo cáo khác */
+  if(m.id!=='HRM6'||!HRon()) return '';
   const H=HRx(), y=[];
   const ten=(ds,n)=>ds.slice(0,n).map(x=>escHtml(x.ten||x.ma||'(chưa có tên)')).join(', ')
     +(ds.length>n?` +${ds.length-n}`:'');
@@ -1361,7 +1366,7 @@ function canhBaoThieuNgayNghi(m){
 /* Bảng đối chiếu: dẫn từ con số lọc tay trên sheet sang con số của báo cáo,
    để nhìn phát ra ngay lệch ở đâu thay vì phải dò từng dòng. */
 function bangDoiChieu(m){
-  if(!m.src||!m.src.includes('DM_NhanSu')||!HRon()||!HRx().doiChieuHeadcount) return '';
+  if(m.id!=='HRM6'||!HRon()||!HRx().doiChieuHeadcount) return '';
   const d=HRx().doiChieuHeadcount(RANGE&&RANGE.to?new Date(RANGE.to):null);
   const dong=(nhan,so,cls)=>`<tr class="${cls||''}"><td>${nhan}</td><td class="n">${so}</td></tr>`;
   const buoc=[
