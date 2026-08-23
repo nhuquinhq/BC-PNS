@@ -587,7 +587,7 @@ REP.HRM3={
   {k:"Giảm quỹ lương so tháng 1",u:"%",cur:22.4,prev:13.8,tgt:10,dir:1,sp:[0,3.5,10.2,15.9,15.5,13.8,22.4]},
   {k:"Rời bảng lương từ đầu năm",d:"Có lương T1 nhưng không còn ở tháng chốt",u:"người",cur:58,prev:52,tgt:40,dir:-1,p:0,sp:[12,21,30,38,45,52,58]}],
  charts:[
-  {id:"c1",t:"Quỹ lương 12 tháng",h:"triệu đồng · cột nhạt là tháng dự trù",cls:"tall",span:"g21",
+  {id:"c1",t:"Tổng quỹ lương 2026",h:"triệu đồng · cột nhạt là tháng dự trù",cls:"tall",span:"g21",
    f:()=>{const q=LGon()?LGx().quyLuongThang()
        :[1544,1491,1387,1299,1305,1331,1198,1117,1095,1018,1039,1039].map((v,i)=>({nhan:"T"+(i+1),tong:v*1e6,soNguoi:150-i*3,duTru:i>=7}));
      mk("c1","bar",{labels:q.map(x=>x.nhan),datasets:[
@@ -625,7 +625,24 @@ REP.HRM3={
    f:()=>{const t=LGon()?LGx().tongLuongNam():{chot:9555e6,duTru:5308e6};
      const e=[["Đã chốt",+(t.chot/1e6).toFixed(0)],["Dự trù",+(t.duTru/1e6).toFixed(0)]];
      mk("c7","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:[C.navy,C.steel],borderWidth:0,hoverOffset:6}]},
-       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}}],
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"c8",t:"Quỹ lương theo Khối",h:"triệu đồng · tháng chốt gần nhất",
+   f:()=>{const e=LGon()?LGx().luongTheoKhoi(LGx().thangChot()).map(([k,v])=>[k,+(v/1e6).toFixed(1)])
+       :[["BO",385],["Kinh doanh Quốc tế",366],["Kinh doanh Việt Nam",245],["BOD",199]];
+     mk("c8","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"c9",t:"Quỹ lương các Team Kinh doanh",h:"triệu đồng · tháng chốt gần nhất",cls:"tall",span:"g21",
+   f:()=>{const e=LGon()?LGx().luongTeamKinhDoanh(LGx().thangChot(),12).map(([k,v])=>[k,+(v/1e6).toFixed(1)])
+       :[["HQS200",166],["WGG100 Team",83],["VX101 Team",80],["A10GG",77]];
+     mk("c9","bar",barSet(lab(e),val(e),C.navy),{indexAxis:"y",scales:AXH})}},
+  {id:"c10",t:"Team Kinh doanh: đã chốt và dự trù",h:"triệu đồng · cả năm",cls:"tall",
+   f:()=>{const d=LGon()?LGx().teamKinhDoanhThang().slice(0,10)
+       :[{ten:"HQS200",chot:884e6,duTru:644e6},{ten:"VX101 Team",chot:782e6,duTru:374e6}];
+     mk("c10","bar",{labels:d.map(x=>x.ten),datasets:[
+       {label:"Đã chốt",data:d.map(x=>+(x.chot/1e6).toFixed(0)),backgroundColor:C.navy,borderRadius:2},
+       {label:"Dự trù",data:d.map(x=>+(x.duTru/1e6).toFixed(0)),backgroundColor:C.steel,borderRadius:2}]},
+       {indexAxis:"y",scales:{x:Object.assign({stacked:true},AXH.x),y:Object.assign({stacked:true},AXH.y)},
+        plugins:{legend:{display:true,position:"bottom"}}})}}],
  tables:[
   {id:"t3",t:"Quỹ lương theo tháng",
    cols:[{t:"Tháng"},{t:"Trạng thái",a:"c"},{t:"Quỹ lương (triệu)",a:"n"},{t:"Nhân sự",a:"n"},
@@ -650,6 +667,22 @@ REP.HRM3={
          if(t<=ct)m[k].chot+=v;else m[k].duTru+=v; if(t===ct)m[k].nay+=v}});
      return Object.entries(m).sort((a,b)=>b[1].chot-a[1].chot)
        .map(([k,v])=>[`<b>${escHtml(k)}</b>`,dec(v.nay/1e6,0),dec(v.chot/1e6,0),dec(v.duTru/1e6,0),dec((v.chot+v.duTru)/1e6,0)])}},
+  {id:"t3d",t:"Quỹ lương các Team Kinh doanh",
+   cols:[{t:"Team"},{t:"Nhân sự",a:"n"},{t:"Tháng chốt (triệu)",a:"n"},{t:"Luỹ kế đã chốt (triệu)",a:"n"},
+         {t:"Dự trù còn lại (triệu)",a:"n"},{t:"Cả năm (triệu)",a:"n"},{t:"% quỹ lương KD",a:"n"}],
+   rows:()=>{if(!LGon())return [["HQS200","30","166","884","644","1.528","28,5%"]];
+     const d=LGx().teamKinhDoanhThang(), ct=LGx().thangChot();
+     const tong=d.reduce((s,x)=>s+x.chot+x.duTru,0)||1;
+     return d.map(x=>[`<b>${escHtml(x.ten)}</b>`,dec(x.nguoi,0),dec((x.thang[ct]||0)/1e6,0),
+       dec(x.chot/1e6,0),dec(x.duTru/1e6,0),dec((x.chot+x.duTru)/1e6,0),
+       dec((x.chot+x.duTru)/tong*100,1)+"%"])},
+   total:()=>{if(!LGon())return null;
+     const d=LGx().teamKinhDoanhThang(), ct=LGx().thangChot();
+     const c=d.reduce((s,x)=>s+x.chot,0), t=d.reduce((s,x)=>s+x.duTru,0);
+     const n=d.reduce((s,x)=>s+(x.thang[ct]||0),0);
+     return ["<b>Tổng khối Kinh doanh</b>",`<b>${dec(d.reduce((s,x)=>s+x.nguoi,0),0)}</b>`,
+       `<b>${dec(n/1e6,0)}</b>`,`<b>${dec(c/1e6,0)}</b>`,`<b>${dec(t/1e6,0)}</b>`,
+       `<b>${dec((c+t)/1e6,0)}</b>`,"<b>100,0%</b>"]}},
   {id:"t3c",t:"Bảng lương chi tiết theo nhân sự",
    cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Phòng ban"},{t:"Cấp bậc"},{t:"Vị trí"},
          {t:"Tháng chốt (triệu)",a:"n"},{t:"Luỹ kế đã chốt (triệu)",a:"n"}],

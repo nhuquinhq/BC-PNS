@@ -1042,7 +1042,61 @@ window.HQLive = (function () {
     const duTru = q.filter(x => x.duTru).reduce((s, x) => s + x.tong, 0);
     return { chot, duTru, ca: chot + duTru, thangChot: thangChot() };
   }
-  const LG = { has: coLuong, rows: luongDS, thangChot, quyLuongThang, luongTheo, tongLuongNam };
+  /* Tab lương chỉ có Phòng ban, không có Khối. Ghép mã nhân viên sang sheet
+     nhân sự để biết ai thuộc khối Kinh doanh — hiện ghép được 100% số dòng.
+     Mã không ghép được thì suy từ tên phòng ban. */
+  let _mapKhoi = null, _mapKhoiN = -1;
+  function khoiTheoMa() {
+    const hr = hasHR() ? hrRows() : [];
+    if (_mapKhoi && _mapKhoiN === hr.length) return _mapKhoi;
+    const m = {};
+    hr.forEach(r => { const k = String(r.ma || "").trim(); if (k) m[k] = r.khoi || ""; });
+    _mapKhoi = m; _mapKhoiN = hr.length;
+    return m;
+  }
+  const TEN_TEAM_KD = /^(hqs|wgg|vx\d|a10|bd\d|maverick|all stars|ritoe|team kinh doanh)/i;
+  function khoiCua(r) {
+    const k = khoiTheoMa()[String(r.ma || "").trim()];
+    if (k) return k;
+    return TEN_TEAM_KD.test(r.phong) ? "Kinh doanh" : "Không rõ";
+  }
+  const laKinhDoanh = r => /kinh doanh|sale|business/i.test(khoiCua(r));
+
+  /* Quỹ lương của một tháng gộp theo Khối */
+  function luongTheoKhoi(t) {
+    return luongTheo(khoiCua, t);
+  }
+  /* Quỹ lương các team Kinh doanh: chỉ tính nhân sự thuộc khối Kinh doanh,
+     chia theo phòng ban / team của họ. */
+  function luongTeamKinhDoanh(t, top) {
+    const ds = luongDS().filter(laKinhDoanh), m = {};
+    ds.forEach(r => {
+      const v = r.thang[t]; if (v == null || !v) return;
+      const k = (r.phong || "Chưa rõ").trim() || "Chưa rõ";
+      m[k] = (m[k] || 0) + v;
+    });
+    let e = Object.entries(m).sort((a, b) => b[1] - a[1]);
+    if (top) e = e.slice(0, top);
+    return e;
+  }
+  /* Bảng team Kinh doanh theo từng tháng, kèm luỹ kế chốt và dự trù */
+  function teamKinhDoanhThang() {
+    const ds = luongDS().filter(laKinhDoanh), ct = thangChot(), m = {};
+    ds.forEach(r => {
+      const k = (r.phong || "Chưa rõ").trim() || "Chưa rõ";
+      const o = m[k] = m[k] || { ten: k, thang: {}, chot: 0, duTru: 0, nguoi: 0 };
+      if (r.thang[ct] > 0) o.nguoi++;
+      for (let t = 1; t <= 12; t++) {
+        const v = r.thang[t]; if (!(v > 0)) continue;
+        o.thang[t] = (o.thang[t] || 0) + v;
+        if (t <= ct) o.chot += v; else o.duTru += v;
+      }
+    });
+    return Object.values(m).sort((a, b) => b.chot - a.chot);
+  }
+
+  const LG = { has: coLuong, rows: luongDS, thangChot, quyLuongThang, luongTheo, tongLuongNam,
+               khoiCua, laKinhDoanh, luongTheoKhoi, luongTeamKinhDoanh, teamKinhDoanhThang };
 
   const TDSRC = "RAW_TuyenDung", DXSRC = "RAW_DeXuatTD", SLASRC = "RAW_SLA_TD";
   const raws = k => thoRaw[k] || [];
