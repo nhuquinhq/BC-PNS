@@ -23,7 +23,8 @@ const SOURCES={
  RAW_Offboard:{n:"RAW_Offboard",l:"Danh sách off",m:"HRM6",url:"",c:"Mã NV · Họ tên · Phòng ban · Ngày vào · Ngày nghỉ · Loại nghỉ · Lý do · Exit Interview · Bàn giao"},
  RAW_HoSo:{n:"RAW_HoSo",l:"Hồ sơ nhân sự",m:"HRM6",url:"",c:"Mã NV · CCCD · SYLL · Bằng cấp · Khám SK · HĐLĐ · Sổ BH · TK ngân hàng · MST"},
  RAW_BHXH:{n:"RAW_BHXH",l:"BHXH – BHYT – BHTN",m:"HRM7",url:"",c:"Mã NV · Số sổ · Mức lương đóng · Ngày hiệu lực · Nghiệp vụ · Trạng thái"},
- RAW_Workload:{n:"RAW_Workload",l:"Khối lượng việc & phân bổ",m:"HRM8",url:"",c:"Mã NV · Nhóm việc · Số đầu việc · Giờ/tháng · BU thụ hưởng · % phân bổ · Mã hạch toán"}
+ RAW_Workload:{n:"RAW_Workload",l:"Khối lượng việc & phân bổ",m:"HRM8",url:"",c:"Mã NV · Nhóm việc · Số đầu việc · Giờ/tháng · BU thụ hưởng · % phân bổ · Mã hạch toán"},
+ RAW_PhanBoLuong:{n:"RAW_PhanBoLuong",l:"Phân bổ quỹ lương về team",m:"HRM8",url:"",c:"Mã nhân viên · Họ tên · Phòng ban/Dự án · Cấp bậc · Chức năng · PIC · Tổng tỷ lệ · Tỷ lệ phân bổ sang từng team"}
 };
 const CFG=window.HQ_CONFIG||{};
 CFG.sheets=CFG.sheets||{};
@@ -281,7 +282,7 @@ const MODULES=[
  {id:"HRM5",code:"HRM5",title:"Chi phí truyền thông NB",src:["RAW_ChiPhiTT"]},
  {id:"HRM6",code:"HRM6",title:"Tình hình nhân sự",src:["DM_NhanSu","RAW_Onboard","RAW_Offboard","RAW_HoSo"]},
  {id:"HRM7",code:"HRM7",title:"Hợp đồng & BHXH",src:["RAW_BHXH","DM_NhanSu"]},
- {id:"HRM8",code:"HRM8",title:"Workload & Phân bổ lương",src:["RAW_Workload","RAW_Luong"]}
+ {id:"HRM8",code:"HRM8",title:"Workload & Phân bổ lương",src:["RAW_PhanBoLuong","RAW_Workload","RAW_Luong"]}
 ];
 
 /* Trạng thái phát hành (phiên làm việc) */
@@ -1161,67 +1162,80 @@ REP.HRM7={
 const ALLOC=[["Ritokey",26],["WGG",19],["A10GG",15],["HQS10000",13],["VX Team",9],["Maverick",7],["Khối BO",11]];
 REP.HRM8={
  title:"Báo cáo phân bổ khối lượng công việc và phân bổ lương",
- sub:"Mức tải theo đầu người, cơ cấu thời gian theo nhóm việc và phân bổ chi phí nhân sự về các BU.",
- meta:{cycle:"Tháng",close:"31/07/2026",issue:"08/08/2026",ver:"1.0",
+ sub:"Quỹ lương của các bộ phận BO được chia về từng team kinh doanh theo tỷ lệ phục vụ.",
+ meta:{cycle:"Tháng",close:"31/07/2026",issue:"08/08/2026",ver:"2.0",
    by:"Lã Thị Kiều Trang",byRole:"Chuyên viên C&B · PNS",
-   chk:"Nguyễn Thanh Dung",chkRole:"Giám đốc Quản trị Hiệu quả",
+   chk:"Nguyễn Thanh Dung",chkRole:"Kế toán quản trị · PKT",
    apv:"Hoàng Thị Như Quỳnh",apvRole:"Quản trị Khối BO"},
  summary:[
-  "Mức tải bình quân của khối BO đạt <b>117% mức chuẩn 176 giờ</b>. Bốn trên bảy nhân sự đang ở trạng thái quá tải.",
-  "Nhóm việc Tuyển dụng và Onboarding chiếm 26% tổng thời gian, cao nhất trong sáu nhóm việc.",
-  "Phân bổ được <b>89% quỹ lương về các BU</b>, phần giữ lại 11% là chi phí quản trị chung không quy về BU cụ thể.",
-  "Ritokey nhận phân bổ lớn nhất với 26% quỹ lương, tương ứng 507,5 triệu đồng."],
+  "Kết quả kinh doanh của HQ tính theo từng team, trong khi các bộ phận BO phục vụ chung cho nhiều team. Vì vậy quỹ lương BO được chia về team theo tỷ lệ phục vụ, để kết quả cuối cùng của mỗi team phản ánh đúng chi phí thật đã bỏ ra.",
+  "Kỳ này phân bổ <b>1.198 triệu đồng</b> về <b>9 team</b>. Chỉ 13 triệu giữ lại ở Tổng Công Ty, tức <b>98,9% quỹ lương đã về được tới team</b>.",
+  "<b>36 trên 127 nhân sự phục vụ nhiều hơn một team</b>, bình quân mỗi người gánh 2,3 team. Đây là phần chi phí dùng chung phải chia, cũng là nhóm khó quy trách nhiệm nhất khi soát xét hiệu quả.",
+  "Team HQS200 nhận nhiều nhất <b>428 triệu</b>, gấp gần ba lần mức bình quân 148 triệu mỗi team. Chức năng BD gánh 477 triệu, chiếm gần 40% toàn bộ chi phí được phân bổ."],
  actions:[
-  ['Bốn nhân sự quá tải trên 120%, trong đó NV-0311 ở mức 154%. Cần chia lại đầu việc hoặc bổ sung nhân sự trước khi rủi ro nghỉ việc hiện thực hoá.','t-hi'],
-  ['Tỷ lệ quá tải 57% của khối BO là đầu vào trực tiếp cho kế hoạch tuyển bổ sung Q3 tại HRM1. Đề nghị BOD duyệt hai vị trí.','t-hi'],
-  ['Một nhân sự dưới tải ở mức 73%. Đề nghị rà lại phạm vi công việc và bổ sung đầu việc phù hợp Grade.','t-md']],
+  ['Nhóm phục vụ từ 4 team trở lên có 35 người. Cần rà lại xem tỷ lệ phân bổ có còn đúng thực tế công việc không, vì tỷ lệ càng chia nhỏ thì sai số càng lớn khi tính kết quả từng team.','t-hi'],
+  ['13 triệu vẫn giữ ở Tổng Công Ty chưa chia về team. Nên xác định rõ đây là chi phí quản trị chung cố ý giữ lại, hay là phần chưa gán được đầu mối phục vụ.','t-md'],
+  ['Đối chiếu tổng phân bổ với quỹ lương tháng ở HRM3 để chắc không sót hoặc trùng nhân sự nào giữa hai bảng.','t-md']],
  kpis:[
-  {k:"Mức tải bình quân",d:"Trên chuẩn 176 giờ mỗi tháng",u:"%",cur:116.9,prev:112.4,tgt:100,dir:-1,sp:[104,107,109,111,112,117]},
-  {k:"Số đầu việc bình quân",u:"việc",cur:8.4,prev:7.9,tgt:8.0,dir:-1,sp:[6.8,7.1,7.4,7.7,7.9,8.4]},
-  {k:"Tỷ lệ nhân sự quá tải",d:"Trên 120% mức chuẩn",u:"%",cur:57.1,prev:42.9,tgt:10.0,dir:-1,sp:[29,29,43,43,43,57]},
-  {k:"Tỷ lệ nhân sự dưới tải",d:"Dưới 70% mức chuẩn",u:"%",cur:14.3,prev:14.3,tgt:0,dir:-1,sp:[29,14,14,14,14,14]},
-  {k:"Tỷ lệ quỹ lương phân bổ được về BU",u:"%",cur:89.0,prev:87.0,tgt:85.0,dir:1,p:0,sp:[81,83,85,86,87,89]},
-  {k:"Chi phí quản trị chung giữ tại BO",u:"triệu",cur:214.7,prev:251.9,tgt:250.0,dir:-1,sp:[318,299,278,265,252,215]}],
+  {k:"Quỹ lương đã phân bổ",d:"Tổng tiền chia về các team",u:"triệu",cur:1198,prev:1331,tgt:1250,dir:-1,p:0,sp:[1544,1491,1387,1299,1305,1331,1198]},
+  {k:"Tỷ lệ phân bổ về team",d:"Phần chia được về team kinh doanh",u:"%",cur:98.9,prev:98.2,tgt:95,dir:1,sp:[96,96.5,97,97.5,98,98.2,98.9]},
+  {k:"Giữ tại Tổng Công Ty",d:"Chi phí chung không chia về team",u:"triệu",cur:13,prev:16,tgt:20,dir:-1,p:0,sp:[22,20,19,18,17,16,13]},
+  {k:"Số team nhận phân bổ",u:"team",cur:9,prev:9,tgt:9,dir:1,p:0,sp:[9,9,9,9,9,9,9]},
+  {k:"Team nhận nhiều nhất",u:"triệu",cur:428,prev:420,tgt:400,dir:-1,p:0,sp:[390,398,405,410,415,420,428]},
+  {k:"Bình quân mỗi team",u:"triệu",cur:148,prev:152,tgt:150,dir:-1,p:0,sp:[168,163,158,154,153,152,148]},
+  {k:"Nhân sự được phân bổ",u:"người",cur:127,prev:144,tgt:130,dir:1,p:0,sp:[159,154,147,137,132,144,127]},
+  {k:"Nhân sự phục vụ nhiều team",d:"Bộ phận BO dùng chung cho nhiều team",u:"người",cur:36,prev:38,tgt:40,dir:1,p:0,sp:[42,41,40,39,38,38,36]},
+  {k:"Tỷ lệ nhân sự dùng chung",u:"%",cur:28.3,prev:26.4,tgt:30,dir:1,sp:[26,26,27,27,27,26.4,28.3]},
+  {k:"Số team bình quân mỗi người",u:"team",cur:2.4,prev:2.3,tgt:2,dir:-1,p:1,sp:[2,2.1,2.2,2.2,2.3,2.3,2.4]},
+  {k:"Bộ phận gánh chi phí lớn nhất",u:"triệu",cur:477,prev:465,tgt:450,dir:-1,p:0,sp:[430,440,448,455,460,465,477]},
+  {k:"Số bộ phận tham gia",u:"bộ phận",cur:11,prev:11,tgt:11,dir:1,p:0,sp:[11,11,11,11,11,11,11]}],
  charts:[
-  {id:"w1",t:"Mức tải theo nhân sự",h:"% so mức chuẩn 176 giờ",cls:"tall",span:"g21",
-   f:()=>{const nm=["TrangLTK","QuangLM","HạnhNTH","ĐứcTV","HươngPT","YếnVH","KhôiĐM"],ld=[118,141,111,154,99,73,122];
-     mk("w1","bar",{labels:nm,datasets:[
-       {data:ld,backgroundColor:ld.map(v=>v>120?C.red:v<70?C.amber:v>100?C.navy2:C.green),borderRadius:1},
-       {label:"Mức chuẩn",type:"line",data:nm.map(()=>100),borderColor:"#08182C",borderDash:[5,4],borderWidth:1.2,pointRadius:0}]},
-       {indexAxis:'y',scales:{x:{max:180,grid:{color:cssv("--grid")},border:{display:false}},y:{grid:{display:false},border:{display:false}}}})}},
-  {id:"w2",t:"Cơ cấu thời gian theo nhóm việc",h:"% tổng giờ",cls:"tall",
-   f:()=>mk("w2","doughnut",{labels:["Tuyển dụng & Onboarding","Chấm công – C&B","Hồ sơ – BHXH","Đào tạo & Văn hoá","Báo cáo & Dashboard","Hành chính – Vận hành"],
-     datasets:[{data:[26,22,17,14,12,9],backgroundColor:PAL,borderWidth:0}]},{cutout:"55%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})},
-  {id:"w3",t:"Tỷ lệ phân bổ quỹ lương về BU",h:"% quỹ lương kỳ",span:"g2",
-   f:()=>mk("w3","bar",{labels:ALLOC.map(x=>x[0]),datasets:[{data:ALLOC.map(x=>x[1]),backgroundColor:C.navy,borderRadius:1}]})},
-  {id:"w4",t:"Chi phí nhân sự phân bổ theo BU",h:"triệu đồng · P1 và P2",
-   f:()=>mk("w4","bar",{labels:ALLOC.map(x=>x[0]),datasets:[
-     {label:"P1 cố định",data:ALLOC.map(x=>+(1952*x[1]/100*0.8).toFixed(0)),backgroundColor:C.navy,borderRadius:1},
-     {label:"P2 biến động",data:ALLOC.map(x=>+(1952*x[1]/100*0.2).toFixed(0)),backgroundColor:C.navy2,borderRadius:1}]},
-     {plugins:{legend:{display:true,position:"bottom"}},scales:{x:{stacked:true,grid:{display:false},border:{color:"rgba(148,163,184,.28)"}},y:{stacked:true,grid:{color:cssv("--grid")},border:{display:false}}}})}],
+  {id:"w1",t:"Quỹ lương phân bổ về từng team",h:"triệu đồng · sau khi chia chi phí BO",cls:"tall",span:"g21",
+   f:()=>{const e=PBon()?PBx().theoTeam().map(([k,v])=>[k,+(v/1e6).toFixed(1)])
+       :[["Team HQS200 - BU2",428],["Team BD10F - BU1",136],["Team WGG",121],["Team HQS400",120]];
+     mk("w1","bar",barSet(lab(e),val(e),C.navy),{indexAxis:"y",scales:AXH})}},
+  {id:"w2",t:"Cơ cấu phân bổ theo team",h:"triệu đồng",cls:"tall",
+   f:()=>{const e=PBon()?PBx().theoTeam().slice(0,8).map(([k,v])=>[k,+(v/1e6).toFixed(1)])
+       :[["Team HQS200 - BU2",428],["Team BD10F - BU1",136]];
+     mk("w2","doughnut",{labels:lab(e),datasets:[{data:val(e),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},
+       {cutout:"54%",plugins:{legend:{display:true,position:"bottom"}},scales:{}})}},
+  {id:"w3",t:"Bộ phận gánh chi phí phân bổ",h:"triệu đồng · theo chức năng",cls:"tall",span:"g21",
+   f:()=>{const e=PBon()?PBx().theoBoPhan(12).map(([k,v])=>[k,+(v/1e6).toFixed(1)])
+       :[["BD",477],["BOD",201],["IT",170],["TCKT",85]];
+     mk("w3","bar",barSet(lab(e),val(e),C.navy2),{indexAxis:"y",scales:AXH})}},
+  {id:"w4",t:"Mức độ dùng chung nhân sự",h:"người · phục vụ mấy team",cls:"tall",
+   f:()=>{const e=PBon()&&PBx().phoiTeam().length?PBx().phoiTeam()
+       :[["1 team",91],["2 team",0],["3 team",1],["4 team trở lên",35]];
+     mk("w4","bar",barSet(lab(e),val(e),C.green),{})}}],
  tables:[
-  {id:"t8a",t:"Ma trận khối lượng công việc theo nhân sự",
-   cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Phòng ban"},{t:"Grade",a:"c"},{t:"Nhóm việc chính"},{t:"Số đầu việc",a:"n"},{t:"Giờ/tháng",a:"n"},{t:"Mức tải",a:"n"},{t:"Biểu diễn",a:"c"},{t:"BU thụ hưởng"},{t:"Đánh giá",a:"c"}],
-   groups:[{t:"Nhân sự",s:5},{t:"Khối lượng",s:5},{t:"Phân bổ",s:2}],
-   rows:[
-    ["NV-0142","Lã Thị Kiều Trang","Nhân sự","G4.1","Chấm công – C&B","6","109","118%",miniBar(18,60,true),"Khối BO 100%",'<span class="pill p-b">Quá tải</span>'],
-    ["NV-0087","Lương Minh Quang","Nhân sự","G3.2","Tuyển dụng & Onboarding","9","130","141%",miniBar(41,60,true),"Khối BO 60% · Ritokey 40%",'<span class="pill p-b">Quá tải</span>'],
-    ["NV-0203","Nguyễn Thị Hạnh","Kế toán","G3.1","Thanh toán – Đối soát","7","102","111%",miniBar(11,60,true),"Khối BO 100%",'<span class="pill p-w">Sát trần</span>'],
-    ["NV-0311","Trần Văn Đức","Vận hành","G2.2","Xử lý đơn – Kho số","12","142","154%",miniBar(54,60,true),"Ritokey 70% · WGG 30%",'<span class="pill p-b">Quá tải</span>'],
-    ["NV-0356","Phạm Thu Hương","Chăm sóc KH","G2.1","CSKH quốc tế","8","91","99%",miniBar(1,60),"WGG 100%",'<span class="pill p-ok">Cân bằng</span>'],
-    ["NV-0418","Vũ Hải Yến","Marketing","G3.1","Content & Truyền thông","5","67","73%",miniBar(27,60),"VX Team 100%",'<span class="pill p-w">Dưới tải</span>'],
-    ["NV-0402","Đỗ Minh Khôi","Công nghệ","G4.2","Dashboard – Tự động hoá","12","112","122%",miniBar(22,60,true),"Khối BO 50% · A10GG 50%",'<span class="pill p-b">Quá tải</span>']],
-   total:["TỔNG CỘNG","7 nhân sự","—","—","6 nhóm việc","59","753","117%","—","—","4 quá tải · 1 dưới tải"]},
-  {id:"t8b",t:"Bảng phân bổ chi phí lương về các BU",
-   cols:[{t:"BU"},{t:"% phân bổ",a:"n"},{t:"Tổng phân bổ",a:"n"},{t:"Trong đó P1",a:"n"},{t:"Trong đó P2",a:"n"},{t:"Quy đổi nhân sự",a:"c"},{t:"Mã hạch toán MISA",a:"c"}],
-   rows:ALLOC.map(([bu,p],i)=>{const amt=1952e6*p/100;
-     return [bu,p+"%",vnd(amt),vnd(amt*0.8),vnd(amt*0.2),Math.round(148*p/100)+" người","6421-"+(i+1)]}),
-   total:["TỔNG CỘNG","100%",vnd(1952e6),vnd(1561.6e6),vnd(390.4e6),"148 người","—"]}],
- defs:[["Mức tải","Số giờ làm thực tế chia cho mức chuẩn 176 giờ mỗi tháng."],
-   ["Quá tải","Mức tải trên 120%. Đây là ngưỡng cảnh báo rủi ro nghỉ việc và sai sót nghiệp vụ."],
-   ["Dưới tải","Mức tải dưới 70%, cần rà lại phạm vi công việc."],
-   ["Phân bổ về BU","Tỷ lệ thời gian nhân sự dành cho từng BU, dùng làm cơ sở phân bổ chi phí lương trên hệ thống MISA."]],
- note:"Nhóm quá tải trên 120% là đầu vào trực tiếp cho kế hoạch tuyển bổ sung tại HRM1 và cho việc chia lại đầu việc trong SOP phân công công việc."
+  {id:"t8a",t:"Quỹ lương phân bổ về từng team",
+   cols:[{t:"Team"},{t:"Quỹ lương nhận (triệu)",a:"n"},{t:"Tỷ trọng",a:"n"}],
+   rows:()=>{if(!PBon())return [["Team HQS200 - BU2","428","35,7%"]];
+     const e=PBx().theoTeam(), tong=e.reduce((s,x)=>s+x[1],0)||1;
+     return e.map(([k,v])=>[`<b>${escHtml(k)}</b>`,dec(v/1e6,1),dec(v/tong*100,1)+"%"])},
+   total:()=>{if(!PBon())return null;
+     const e=PBx().theoTeam(), tong=e.reduce((s,x)=>s+x[1],0);
+     return ["<b>Tổng</b>",`<b>${dec(tong/1e6,1)}</b>`,"<b>100,0%</b>"]}},
+  {id:"t8b",t:"Chi phí phân bổ theo bộ phận",
+   cols:[{t:"Bộ phận / chức năng"},{t:"Chi phí phân bổ (triệu)",a:"n"},{t:"Tỷ trọng",a:"n"}],
+   rows:()=>{if(!PBon())return [["BD","477","39,8%"]];
+     const e=PBx().theoBoPhan(), tong=e.reduce((s,x)=>s+x[1],0)||1;
+     return e.map(([k,v])=>[`<b>${escHtml(k)}</b>`,dec(v/1e6,1),dec(v/tong*100,1)+"%"])}},
+  {id:"t8c",t:"Chi tiết phân bổ theo từng nhân sự",
+   cols:[{t:"Mã NV"},{t:"Họ tên"},{t:"Phòng ban"},{t:"Cấp bậc"},{t:"Chức năng"},
+         {t:"Số team",a:"n"},{t:"Lương tháng (triệu)",a:"n"},{t:"Phân bổ về các team"}],
+   rows:()=>{if(!PBon()||PBx().dang()!=="nguoi")
+       return [["00027","Nguyễn Công Việt Anh","A10GG","Manager","BD","1","22,34","Team A10GG 100%"]];
+     return PBx().rows().filter(r=>r.soTeam).sort((a,b)=>b.luong-a.luong).slice(0,300)
+       .map(r=>[r.ma,`<b>${escHtml(r.ten)}</b>`,escHtml(r.phong),escHtml(r.cap),escHtml(r.cn),
+         `<span class="pill ${r.soTeam>3?'p-w':'p-ok'}">${r.soTeam}</span>`,dec(r.luong/1e6,2),
+         r.pb.slice(0,4).map(x=>`${escHtml(x.team)} ${dec(x.ty*100,0)}%`).join(' · ')
+           +(r.pb.length>4?` +${r.pb.length-4}`:'')])}}],
+ defs:[["Phân bổ lương","Chia quỹ lương của một nhân sự về các team mà người đó phục vụ, theo tỷ lệ thời gian hoặc khối lượng công việc dành cho từng team."],
+   ["Tỷ lệ phân bổ về team","Phần quỹ lương chia được về các team kinh doanh, tính trên tổng quỹ lương đã phân bổ. Phần còn lại giữ ở Tổng Công Ty."],
+   ["Nhân sự dùng chung","Nhân sự phục vụ từ hai team trở lên. Phần lương của họ phải chia nhỏ nên ảnh hưởng trực tiếp tới độ chính xác kết quả từng team."],
+   ["Giữ tại Tổng Công Ty","Chi phí không gán được về team cụ thể, ví dụ nhân sự phục vụ toàn công ty."]],
+ note:"Bảng nguồn là kết quả CUỐI CÙNG sau khi đã phân bổ, không phải số liệu thô. Hệ thống đọc được cả hai dạng trình bày của sheet: chi tiết theo từng nhân sự, hoặc đã gộp sẵn theo team."
 };
 
 
@@ -1231,6 +1245,8 @@ REP.HRM8={
 const HRon=()=>!!(window.HQLive&&HQLive.HR&&HQLive.HR.has());
 const LGon=()=>!!(window.HQLive&&HQLive.LG&&HQLive.LG.has());
 const LGx=()=>HQLive.LG;
+const PBon=()=>!!(window.HQLive&&HQLive.PB&&HQLive.PB.has());
+const PBx=()=>HQLive.PB;
 const HRx=()=>HQLive.HR;
 /* ---- Cầu nối dữ liệu tuyển dụng thật (HRM1) ---- */
 const TDx =()=>HQLive.TD;
