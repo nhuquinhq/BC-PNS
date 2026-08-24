@@ -2010,7 +2010,10 @@ if(CFG.brand){
          w.querySelector('span').textContent=CFG.brand.userRole||""; }
   const b=document.querySelector('.brand');
   if(b){ b.querySelector('b').textContent=CFG.brand.org||"HQ Group";
-         b.querySelector('span').textContent=CFG.brand.tagline||""; }
+         /* Giữ lại số hiệu bản đang chạy — nhờ nó phân biệt được ngay là
+            trình duyệt đang dùng mã mới hay còn giữ bản cũ trong bộ nhớ đệm. */
+         const sp=b.querySelector('span'), bd=(sp.textContent.match(/bản\s+([\w.-]+)/)||[])[1];
+         sp.textContent=(CFG.brand.tagline||"")+(bd?` · bản ${bd}`:""); }
 }
 showLogin();
 
