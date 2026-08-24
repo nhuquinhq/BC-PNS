@@ -172,7 +172,12 @@ window.HQLive = (function () {
     else if (phay >= 0) vt = (s.match(/,/g) || []).length > 1 ? -1 : phay;
     else if (cham >= 0) {
       const soCham = (s.match(/\./g) || []).length;
-      vt = (soCham > 1 || s.length - cham - 1 === 3) ? -1 : cham;
+      /* Một dấu chấm với đúng ba chữ số phía sau chỉ là dấu NGHÌN khi phần
+         nguyên có 1–3 chữ số ("15.000"). Còn "8803585.989" thì phần nguyên
+         đã 7 chữ số — kiểu Việt Nam sẽ viết 8.803.585 — nên đó là dấu thập
+         phân. Nhầm chỗ này làm con số phồng lên gấp 1000 lần. */
+      const nghin = soCham > 1 || (s.length - cham - 1 === 3 && cham >= 1 && cham <= 3);
+      vt = nghin ? -1 : cham;
     }
     const nguyen = (vt < 0 ? s : s.slice(0, vt)).replace(/[.,]/g, "");
     const le     = vt < 0 ? "" : s.slice(vt + 1).replace(/[.,]/g, "");
@@ -236,6 +241,39 @@ window.HQLive = (function () {
       const tu = (typeof RANGE !== "undefined" && RANGE && RANGE.from) ? new Date(RANGE.from) : new Date(den.getFullYear(), 0, 1);
       setSp("Nhân sự onboard trong kỳ", all.filter(r => r.vao && r.vao >= tu && r.vao <= den).length, bd.map(x => x.vao));
       setSp("Nhân sự nghỉ trong kỳ", all.filter(r => r.nghi && r.nghi >= tu && r.nghi <= den).length, bd.map(x => x.ra));
+    }
+
+    /* ---- HRM8 · Phân bổ khối lượng việc và phân bổ lương về team ---- */
+    if (reportId === "HRM8" && coPB()) {
+      const T = pbTong(), team = pbTheoTeam(), bp = pbTheoBoPhan();
+      const setP = (ten, v) => { const k = kpis.find(x => x.k === ten);
+        if (k && v != null && isFinite(v)) { k.cur = v; k.live = true; } };
+      const tr = x => x / 1e6;
+      setP("Quỹ lương đã phân bổ", tr(T.daChia));
+      setP("Số team nhận phân bổ", T.soTeam);
+      if (T.daChia) {
+        const tct = team.find(x => /tổng công ty|cong ty/i.test(x[0]));
+        /* Phần giữ lại ở Tổng Công Ty là chi phí chung không chia được về team */
+        setP("Giữ tại Tổng Công Ty", tr(tct ? tct[1] : 0));
+        setP("Tỷ lệ phân bổ về team", (T.daChia - (tct ? tct[1] : 0)) / T.daChia * 100);
+        setP("Team nhận nhiều nhất", tr(team.filter(x => !/tổng công ty|cong ty/i.test(x[0]))
+          .reduce((m, x) => Math.max(m, x[1]), 0)));
+        const kd = team.filter(x => !/tổng công ty|cong ty/i.test(x[0]));
+        setP("Bình quân mỗi team", kd.length ? tr(kd.reduce((s, x) => s + x[1], 0) / kd.length) : null);
+      }
+      if (bp.length) {
+        setP("Bộ phận gánh chi phí lớn nhất", tr(bp[0][1]));
+        setP("Số bộ phận tham gia", bp.length);
+      }
+      if (pbDang() === "nguoi") {
+        setP("Nhân sự được phân bổ", T.soNguoi);
+        setP("Nhân sự phục vụ nhiều team", T.dungChung);
+        setP("Tỷ lệ nhân sự dùng chung", T.soNguoi ? T.dungChung / T.soNguoi * 100 : null);
+        const ds = pbDS().filter(r => r.soTeam);
+        setP("Số team bình quân mỗi người",
+          ds.length ? ds.reduce((s, r) => s + r.soTeam, 0) / ds.length : null);
+        setP("Lương chưa chia về team", tr(T.chuaChia));
+      }
     }
 
     /* ---- HRM3 · Quỹ lương 12 tháng (tab DATA 2026) ---- */
@@ -1098,6 +1136,173 @@ window.HQLive = (function () {
   const LG = { has: coLuong, rows: luongDS, thangChot, quyLuongThang, luongTheo, tongLuongNam,
                khoiCua, laKinhDoanh, luongTheoKhoi, luongTeamKinhDoanh, teamKinhDoanhThang };
 
+  /* =====================================================================
+     5b-ter. PHÂN BỔ KHỐI LƯỢNG CÔNG VIỆC & PHÂN BỔ LƯƠNG (HRM8)
+
+     Kết quả kinh doanh của HQ tính theo từng team, mà các bộ phận BO phục
+     vụ chung cho nhiều team. Vì vậy quỹ lương của BO được phân bổ về team:
+     một nhân sự phục vụ mấy team thì chia lương về mấy team đó theo tỷ lệ.
+     Bảng nguồn là kết quả CUỐI CÙNG sau khi đã phân bổ.
+
+     Sheet có hai dạng trình bày, bộ đọc tự nhận dạng nào cũng chạy:
+       · dạng "người"  — mỗi dòng một nhân sự, các cột là tỷ lệ phân bổ sang
+                         từng team, kèm khối cột số tiền tương ứng;
+       · dạng "khối"   — gộp sẵn theo team, mỗi khối một team, bên trong
+                         tách theo bộ phận, các cột là Tháng 1…Tháng 12.
+     ===================================================================== */
+  const PBSRC = "RAW_PhanBoLuong";
+  let _pb = null, _pbLen = -1;
+
+  function pbParse() {
+    const src = raws(PBSRC);
+    if (!src.length) return { dang: null };
+    if (_pb && _pbLen === src.length) return _pb;
+    _pb = pbDangNguoi(src) || pbDangKhoi(src) || { dang: null };
+    _pbLen = src.length;
+    return _pb;
+  }
+
+  /* ---- Dạng "người": mỗi dòng một nhân sự, cột là tỷ lệ theo team ---- */
+  function pbDangNguoi(src) {
+    let hi = -1;
+    for (let i = 0; i < Math.min(src.length, 20); i++) {
+      const o = src[i].map(kd);
+      if (o.some(c => c.includes("ma nhan vien")) && o.some(c => c.includes("tong ty le"))) { hi = i; break; }
+    }
+    if (hi < 0) return null;
+    const H = src[hi], h = H.map(kd);
+    const tim = t => h.findIndex(x => x.includes(t));
+    const C = { ma: tim("ma nhan vien"), ten: tim("ho ten"), phong: tim("phong ban"),
+                cap: tim("cap bac"), cn: tim("chuc nang"), pic: tim("pic"),
+                ty: tim("tong ty le"), chua: tim("phan luong chua") };
+    /* Cột team chạy từ ngay sau "Dự án" tới khi gặp ô tiêu đề trống */
+    /* Khớp ĐÚNG "du an" — dùng includes sẽ bắt nhầm cột "Phòng Ban/ Dự án" */
+    let d0 = h.indexOf("du an");
+    if (d0 < 0) d0 = Math.max(C.ma, C.ten, C.phong, C.cap, C.cn, C.pic, C.ty, C.chua);
+    const team = [];
+    for (let j = d0 + 1; j < H.length; j++) {
+      const t = String(H[j] || "").trim();
+      if (!t) break;
+      team.push({ ten: t, cot: j });
+    }
+    if (!team.length) return null;
+    /* Khối cột tiền: ô tiêu đề đầu tiên có giá trị sau khi hết cột team là
+       cột TỔNG lương tháng, ngay sau đó là tiền của từng team theo đúng thứ tự. */
+    let cotTong = -1;
+    for (let j = team[team.length - 1].cot + 1; j < H.length; j++) {
+      if (String(H[j] || "").trim()) { cotTong = j; break; }
+    }
+    if (cotTong >= 0) team.forEach((t, i) => { t.cotTien = cotTong + 1 + i; });
+
+    const g = (r, c) => c >= 0 ? String(r[c] || "").trim() : "";
+    const ds = [];
+    for (let i = hi + 1; i < src.length; i++) {
+      const r = src[i];
+      const ten = g(r, C.ten); if (!ten) continue;
+      const luong = cotTong >= 0 ? num(g(r, cotTong)) : 0;
+      const pb = [];
+      team.forEach(t => {
+        const ty = num(g(r, t.cot));
+        if (!ty) return;
+        const tien = t.cotTien != null ? num(g(r, t.cotTien)) : ty * luong;
+        pb.push({ team: t.ten, ty, tien });
+      });
+      ds.push({
+        ma: g(r, C.ma), ten, phong: g(r, C.phong) || "Chưa rõ", cap: g(r, C.cap) || "Chưa rõ",
+        cn: g(r, C.cn) || "Chưa rõ", pic: g(r, C.pic), luong,
+        tyTong: num(g(r, C.ty)), chuaChia: num(g(r, C.chua)), pb, soTeam: pb.length
+      });
+    }
+    return ds.length ? { dang: "nguoi", ds, team: team.map(t => t.ten) } : null;
+  }
+
+  /* ---- Dạng "khối": gộp sẵn theo team, các cột là 12 tháng ---- */
+  function pbDangKhoi(src) {
+    let hi = -1;
+    for (let i = 0; i < Math.min(src.length, 20); i++) {
+      const o = src[i].map(kd);
+      if (o.some(c => c.includes("phong ban")) && o.some(c => c === "thang 1")) { hi = i; break; }
+    }
+    if (hi < 0) return null;
+    const h = src[hi].map(kd);
+    const cotPhong = h.findIndex(x => x.includes("phong ban"));
+    const cotNam = h.findIndex(x => x.includes("tong nam"));
+    const cotThang = {};
+    for (let t = 1; t <= 12; t++) { const j = h.indexOf("thang " + t); if (j >= 0) cotThang[t] = j; }
+
+    const ds = []; let team = "Chưa rõ";
+    for (let i = hi + 1; i < src.length; i++) {
+      const r = src[i]; if (!r) continue;
+      const a = String(r[0] || "").trim(), b = String(r[cotPhong] || "").trim();
+      /* Dòng đầu khối: cột đầu có tên team, cột phòng ban để trống */
+      if (a && !b) { team = a; continue; }
+      if (!b) continue;
+      const thang = {};
+      for (const t in cotThang) thang[t] = num(String(r[cotThang[t]] || ""));
+      ds.push({ team, ma: a, phong: b, nam: cotNam >= 0 ? num(String(r[cotNam] || "")) : 0, thang });
+    }
+    return ds.length ? { dang: "khoi", ds } : null;
+  }
+
+  const coPB   = () => raws(PBSRC).length > 0 && !!pbParse().dang;
+  const pbDang = () => pbParse().dang;
+  const pbDS   = () => pbParse().ds || [];
+
+  /* Quỹ lương sau phân bổ về từng team — dùng chung cho cả hai dạng */
+  function pbTheoTeam(t) {
+    const p = pbParse(), m = {};
+    if (p.dang === "nguoi") {
+      p.ds.forEach(r => r.pb.forEach(x => { m[x.team] = (m[x.team] || 0) + x.tien; }));
+    } else if (p.dang === "khoi") {
+      const thang = t || null;
+      p.ds.forEach(r => {
+        const v = thang ? (r.thang[thang] || 0) : r.nam;
+        if (v) m[r.team] = (m[r.team] || 0) + v;
+      });
+    }
+    return Object.entries(m).filter(x => x[1]).sort((a, b) => b[1] - a[1]);
+  }
+  /* Bộ phận nào đang gánh chi phí cho team nào */
+  function pbTheoBoPhan(top) {
+    const p = pbParse(), m = {};
+    if (p.dang === "nguoi") p.ds.forEach(r => {
+      const k = r.cn || "Chưa rõ";
+      m[k] = (m[k] || 0) + r.pb.reduce((s, x) => s + x.tien, 0);
+    });
+    else if (p.dang === "khoi") p.ds.forEach(r => { m[r.phong] = (m[r.phong] || 0) + r.nam; });
+    let e = Object.entries(m).filter(x => x[1]).sort((a, b) => b[1] - a[1]);
+    return top ? e.slice(0, top) : e;
+  }
+  /* Mức độ dùng chung: mỗi nhân sự phục vụ bao nhiêu team (chỉ dạng "người") */
+  function pbPhoiTeam() {
+    const p = pbParse(); if (p.dang !== "nguoi") return [];
+    const b = { "1 team": 0, "2 team": 0, "3 team": 0, "4 team trở lên": 0 };
+    p.ds.forEach(r => {
+      if (!r.soTeam) return;
+      if (r.soTeam === 1) b["1 team"]++; else if (r.soTeam === 2) b["2 team"]++;
+      else if (r.soTeam === 3) b["3 team"]++; else b["4 team trở lên"]++;
+    });
+    return Object.entries(b);
+  }
+  /* Tổng đã phân bổ, phần chưa chia và số nhân sự dùng chung */
+  function pbTong() {
+    const p = pbParse();
+    if (p.dang === "nguoi") {
+      const daChia = p.ds.reduce((s, r) => s + r.pb.reduce((x, y) => x + y.tien, 0), 0);
+      return { daChia, chuaChia: p.ds.reduce((s, r) => s + (r.chuaChia || 0), 0),
+               soNguoi: p.ds.filter(r => r.soTeam).length,
+               dungChung: p.ds.filter(r => r.soTeam > 1).length,
+               soTeam: pbTheoTeam().length };
+    }
+    if (p.dang === "khoi") {
+      const daChia = p.ds.reduce((s, r) => s + r.nam, 0);
+      return { daChia, chuaChia: 0, soNguoi: 0, dungChung: 0, soTeam: pbTheoTeam().length };
+    }
+    return { daChia: 0, chuaChia: 0, soNguoi: 0, dungChung: 0, soTeam: 0 };
+  }
+  const PB = { has: coPB, dang: pbDang, rows: pbDS, theoTeam: pbTheoTeam,
+               theoBoPhan: pbTheoBoPhan, phoiTeam: pbPhoiTeam, tong: pbTong };
+
   const TDSRC = "RAW_TuyenDung", DXSRC = "RAW_DeXuatTD", SLASRC = "RAW_SLA_TD";
   const raws = k => thoRaw[k] || [];
 
@@ -1435,5 +1640,5 @@ window.HQLive = (function () {
   }
 
   return { loadAll, apply, rows, has, num, nhanSu, dem, tuoi, sheetTable, status, store, meta, parseCSV,
-           parseVietnameseDate, calculateTenureMonths, HR, TD, LG };
+           parseVietnameseDate, calculateTenureMonths, HR, TD, LG, PB };
 })();

@@ -96,7 +96,13 @@ window.HQ_CONFIG = {
     RAW_Offboard:  "",
     RAW_HoSo:      "",
     RAW_BHXH:      "",
-    RAW_Workload:  ""
+    RAW_Workload:  "",
+    /* "PHÂN BỔ QUỸ LƯƠNG HQPLAY 2026" — bảng kết quả CUỐI CÙNG sau khi phân bổ
+       quỹ lương của các bộ phận BO về từng team kinh doanh. Kết quả kinh doanh
+       tính theo team, mà BO phục vụ chung nhiều team, nên lương BO được chia
+       về team theo tỷ lệ phục vụ. Bộ đọc tự nhận cả hai dạng trình bày: chi
+       tiết theo từng nhân sự, hoặc đã gộp sẵn theo team. */
+    RAW_PhanBoLuong: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGoboLSWbSgzBhslDazIMFpN7KNMwTRtRupE3nE3O8SyM5F2piTWLB9BJ7Yeza9CUxCSvaRTFHJkqY/pub?gid=1633723332&single=true&output=csv"
   },
 
   /* ---------------------------------------------------------------
